@@ -11,8 +11,10 @@ dumps/
 # Heavy / regenerable — kept out of the repo
 # _archive: superseded scripts, old captures, retracted PSIRT package
 # dist: generated engagement kit (rebuild via make-standalone-package.sh)
+# reports: per-engagement outputs (captures + analyses; may contain extracted secrets)
 _archive/
 dist/
+reports/
 
 # Python / generated artifacts
 __pycache__/
