@@ -1,0 +1,11 @@
+
+================================================================
+ CORTEX-M SECURITY POSTURE  (family: sam-dsu)
+================================================================
+ (1) IDENTITY
+   DSU.DID                0x61840303 (FAMILY=0x3 SERIES=0x4 DIE=0x0 REV=0x3 DEVSEL=0x03)
+ (2) READOUT PROTECTION (DSU.STATUSB.PROT)
+   PROT                   0 -> open, debug + flash accessible (dev)
+================================================================
+ NOTE: reading any of the above proves the AHB-AP is OPEN -> internal flash is dumpable now.
+================================================================

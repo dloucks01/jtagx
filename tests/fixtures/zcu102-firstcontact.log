@@ -1,0 +1,5 @@
+Open On-Chip Debugger 0.12.0
+Info : JTAG tap: uscale.ps tap/device found: 0x24738093 (mfg: 0x049 (Xilinx), part: 0x4738, ver: 0x2)
+Info : JTAG tap: uscale.tap tap/device found: 0x5ba00477 (mfg: 0x23b (ARM Ltd), part: 0xba00, ver: 0x5)
+Info : uscale.a53.0: hardware has 6 breakpoints, 4 watchpoints
+- **CSU.IDCODE**: `0xffca0040 = 0x24738093`   (register read — must NOT be parsed as a device IDCODE)

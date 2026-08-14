@@ -1,0 +1,28 @@
+// Three-layer enumeration pipeline — Volume 2 §1.1
+
+digraph Pipeline {
+    rankdir=TB;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled"];
+    edge [fontname="Helvetica", fontsize=9, color="#444444"];
+
+    label = "Discover → Enumerate → Deep-Probe Layering";
+    labelloc = "t";
+    fontsize = 14;
+
+    L1 [label="Layer 1: Discover\nFamily-agnostic\n\n• TAP listing\n• AP enumeration\n• SoC family identification\n• Pre-flight verification",
+        fillcolor="#E3F2FD", color="#1976D2", width=4];
+
+    L2 [label="Layer 2: Enumerate\nFamily-specific\n\n• Silicon ID + variant\n• Security registers (CSU, eFUSE)\n• Power, clock, reset state\n• Boot artifacts\n• Produces structured report",
+        fillcolor="#E8F5E9", color="#43A047", width=4];
+
+    L3 [label="Layer 3: Deep-Probe\nTargeted, optional\n\n• BootROM dump\n• PMU firmware dump\n• TCM / reserved-offset scans\n• Future: active probing, fuzzing",
+        fillcolor="#FFE0B2", color="#E65100", width=4];
+
+    riskbar [label="invasiveness ↑",
+             shape=plaintext, fontcolor="#888888", fontsize=10];
+
+    L1 -> L2 -> L3;
+    L3 -> riskbar [style=invis];
+    L1 -> riskbar [style=invis];
+}

@@ -1,0 +1,5 @@
+from: markdown+pipe_tables+yaml_metadata_block+raw_html
+to: docx
+table-of-contents: true
+toc-depth: 2
+standalone: true

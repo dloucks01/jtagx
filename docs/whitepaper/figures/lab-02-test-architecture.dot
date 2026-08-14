@@ -1,0 +1,42 @@
+// Test architecture — lab-setup §4
+// Shows the three gating layers: static check, smoke test, audit, live test
+
+digraph TestArch {
+    rankdir=TB;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="white"];
+    edge [fontname="Helvetica", fontsize=9, color="#666666"];
+    splines=ortho;
+
+    label = "Change Gate — How Edits to enumerate.tcl Are Validated";
+    labelloc = "t";
+    fontsize = 14;
+
+    Edit [label="Edit enumerate.tcl\nor helpers",
+          fillcolor="#FFF9C4", color="#F9A825"];
+
+    Static [label="Static check\ntools/tcl-smoketest.sh\n(scan for bracket-in-string bug)",
+            fillcolor="#E3F2FD", color="#1976D2"];
+
+    Smoke [label="Dynamic smoke test\nStub OpenOCD, source script,\nverify clean end-to-end",
+           fillcolor="#E3F2FD", color="#1976D2"];
+
+    Audit [label="Annotation + golden tests\ncheck-annotations.py\ngolden-test{,-roundtrip}.sh",
+           fillcolor="#E8F5E9", color="#43A047"];
+
+    Live [label="Live test on hardware\nopenocd -f zcu102.cfg\nsource enumerate.tcl",
+          fillcolor="#FFE0B2", color="#E65100"];
+
+    Diff [label="Diff vs baseline report\nConfirm no regression in\nfindings interpretation",
+          fillcolor="#FFE0B2", color="#E65100"];
+
+    Commit [label="Commit change",
+            fillcolor="#C8E6C9", color="#2E7D32"];
+
+    Edit -> Static;
+    Static -> Smoke [label="passes"];
+    Smoke -> Audit [label="passes"];
+    Audit -> Live [label="0 critical findings"];
+    Live -> Diff;
+    Diff -> Commit [label="findings match\nexpected"];
+}

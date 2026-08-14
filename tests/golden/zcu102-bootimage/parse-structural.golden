@@ -1,0 +1,21 @@
+== Boot header ==
+  magic            : OK (XLNX)
+  headerChecksum   : 0xFD15B7F1 (OK)
+  encryptionKeySrc : 0x00000000  (None (unencrypted))
+  fsblAttributes   : 0x00000800  (AUTH_ONLY=0 BH_RSA=0)
+  iht_offset(0x98) : 0x000008C0   pht_offset(0x9c) : 0x00001100
+
+== Image Header Table ==
+  partitionCount   : 6
+  firstPH wordoff  : 0x00000440 (byte 0x00001100)
+  headerAC wordoff : 0x00000000 (headers not authenticated)
+  ihtChecksum      : 0xFEFDF979 (OK)
+
+== Partition Header Table ==
+  [0] num=0 dest=PS attr=0x00000116 encrypt=0 ac_flag=0 acOff=0x00000000 -> plain+noauth checksum=OK
+  [1] num=1 dest=PL attr=0x00000026 encrypt=0 ac_flag=0 acOff=0x00000000 -> plain+noauth checksum=OK
+  [2] num=2 dest=PS attr=0x00000117 encrypt=0 ac_flag=0 acOff=0x00000000 -> plain+noauth checksum=OK
+  [3] num=3 dest=PS attr=0x00000117 encrypt=0 ac_flag=0 acOff=0x00000000 -> plain+noauth checksum=OK
+  [4] num=4 dest=PS attr=0x00000116 encrypt=0 ac_flag=0 acOff=0x00000000 -> plain+noauth checksum=OK
+  [5] num=5 dest=PS attr=0x00000114 encrypt=0 ac_flag=0 acOff=0x00000000 -> plain+noauth checksum=OK
+

@@ -1,0 +1,12 @@
+
+================================================================
+ CORTEX-M SECURITY POSTURE  (family: kinetis-fsec)
+================================================================
+ (1) IDENTITY
+   SIM_SDID               0x12340680 (FAMILYID=0x1 SUBFAMID=0x2 SERIESID=0x3 PINID=0x0 REVID=0x0)
+ (2) FLASH SECURITY (FTFE_FSEC)
+   SEC (bits 1-0)         0x2 -> UNSECURED (0b10) — flash readable (dev)
+   MEEN (bits 5-4)        0x3 -> mass-erase available
+================================================================
+ NOTE: reading any of the above proves the AHB-AP is OPEN -> internal flash is dumpable now.
+================================================================

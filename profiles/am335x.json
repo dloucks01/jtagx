@@ -1,0 +1,55 @@
+// TI Sitara AM335x (Cortex-A8) — Paradigm A (Cortex-A Linux SoC). Build #3 (coverage), 2026-06-12.
+// auto_match:false (generic ARM DAP) -> --profile am335x. Reuses the generic mem-AP DRAM dump. HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "TI Sitara AM335x (Cortex-A8)",
+  "soc": "am335x",
+  "paradigm": "A",
+  "status": "partial",
+  "auto_match": false,
+  "match": {
+    "family": "arm",
+    "part_ids": [],
+    "min_taps": 1
+  },
+  "openocd_cfg": "openocd/am335x.cfg",
+  "access_check": "openocd/jtag-access-check.tcl",
+  "enumerate": null,
+  "dump": {
+    "dram": {
+      "script": "openocd/dump-os-ddr.tcl",
+      "addr": "0x80000000",
+      "size": "0x20000000",
+      "sparse": true,
+      "out": "dumps/os-live.bin"
+    },
+    "flash": null
+  },
+  "reopen": [],
+  "absent": {
+    "enumerate": "no on-DAP vendor posture register set characterized (secure-boot is the high-secure SoC variant + eFuses)",
+    "flash": "boot flash (SD/eMMC/QSPI via the SoC boot ROM) reflash is media-specific \u2014 not wired; DRAM is the JTAG value",
+    "reopen": "secure-boot/debug gating is eFuse \u2014 no live register reopen lever"
+  },
+  "patch": {
+    "script": "openocd/probe-phys-patch.tcl",
+    "pa_math": "virt2phys",
+    "kva_lo": "0x00000000",
+    "env": {
+      "PATCH_CORE": "am335x.cpu",
+      "PATCH_AXI": "am335x.axi",
+      "PATCH_DAP": "am335x.dap"
+    }
+  },
+  "reflash": {
+    "repack": false,
+    "note": "reflash by writing the patched boot image to the SD/eMMC/QSPI boot media directly (media-specific)."
+  },
+  "analysis": [
+    {
+      "tool": "tools/dram-secrets.py",
+      "on": "dram"
+    }
+  ],
+  "ghidra": "auto"
+}

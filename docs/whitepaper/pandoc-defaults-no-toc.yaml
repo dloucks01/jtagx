@@ -1,0 +1,27 @@
+# pandoc defaults for per-volume builds without a Table of Contents.
+# Used for Volume 2 per user request — overrides table-of-contents=false
+# while inheriting everything else from pandoc-defaults.yaml.
+
+from: markdown+pipe_tables+yaml_metadata_block+raw_html
+to: pdf
+pdf-engine: xelatex
+
+variables:
+  documentclass: article
+  papersize: letter
+  fontsize: 11pt
+  geometry:
+    - margin=1in
+  linkcolor: blue
+  urlcolor: blue
+  colorlinks: true
+  mainfont: "DejaVu Serif"
+  sansfont: "DejaVu Sans"
+  monofont: "DejaVu Sans Mono"
+
+table-of-contents: false
+number-sections: false
+standalone: true
+shift-heading-level-by: 0
+
+default-image-extension: png

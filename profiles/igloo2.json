@@ -1,0 +1,39 @@
+// Microchip/Microsemi IGLOO2 (M2GL) — Paradigm D (FPGA programming TAP, NO CPU). Build #4, 2026-06-11.
+//
+// auto_match:false — IGLOO2 presents a Microsemi IEEE-1149.1 programming TAP, not a CoreSight DAP, and
+// we don't ship a confirmed Microsemi IDCODE decoder (won't fabricate one). Select it explicitly:
+//     python3 tools/board-runner.py --profile igloo2
+// (A recognized FPGA manufacturer — e.g. Lattice — auto-lands in Tier-3 generic-D handoff already.)
+//
+// HONEST SCOPE: there is NO memory bus on this TAP. No ARM core, no AXI, no DRAM/flash dump over JTAG.
+// The fabric + eNVM are reachable ONLY via Microsemi's proprietary secure-programming protocol
+// (FlashPro Express / Libero / DirectC) — OpenOCD does not speak it. Best case = identify + device
+// status, and eNVM/bitstream readback ONLY if security (FlashLock / user pass-key / AES) is NOT
+// provisioned; if it is, readback is disabled by design. This stub makes the runner exit cleanly with
+// the vendor handoff instead of pretending it's a CoreSight target.
+// (Note: SmartFusion2 — IGLOO2's Cortex-M3 sibling — DOES give a DAP and would be Paradigm B instead.)
+{
+  "schema_version": 1,
+  "name": "Microchip IGLOO2 (M2GL)",
+  "soc": "igloo2",
+  "paradigm": "D",
+  "status": "stub",
+  "auto_match": false,
+
+  "match": { "family": "microsemi", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": null,
+  "access_check": "openocd/discover.tcl",
+
+  "vendor": {
+    "tool": "Microchip FlashPro Express (or Libero SoC / DirectC)",
+    "cmd": "# FlashPro Express -> New Job Project (.job), or Libero SoC -> Programming Connectivity & Inspect Device",
+    "note": "IGLOO2/SmartFusion2 expose a Microsemi PROGRAMMING TAP — no CoreSight DAP, no memory bus over JTAG.",
+    "steps": [
+      "Connect a FlashPro5/6 (or an FTDI in Microsemi mode) to the JTAG header.",
+      "Inspect Device: read IDCODE + device/security status (FlashPro Express -> Inspect Device).",
+      "If FlashLock / user pass-key / AES is NOT provisioned: eNVM + fabric bitstream readback may be possible.",
+      "If security IS provisioned: readback is disabled by design -> identify + posture only, no dump."
+    ]
+  }
+}

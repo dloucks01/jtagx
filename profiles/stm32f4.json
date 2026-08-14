@@ -1,0 +1,40 @@
+// STMicro STM32F4 (Cortex-M4 MCU) — Paradigm B. Build #5, 2026-06-11.
+// auto_match:false — an MCU on SWD presents only a generic ARM DP IDCODE; identify it by reading
+// DBGMCU_IDCODE (in the protection step), not by chain scan. Select: --profile stm32f4.
+// No MMU: flash + SRAM are flat & memory-mapped, so "dump" = a direct mem-AP read. The gate is RDP
+// (read-out protection) in the option bytes. HW-UNVALIDATED (no MCU on the bench); reuses dump_memory.
+{
+  "schema_version": 1,
+  "name": "STMicro STM32F4 (Cortex-M4)",
+  "soc": "stm32f4",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-stm32f4.cfg",
+  "access_check": null,
+
+  // The Paradigm-B "posture" = the readout-protection check (RDP) + chip-ID read.
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/cortexm-flash.bin",
+               "note": "Internal flash (0x08000000) + SRAM via the mem-AP. Constants from the cfg.", "env": {} }
+  },
+
+  "reopen": [],
+  "absent": { "reopen": "no non-destructive reopen — RDP level 1 clears only via a flash-WIPING mass-erase (regression to L0)" },
+
+  // No-MMU live patch: PA = VA (pa_math linear, kva_lo 0). Target SRAM (running code/data); flash
+  // patching needs the flash-controller program/erase sequence (out of scope here).
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "stm32f4x.cpu", "PATCH_AXI": "stm32f4x.cpu", "PATCH_DAP": "stm32f4x.dap" } },
+
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/cortexm-flash-patched.bin" },
+               "note": "Reflash internal flash via OpenOCD's driver. DESTRUCTIVE; part must be RDP-0 / APPROTECT-off." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto"
+}

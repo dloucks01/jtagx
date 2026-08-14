@@ -1,0 +1,14 @@
+
+================================================================
+ CORTEX-M SECURITY POSTURE  (family: none)
+================================================================
+ (1) IDENTITY (SYSINFO)
+   CHIP_ID                0x10002927  (PART=0x0002 REV=0x1 MANUF=0x927)
+   PLATFORM               0x00000002 (ASIC)
+   GITREF                 0xabcd1234
+ (2) READOUT PROTECTION
+   On-chip protection     NONE — RP2040 has no internal flash + no readout-protection fuse.
+   Real gate              the EXTERNAL QSPI flash (XIP @0x10000000) — readable unless QSPI is disabled.
+================================================================
+ NOTE: reading any of the above proves the AHB-AP is OPEN -> internal flash is dumpable now.
+================================================================

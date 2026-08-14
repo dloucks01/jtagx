@@ -1,0 +1,17 @@
+
+================================================================
+ CORTEX-M SECURITY POSTURE  (family: nrf-approtect)
+================================================================
+ (1) IDENTITY (FICR)
+   INFO.PART              0x00052840 (e.g. 0x52840)
+   INFO.VARIANT           0x00000000 (ASCII build code)
+   RAM / FLASH            256 KB / 1024 KB
+   DEVICEID               0000000000000000
+ (2) READOUT PROTECTION (UICR.APPROTECT @0x10001208)
+   APPROTECT              0x00000000 -> ENABLED is the configured intent — a reset re-locks; only re-open is a CTRL-AP mass-erase (WIPE)
+ (3) DEBUG / OUTPUT
+   DEBUGCTRL              0xffffffff (CPUNIDEN/CPUFPBEN; 0xFFFFFFFF = all debug allowed)
+   REGOUT0 (VOUT)         0xffffffff
+================================================================
+ NOTE: reading any of the above proves the AHB-AP is OPEN -> internal flash is dumpable now.
+================================================================

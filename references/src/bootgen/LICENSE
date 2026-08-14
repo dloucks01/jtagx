@@ -1,0 +1,145 @@
+Components: bootgen
+
+
+/******************************************************************************
+* Copyright 2015-2020 Xilinx, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+******************************************************************************/
+
+
+Components: bison 2.7
+
+
+/* Skeleton interface for Bison LALR(1) parsers in C++
+
+      Copyright (C) 2002-2012 Free Software Foundation, Inc.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+/* As a special exception, you may create a larger work that contains
+   part or all of the Bison parser skeleton and distribute that work
+   under terms of your choice, so long as that work isn't itself a
+   parser generator using the skeleton or a modified version thereof
+   as a parser skeleton.  Alternatively, if you modify or redistribute
+   the parser skeleton itself, you may (at your option) remove this
+   special exception, which will cause the skeleton and the resulting
+   Bison output files to be licensed under the GNU General Public
+   License without this special exception.
+
+   This special exception was added by the Free Software Foundation in
+   version 2.2 of Bison.  */
+
+
+Copyright 2002-2012 Free Software Foundation Inc
+
+
+Components: flex 2.5.35
+
+
+// This code is derived from software contributed to Berkeley by
+// Kent Williams and Tom Epperly.
+//
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions
+//  are met:
+
+//  1. Redistributions of source code must retain the above copyright
+//  notice, this list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright
+//  notice, this list of conditions and the following disclaimer in the
+//  documentation and/or other materials provided with the distribution.
+
+//  Neither the name of the University nor the names of its contributors
+//  may be used to endorse or promote products derived from this software
+//  without specific prior written permission.
+
+//  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+//  IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+//  PURPOSE.
+
+
+Copyright (c) 1993 The Regents of the University of California. All rights reserved.
+
+
+Components: keccak 3.3
+
+
+/*
+The Keccak sponge function, designed by Guido Bertoni, Joan Daemen,
+Micha??l Peeters and Gilles Van Assche. For more information, feedback or
+questions, please refer to our website: http://keccak.noekeon.org/
+
+Implementation by Ronny Van Keer,
+hereby denoted as "the implementer".
+
+To the extent possible under law, the implementer has waived all copyright
+and related or neighboring rights to the source code in this file.
+http://creativecommons.org/publicdomain/zero/1.0/
+*/
+
+
+Copyright (c) 1994 Hewlett-Packard Company
+Copyright (c) 1993 The Regents of the University of California.
+Copyright (c) 1998-2011 The OpenSSL Project. All rights reserved.
+Copyright 2002-2012 Free Software Foundation Inc
+
+
+Components: stdint.h 0.1.5
+
+
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *      Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *
+ *      Redistributions in binary form must not misrepresent the orignal
+ *      source in the documentation and/or other materials provided
+ *      with the distribution.
+ *
+ *      The names of the authors not its contributors may be used to
+ *      endorse or promote products derived from this software without
+ *      specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ *  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ *  STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ *  OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************
+
+
+Copyright (c) 2005 Paul Hsieh
+

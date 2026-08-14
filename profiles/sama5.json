@@ -1,0 +1,55 @@
+// Microchip SAMA5D2 (Cortex-A5) — Paradigm A (Cortex-A Linux SoC). Build #3 (coverage), 2026-06-12.
+// auto_match:false (generic ARM DAP) -> --profile sama5. Reuses the generic mem-AP DRAM dump. HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "Microchip SAMA5D2 (Cortex-A5)",
+  "soc": "sama5",
+  "paradigm": "A",
+  "status": "partial",
+  "auto_match": false,
+  "match": {
+    "family": "arm",
+    "part_ids": [],
+    "min_taps": 1
+  },
+  "openocd_cfg": "openocd/sama5.cfg",
+  "access_check": "openocd/jtag-access-check.tcl",
+  "enumerate": null,
+  "dump": {
+    "dram": {
+      "script": "openocd/dump-os-ddr.tcl",
+      "addr": "0x20000000",
+      "size": "0x10000000",
+      "sparse": true,
+      "out": "dumps/os-live.bin"
+    },
+    "flash": null
+  },
+  "reopen": [],
+  "absent": {
+    "enumerate": "no on-DAP vendor posture register set characterized (secure boot is BootROM + fuses)",
+    "flash": "boot flash (SD/eMMC/QSPI via the SoC boot ROM) reflash is media-specific \u2014 not wired; DRAM is the JTAG value",
+    "reopen": "secure-boot/debug gating is eFuse \u2014 no live register reopen lever"
+  },
+  "patch": {
+    "script": "openocd/probe-phys-patch.tcl",
+    "pa_math": "virt2phys",
+    "kva_lo": "0x00000000",
+    "env": {
+      "PATCH_CORE": "sama5d2.cpu_a5.0",
+      "PATCH_AXI": "sama5.axi",
+      "PATCH_DAP": "sama5d2.dap"
+    }
+  },
+  "reflash": {
+    "repack": false,
+    "note": "reflash by writing the patched boot image to the SD/eMMC/QSPI boot media directly (media-specific)."
+  },
+  "analysis": [
+    {
+      "tool": "tools/dram-secrets.py",
+      "on": "dram"
+    }
+  ],
+  "ghidra": "auto"
+}

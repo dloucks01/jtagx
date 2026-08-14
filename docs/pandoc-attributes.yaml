@@ -1,0 +1,23 @@
+# pandoc defaults for docs/11-enumerated-attributes.md → shareable PDF.
+# Landscape + line-wrapping so the wide attribute tables and hexdump rows fit.
+# Regenerate:  cd docs && pandoc --defaults=pandoc-attributes.yaml \
+#                -o 11-enumerated-attributes.pdf 11-enumerated-attributes.md
+from: markdown+pipe_tables+yaml_metadata_block+raw_html
+to: pdf
+pdf-engine: xelatex
+standalone: true
+table-of-contents: true
+toc-depth: 2
+include-in-header:
+  - pandoc-wide-header.tex
+variables:
+  geometry:
+    - landscape
+    - margin=0.6in
+  fontsize: 10pt
+  mainfont: "DejaVu Serif"
+  sansfont: "DejaVu Sans"
+  monofont: "DejaVu Sans Mono"
+  colorlinks: true
+  linkcolor: blue
+  urlcolor: blue

@@ -1,0 +1,37 @@
+// Five-stage workflow — Volume 2 §2
+// Updated for the capture/interpret split: Enumerate became two stages
+// (Capture writes raw md + raw JSON, Interpret renders findings).
+
+digraph WorkflowStages {
+    rankdir=TB;
+    fontname="Helvetica";
+    // splines=ortho works around the "cannot realloc pnls / lost edge" bug
+    // that fires with default spline routing on labels this size.
+    splines=ortho;
+    nodesep=0.4;
+    ranksep=0.35;
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled",
+          width=3.4];
+    edge [fontname="Helvetica", fontsize=9];
+
+    label = "First-Contact Enumeration Workflow";
+    labelloc = "t";
+    fontsize = 14;
+
+    S1 [label="Stage 1 — Connect\nPower board, attach JTAG USB\n(~30 sec)",
+        fillcolor="#FFF9C4", color="#F9A825"];
+
+    S2 [label="Stage 2 — Auto-detect\n./tools/jtag-autoconnect.sh\n(~5 sec)",
+        fillcolor="#E3F2FD", color="#1976D2"];
+
+    S3 [label="Stage 3 — Capture\nopenocd -f cfg -c source enumerate.tcl\nProduces enumerate-*.md + raw-*.json\n(~10 sec)",
+        fillcolor="#E8F5E9", color="#43A047"];
+
+    S4 [label="Stage 4 — Interpret\npython3 tools/interpret.py raw-*.json -O\nProduces interpreted-*.md\n(~2 sec)",
+        fillcolor="#E1BEE7", color="#7B1FA2"];
+
+    S5 [label="Stage 5 — Read report\nReview interpreted-*.md\n(~5-15 min)",
+        fillcolor="#FFE0B2", color="#E65100"];
+
+    S1 -> S2 -> S3 -> S4 -> S5;
+}

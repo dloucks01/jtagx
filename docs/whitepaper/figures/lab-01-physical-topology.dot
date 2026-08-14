@@ -1,0 +1,47 @@
+// Physical lab topology — lab-setup §2
+
+digraph LabTopology {
+    rankdir=LR;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="white"];
+    edge [fontname="Helvetica", fontsize=9];
+    splines=ortho;
+
+    label = "Physical Lab Topology";
+    labelloc = "t";
+    fontsize = 14;
+
+    Host [label="Host PC\n(Kali Linux,\nphysical or VMware guest)",
+          fillcolor="#E3F2FD", color="#1976D2"];
+
+    USBhub [label="USB hub\n(optional, powered)",
+            fillcolor="white"];
+
+    subgraph cluster_board {
+        label = "ZCU102 board";
+        labeljust = "l";
+        style = "rounded,filled";
+        fillcolor = "#FFF4E6";
+        color = "#E69500";
+
+        JTAG  [label="On-board JTAG bridge\nDigilent SMT2 (FT232H)\nUSB micro-B"];
+        UART  [label="Quad UART\nCP2108\nUSB micro-B"];
+        SYSCTL[label="System Controller\n(separate Zynq-7000)"];
+        SoC   [label="Zynq UltraScale+ MPSoC\n(XCZU9EG on ZCU102)",
+               fillcolor="#FFE0B2"];
+        SW6   [label="SW6 DIP\nboot-mode\nswitch", shape=note];
+        SW1   [label="SW1\npower",   shape=note];
+        PWR   [label="12V DC\npower supply", shape=note];
+    }
+
+    PWR -> SW1 -> SoC;
+    SW6 -> SoC;
+    SYSCTL -> SoC [label="manages"];
+
+    Host -> USBhub [label="USB 3.0"];
+    USBhub -> JTAG [label="USB micro-B"];
+    USBhub -> UART [label="USB micro-B"];
+
+    JTAG -> SoC [label="JTAG chain\n(PS-TAP +\n ARM DAP)"];
+    UART -> SoC [label="4 serial\nlines"];
+}

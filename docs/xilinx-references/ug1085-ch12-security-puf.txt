@@ -1,0 +1,994 @@
+                                                                                  Chapter 12
+
+
+Security
+
+       Introduction
+       The increasing ubiquity of Xilinx® devices makes protecting the intellectual property (IP)
+       within them as important as protecting the data processed by the device. As security threats
+       have increased, the range of security threats or potential weaknesses that must be
+       considered to deploy secure products has grown as well. The Zynq UltraScale+ MPSoC
+       provides features to help secure applications running on the SoC. These features include
+       the following.
+
+       •   Encryption and authentication of configuration files.
+       •   Hardened crypto-accelerators for use by the user application.
+       •   Secure methods of storing cryptographic keys.
+       •   Methods for detecting and responding to tamper events.
+
+       The sections in this chapter describe these features and their use.
+
+       The functionality of the battery-backed RAM (BBRAM) and eFUSE arrays are also described
+       in this chapter and complements the Programming BBRAM and eFUSEs Application Note
+       (XAPP1319) [Ref 20].
+
+       The hardware provides many features to detect security intrusions. See Developing
+       Tamper-Resistant Designs with Zynq UltraScale+ Devices, XAPP1323 [Ref 32]. This document
+       provides guidance and practical examples to help protect the user IP and sensitive data
+       within a system. This protection (in the form of tamper resistance) needs to be effective
+       before, during, and after the device has been securely booted with a software image or
+       configured with a programmable logic (PL) bitstream. Sensitive data can include the
+       software and configuration data that sets up the functionality of the device logic, critical
+       data, or parameters that might be included in the boot image (for example, initial memory
+       contents and initial state). It also includes external data that is dynamically brought in and
+       out of the device during post-boot normal operation.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                    Send Feedback
+                                                                                                  255
+UG1085 (v1.8) August 3, 2018              www.xilinx.com
+                                                                                 Chapter 12: Security
+
+
+
+
+       Device and Data Security
+       Configuration Security Unit (CSU) Introduction
+       At the center of the device security is the configuration security unit (CSU). The CSU is
+       composed of two main blocks as shown in Figure 12-1. On the left is the secure processor
+       block (SPB) that contains a triple redundant processor for controlling boot operation. It also
+       contains an associated ROM, a small private RAM, the physically unclonable function (PUF),
+       and the necessary control/status registers required to support all secure operations. The
+       component on the right is the crypto interface block (CIB) and contains the AES-GCM, DMA,
+       SHA-3, RSA, and PCAP interfaces.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                    Send Feedback
+                                                                                                  256
+UG1085 (v1.8) August 3, 2018              www.xilinx.com
+                                                                                                                                Chapter 12: Security
+
+
+                               Runtime access to the CSU can be controlled via the Xilinx peripheral protection unit
+                               (XPPU). The CSU has a number of responsibilities, including the following.
+
+                               •    Secure boot.
+                               •    Tamper monitoring and response.
+                               •    Secure key storage and management.
+                               •    Cryptographic hardware acceleration.
+X-Ref Target - Figure 12-1
+
+
+
+
+                                                               To/From LPD Main Switch
+
+
+
+
+                                                                  CSU PMU Switch
+
+
+
+
+                                                                                                       CSU DMA
+                                                                  CSU
+       Tamper                                                                  CSU
+                                   INTC                          Local
+       Sources                                                               Registers
+                                                                Registers
+                                          CSU Triple
+                                          Redundant
+                                          MicroBlaze                                                   Secure Stream Switch
+                                                                              RSA
+                                                                  PUF
+                                                                             Multiplier
+                                    ECC
+
+                                                                                                                    AES-
+                                                                                                        SHA-3                           To PL
+                                                                                                                    GCM       PCAP
+                                                CSU ROM                                                  384                            Configuration
+                                                                                                                    256
+                                                Validation
+
+
+
+                                                                                                                   Key
+                                                                                                                Management
+                                    RAM            ROM                                    PMU ROM
+                                   (32 KB)       (128 KB)                                                    BBRAM
+                                                                                          Validation         eFUSE
+                                                                                                             PUF
+                                                                                                             Operation
+                                                                                                             KUP
+                                                                                                             Family
+
+                             Security Processor Block                                                         Crypto Interface Block
+
+                                                                                                                                              X15318-052418
+
+
+
+                                                       Figure 12-1:     Configuration Security Unit Block Diagram
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                                                   Send Feedback
+                                                                                                                                                    257
+UG1085 (v1.8) August 3, 2018                                                  www.xilinx.com
+                                                                                 Chapter 12: Security
+
+
+       Secure Processor Block
+       The triple-redundant CSU processor provides a highly reliable and robust processing unit
+       for secure boot. The 128 KB CSU ROM is used to store the secure immutable ROM code
+       program. The ROM code passes an integrity check using the SHA-3 prior to being executed.
+       The 32 KB CSU RAM is used as a local secure data storage, and also includes ECC.
+
+       The features of the secure processor block are listed here.
+
+       •   Triple redundant MicroBlaze.
+
+           °   Not user accessible.
+
+           °   Operates through first error and halts on second error.
+       •   Internal, uninterruptible clock source.
+       •   Dedicated internal RAM protected by ECC.
+       •   Dedicated internal boot ROM protected by SHA-3 integrity check.
+       •   PUF for generation of a device-unique encryption key.
+
+       Crypto Interface Block
+       The features of the CIB include the following.
+
+       •   Secure stream switch for managing data exchange with cryptographic cores.
+       •   SHA-3/384 hardened core.
+       •   AES-GCM-256 hardened core.
+       •   RSA exponential multiplier accelerator hardened core.
+       •   Secure key management including BBRAM and eFUSE key storage.
+       •   Processor configuration access port (PCAP).
+
+       In secure configurations, the RSA and SHA-3/384 is used to authenticate the image and the
+       AES-GCM is used to decrypt the image. During boot, the CIB and SPB run on the internal
+       clock oscillator. After boot, the CIB clock can be sourced from a faster PLL clock to increase
+       the performance of the user-accessible crypto blocks.
+
+       Data is moved into and out from the CIB using a direct memory access controller
+       (CSU_DMA) and the secure stream switch (SSS). The Secure Stream Switch in Chapter 11
+       outlines the options for data movement. See Secure Stream Switch and CSU DMA in
+       Chapter 11, Boot and Configuration for more information on DMA between cryptographic
+       accelerators and memory. The CIB also contains key vaults and key management
+       functionality for keys used during boot, as well as post boot for cryptographic acceleration.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                    Send Feedback
+                                                                                                  258
+UG1085 (v1.8) August 3, 2018               www.xilinx.com
+                                                                                          Chapter 12: Security
+
+
+       Access to the PL is provided via the PCAP interface. See PL Configuration in Chapter 11 for
+       more information. Table 11-11 lists CSU registers for performing cryptographic functions,
+       as well as other CSU security critical functionality.
+
+       CSU Resets
+       The different secure blocks of the CSU are reset by writing to the registers in Table 12-1.
+       Write 1 to assert reset, write 0 to deassert reset.
+
+       Table 12-1:       CSU Reset Registers
+                   Component          Reset Register Name
+           AES-GCM                   aes_reset
+           PCAP                      pcap_reset
+           SHA-3/384                 sha_reset
+
+
+       Tamper Monitoring and Response
+       The primary function of the CSU SPB post-boot is to monitor the system for a tamper event.
+       Table 12-2 lists the twelve different monitoring functions that can be configured.
+
+       •     The PS system monitor (SYSMON unit) triggering limits for voltage and temperature
+             alarms are user defined and configured.
+
+             °     The csu_tamper_4 and csu_tamper_5 registers generate an over and under
+                   temperature alarm when the PS SYSMON unit “threshold mode” is set to 1.
+       •     The PL SEU alarm is a runtime health check of the programmable logic.
+       •     Activity on the external PSJTAG interface pins can be detected from within the device
+             and reported on the JTAG toggle detect alarm.
+       •     The CSU can act as a centralized tamper monitor and response hub for a system.
+       •     Single external tamper detect signal through MIO.
+
+       The csu_tamper_x registers are write to clear (WTC) so that once a tamper is detected, the
+       tamper alarm can be cleared by writing to the corresponding register.
+
+       Table 12-2:       Tamper and Control Registers Channels
+                   Register                                        Event Source
+             csu_tamper_12        PS SYSMON voltage alarm for PS GTR (VTT and VCC are both monitored).
+             csu_tamper_11        PS SYSMON voltage alarm for PSIO bank 3.
+             csu_tamper_10        PS SYSMON voltage alarm for PSIO bank 0/1/2 (all three banks).
+                 csu_tamper_9     PS SYSMON voltage alarm for VCC_PSINTFP_DDR.
+                 csu_tamper_8     PS SYSMON voltage alarm for VCC_PSAUX.
+                 csu_tamper_7     PS SYSMON voltage alarm for VCC_PSINTFP.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                            Send Feedback
+                                                                                                          259
+UG1085 (v1.8) August 3, 2018                      www.xilinx.com
+                                                                                                   Chapter 12: Security
+
+
+       Table 12-2:    Tamper and Control Registers Channels (Cont’d)
+                Register                                              Event Source
+            csu_tamper_6          PS SYSMON voltage alarm for VCC_PSINTLP.
+            csu_tamper_5          PS SYSMON upper and lower temperature alarms for FPD.
+            csu_tamper_4          PS SYSMON upper and lower temperature alarms for LPD.
+            csu_tamper_3          PL single event upset (SEU) error.
+            csu_tamper_2          JTAG toggle detect. (1)
+            csu_tamper_1          Input signal via MIO pin.(2)
+            csu_tamper_0          CSU register.
+
+       Notes:
+       1. The tamper event is caused by clocking the TDI or TMS input signals on the dedicated JTAG pins. The PJTAG
+          interface signals on the MIO are not monitored. Xilinx recommends programming this alarm to generate a system
+          interrupt and allow user software to determine the response.
+       2. Assert the MIO tamper input (tamper 1) High until the Tamper Response occurs as configured by the
+          csu_tamper_1 register (Table 12-4). If the system is reset using the PS_RESET_B, then de-assert the MIO tamper
+          signal before releasing PS_RESET_B.
+
+       The external tamper detect signals on MIO are listed in Table 12-3.
+
+       Table 12-3:    External Tamper Detect Signal on MIO
+
+            CSU Signal                            MIO Pins                         I/O        Default Input Value to
+                                                                                                   Controller
+            ext_tamper          18,19,20,21,22,23,24,25,26,31,32,33                  I                     0
+
+       After a tamper event occurs, how the CSU responds is user configurable. Table 12-4
+       indicates which bit in the tamper response registers to set to obtain a specific tamper
+       response for each tamper event. Multiple tamper response bits can be set for each tamper
+       event. When more than one response bit [3:0] is set, the highest MSB that is set determines
+       the tamper response. If bit [4] and one of the bits [3:0] are set, the BBRAM key is erased and
+       the CSU generates the response associated with the MSB. For example, if bits 1, 2, and 4 are
+       set, the BBRAM key is erased and lockdown occurs (no reset).
+
+       Table 12-4:    Tamper Monitor and Response Bits
+          Bit [4:0]                                                 Response
+            1 xxxx         Erase the BBRAM key and the response based on the MSB of bits [3:0], if any are set.(1)
+            x 1xxx         Secure lockdown and 3-states all I/O pins including MIO, PS dedicated, and PL.(2)
+            x 01xx         Secure lockdown.
+            x 001x         System reset.
+            x 0001         System interrupt (GIC IRQ# 117).
+
+       Notes:
+       1. For example, if bit 4, 3, and 2 are all set, the tamper event erases the BBRAM, generates a secure lockdown, and
+          3-states on all I/Os.
+       2. The CSU hardware 3-states the PL I/Os and the CSU ROM code writes 1s to the MIO_MST_TRI {0:2} registers.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                     Send Feedback
+                                                                                                                       260
+UG1085 (v1.8) August 3, 2018                       www.xilinx.com
+                                                                                  Chapter 12: Security
+
+
+       The registers are readable but can only be set on write accesses. Specifically, once a specific
+       tamper response is selected for a given tamper event, the bit selecting that response cannot
+       be cleared except by a POR. This prevents incorrect or rogue software from accidentally
+       decreasing the tamper response penalty. Tamper responses can only be added.
+
+       Emulating a Tamper Event
+       During system design and test, a tamper event can be emulated to ensure the system is
+       functioning correctly. The csu_tamper_trig register, combined with the csu_tamper_0
+       register, provides a mechanism for testing tamper responses. An example of emulating a
+       tamper response is as follows.
+
+       1. Write to the csu_tamper_trig register.
+       2. The associated tamper response in csu_tamper_0 is executed.
+       3. The csu_tamper_trig register self-clears.
+
+       Staged Response to a Tamper Event
+       Systems might require multiple responses to a tamper event. The csu_tamper_trig register,
+       combined with the csu_tamper_0 register, provides a way to have a two-staged response to
+       a tamper event. An example of building a staged response is as follows.
+
+       1. Set bit 0 in csu_tamper_6 (i.e., generate an IRQ when VCCINT_LPD is out of range).
+       2. Set bit 2 in csu_tamper_0 (i.e., enter secure lockdown).
+       3. Tamper event occurs. VCCINT_LPD goes out of range.
+       4. The csu_tamper_6 causes an IRQ to be set.
+       5. User software responds to IRQ and clears the tamper.
+       6. User software performs some additional action, such as logging or zeroing of
+          configuration or data.
+       7. User software writes to csu_tamper_trig register.
+       8. Csu_tamper_0 response is executed. The device goes into secure lockdown.
+
+       The tamper events can be securely and permanently logged for later analysis. Logging can
+       be done within the device through a user eFUSE.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                    Send Feedback
+                                                                                                   261
+UG1085 (v1.8) August 3, 2018               www.xilinx.com
+                                                                                               Chapter 12: Security
+
+
+        Key Management
+        The AES crypto engine has access to a diverse set of key sources. Non-volatile key sources
+        include eFUSEs, BBRAM, a PUF key encryption key (KEK), and a family key. These keys
+        maintain their values even when the device is powered-down. Volatile key sources include
+        an OP key and a key update register key
+
+        The device key source selection is exclusively done by the CSU ROM based on the
+        authenticated boot image header. A device key can be from any of the following sources
+        (see Figure 12-2).
+
+        •     BBRAM
+        •     Boot
+        •     eFUSE
+        •     Family
+        •     Operation
+        •     PUF KEK
+
+Table 12-5:    Types of Keys
+      Key Name                                                   Description
+        BBRAM             The BBRAM key is stored in plain text form in a 256-bit RAM array.
+            Boot          The boot key register holds the decrypted key while the key is in use.
+                          The eFUSE key is stored in eFUSEs. It can be either plain text, obfuscated (i.e., encrypted
+        eFUSE
+                          with the family key), or encrypted with the PUF KEK.
+                          The family key is a constant AES key value hard-coded into the devices. The same key is
+                          used across all devices in the Zynq UltraScale+ MPSoC family. This key is only used by
+                          the CSU ROM to decrypt an obfuscated key. The decrypted obfuscated key is used to
+        Family            decrypt the boot images. The obfuscated key can be stored in either eFUSE or the
+                          authenticated boot header. Because the family key is the same across all devices, the
+                          term obfuscated is used rather than encrypted to reflect the relative strength of the
+                          security mechanism.
+                          The OP key is obtained by decrypting the secure header using a plain text key obtained
+                          from the other device key sources. For secure boot, this key is optional. The OP key is
+      Operational
+                          specified in the boot header and minimizes the use of the device key, thus limiting its
+                          exposure.
+       PUF KEK            The PUF KEK is a key-encryption key that is generated by the PUF.
+                          User provided key source. After boot, a user selected key can be used with the hardened
+  Key update register
+                          AES accelerator.
+
+        In addition to the BBRAM and eFUSE key storage locations, the Zynq UltraScale+ MPSoC
+        also allows for the device key to be stored externally in the boot flash. This key can be
+        stored in its obfuscated form (i.e., encrypted with the family key) or in its black form (i.e.,
+        encrypted with the PUF KEK).
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                 Send Feedback
+                                                                                                                  262
+UG1085 (v1.8) August 3, 2018                      www.xilinx.com
+                                                                                                              Chapter 12: Security
+
+
+       A device key (a key used to boot the device) is selected by the CSU ROM based on the
+       authenticated boot header. To use the device key post boot, the following conditions must
+       be met.
+
+       •                   The device key is available post boot if the initial configuration files are encrypted or if
+                           the authentication only option is selected. See Hardware Root of Trust Only Boot
+                           (Auth_Only Option) for more information.
+       •                   The device key used during boot must be the device key used post boot. The key
+                           source cannot be changed until the next POR.
+
+       Using only the device key post boot is not restricted. A user key can also be loaded into the
+       key update register (KUP). The aes_key_src register can be used to select between the
+       device key and the key update key. Figure 12-2 shows the key selection process and the
+       protections in place.
+       X-Ref Target - Figure 12-2
+
+
+
+
+                                                  ROM
+                                                Controlled                                 AES Key Source
+                                                               CSU          CSU
+                                                                                              Register
+                                                             ROM Valid   Secure Boot
+                                                                                             Selectable
+                                    BBRAM
+
+                                      Boot
+                                                              Lock A         Lock B
+                                     eFUSE
+
+                                     Family
+                                                                                                               AES-GCM
+
+                                    Operation
+                                                                                       Key
+                                      PUF                                             Update
+
+                                      Device Key
+                                                                                                                    X15319-031617
+
+
+                                                              Figure 12-2:   Key Selection
+
+       Battery-Backed RAM
+       The BBRAM module is one of the available options for storing the device AES key. The
+       BBRAM is a static RAM array. When the device has power on the PS_VCCAUX supply, the
+       BBRAM is powered by the PS_VCCAUX supply. When the PS_VCCAUX supply is switched off,
+       the device automatically switches the BBRAM power over to PS_VCCBATT. The key stored in
+       BBRAM can only be stored in its unencrypted form (i.e., red). It cannot be obfuscated (gray)
+       or encrypted (black). The BBRAM can also be cleared, which is valuable as a tamper
+       response.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                                 Send Feedback
+                                                                                                                                    263
+UG1085 (v1.8) August 3, 2018                                     www.xilinx.com
+                                                                                             Chapter 12: Security
+
+
+       BBRAM Programming
+
+       The BBRAM key memory space is 288-bits. The BBRAM can be programmed by system
+       software running on an RPU or APU processor, or via the PJTAG interface on MIO that
+       connects to the Arm DAP controller and becomes an AXI bus master. The BBRAM block
+       diagram is shown in Figure 12-3. The BBRAM and eFUSE programming details are described
+       in the Programming BBRAM and eFUSEs Application Note (XAPP1319) [Ref 20].
+       X-Ref Target - Figure 12-3
+
+
+
+
+                                               APB
+
+
+
+
+                                         BBRAM Control
+
+
+
+
+                                        ws   addr               256-bit BBRAM Key
+                                                                to CSU
+
+
+
+
+                                          288-bit BBRAM
+
+
+
+                                                                           X17981-092516
+
+
+
+                                    Figure 12-3:    BBRAM Programming Interface
+       BBRAM Readback Protections
+
+       In previous generations of Xilinx devices, the AES key stored in battery-backed RAM (known
+       as BBR) could be read out for validation. The BBR had a protocol mechanism in which the
+       key was erased prior to being able to program and verify the key. Although these protocol
+       protection mechanisms still exist, the readback path for the key has been removed. The
+       Zynq UltraScale+ MPSoC does not allow read back of the AES key in its BBRAM. Instead,
+       when the key is written, a CRC32 value of that key is provided. After the key has been
+       written, the device verifies that the key in storage matches the provided CRC32 value. The
+       device then provides a pass or fail result.
+
+       BBRAM Zeroization
+
+       The AES key in BBRAM can be erased using an active write to 0's controlled by an internal
+       zeroization signal. A status bit is provided to confirm that the key is all 0's.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                Send Feedback
+                                                                                                             264
+UG1085 (v1.8) August 3, 2018                   www.xilinx.com
+                                                                                  Chapter 12: Security
+
+
+       BBRAM Key Agility
+
+       The AES key in BBRAM can be securely updated from within the device while the device is
+       in operation. Once the key is updated, subsequent boots of the device will use the new key.
+
+       eFUSE
+       The eFUSE array contains a block of 256 eFUSEs that can provide a key to the AES-256
+       crypto engine. This block of eFUSEs has dedicated read and write disables controlled by
+       additional eFUSEs. The eFUSE key can be stored in plain text form (red), obfuscated form
+       (gray), or encrypted form (black).
+
+       eFUSE Programming
+
+       The eFUSEs can be programmed by system software running on an RPU or APU processor
+       or via the PJTAG interface (on MIO) that connects to the Arm DAP controller and becomes
+       an AXI bus master. In both cases, the eFUSE programming registers are accessed.
+
+       The XilSKey macro library provides a convenient structure to program the eFUSEs. For
+       details on eFUSE programming, see the Programming BBRAM and eFUSEs Application Note
+       (XAPP1319) [Ref 20].
+
+       eFUSE Readback Protections
+
+       In previous generations of Xilinx devices, the key stored in the eFUSEs could be read out for
+       validation. There were options to close the readback path by blowing additional eFUSEs.
+       This readback path has been removed. The Zynq UltraScale+ MPSoC does not allow read
+       back. Instead, when the key is written, a CRC32 value of that key is provided. After the key
+       has been written, the device verifies that the key in storage matches the provided CRC32.
+       The device then provides a pass or fail result. The read disable eFUSE now prevents the
+       CRC32 validation from occurring.
+
+       eFUSE Zeroization
+
+       Although the eFUSE key can by "oneized" by blowing all the eFUSEs from inside the device,
+       it is unclear how much value this provides from a security point of view. Care must be taken
+       to ensure that the key cannot be observed using a simple power analysis (SPA) attack
+       during the blowing of the key bits. It is also possible for an adversary to manipulate external
+       voltages and clocks to compromise successful eFUSE programming.
+
+       Key Update Register
+       The key update register is used during boot to support the key rolling feature, where the
+       different AES key must be loaded multiple times. After boot, any key can be loaded into this
+       register via APB by software running on the PS. A 256-bit KUP key is stored in the eight AES
+       key update registers.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                    Send Feedback
+                                                                                                   265
+UG1085 (v1.8) August 3, 2018               www.xilinx.com
+                                                                                                                    Chapter 12: Security
+
+
+                             Operational Key
+                             The OP key is a register that holds the (optional) key decrypted from the secure header of
+                             the boot image. See Minimizing Use of the AES Boot Key (OP Key Option) for more details.
+
+                             Storing Keys in Obfuscated Form (Gray)
+                             As shown in Figure 12-4, the user key is encrypted with the family key, which is embedded
+                             in the metal layers of the device. This family key is the same for all devices in the Zynq
+                             UltraScale+ MPSoC family. The result is referred to as the obfuscated key. The term
+                             obfuscated is used instead of encrypted to reflect the relative strength of the security
+                             mechanism. The obfuscated key can reside in either the authenticated boot header or
+                             eFUSEs. During boot, the CSU ROM takes the obfuscated key, decrypts it with the family key,
+                             and then uses the resulting user key to decrypt the boot images.
+
+                             The Xilinx development tools (bootgen) can be used to create a boot image with the
+                             obfuscated key. The family key is not distributed with the Xilinx development tools. To
+                             receive the family key, contact secure.solutions@xilinx.com. For more information on
+                             generating boot images with the obfuscated key, see “Chapter 8: Security Features” in the
+                             Zynq UltraScale+ MPSoC Software Developer’s Guide (UG1137) [Ref 3].
+X-Ref Target - Figure 12-4
+
+
+
+
+                                                 Family Key
+                                                                                                      Zynq UltraScale+ MPSoC
+
+                                                                   Obfuscated Key Load
+                             Secret Red Key                                                      Obfuscated Key
+
+                                                 AES-GCM
+
+
+
+                                                                                            AES-GCM                     Family Key
+
+
+
+
+                                                                                                 Secret Red Key
+                                    Secret Red Key
+
+                                                                                Encrypted
+                                               Encrypted Image     Boot Media    Image
+                 User                                                                                                    Unencrypted
+                                                                     (SD or
+                Image                                                                                                      Image
+                                                                   Quad-SPI)
+                                       AES-GCM                                                     AES-GCM
+
+
+                                                                                                                                     X18021-031617
+
+
+
+                                                                 Figure 12-4:   Obfuscated Key
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                                       Send Feedback
+                                                                                                                                            266
+UG1085 (v1.8) August 3, 2018                                             www.xilinx.com
+                                                                                  Chapter 12: Security
+
+
+       Storing Keys in Encrypted Form (Black)
+       The black key storage solution, as shown in Figure 12-5, uses a cryptographically strong
+       KEK generated from a PUF to encrypt the user key. The resulting black key can then be
+       stored either in eFUSEs or as part of the authenticated boot header resident in external
+       memory. The black key storage provides the following advantages.
+
+       •   The user key is the same for all devices. Consequently, the encrypted boot images are
+           the same for all devices that use the same user key.
+       •   The PUF KEK is unique for each device. Consequently, the black key stored with the
+           device is unique for each device.
+       •   The PUF KEK value is only known by the device (cannot be read by the user).
+
+       The silicon manufacturing process includes inherent, random, and uncontrollable variations
+       that cause unique and different characteristics from device to device. The Xilinx devices
+       operate within these variations and device functionality is not affected. PUFs are tiny
+       circuits that exploit these chip-unique variations to generate unique keys. The type of PUF
+       used to generate the KEK is also an important consideration. The Zynq UltraScale+ MPSoC
+       PUF uses an asymmetric technology (i.e., a ring oscillator based type PUF licensed from
+       Verayo), which is different from the device key storage technology (e.g., SRAM or eFUSE).
+       This asymmetric technology increases the security level above what can be achieved with a
+       single technology.
+
+       IMPORTANT: PUF regeneration can only be performed when authentication is enabled. The PUF is
+       disabled in the encrypt-only secure boot mode.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                    Send Feedback
+                                                                                                  267
+UG1085 (v1.8) August 3, 2018                 www.xilinx.com
+                                                                                                                   Chapter 12: Security
+
+X-Ref Target - Figure 12-5
+
+
+
+
+                                                                                                           FPGA/SoC
+
+
+                              Secret “Red” Key                                                   Key Encoder
+
+
+
+
+                                                                                                  Encrypted
+                                                                                                                             PUF
+                                                                                                 “Black” Key              Device Unique
+                                                                                                 Device Unique
+
+
+
+
+                                                                                                Key Decoder
+
+                                     Secret “Red” Key
+                                                                                               Secret “Red” Key
+                                                                                                 during config
+                                                                                                     Only
+                                                        Encrypted               Encrypted                               Unencrypted
+                                                        Bitstream/              Bitstream/                               Bitstream/
+                                                          FSBL                    FSBL                                     FSBL
+                      User                                            PROM
+                     Design
+                                        AES-GCM                                                   AES-GCM
+
+
+                                                                                                                                  X18921-032117
+
+
+                                                            Figure 12-5:   Black Key Storage
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                                      Send Feedback
+                                                                                                                                          268
+UG1085 (v1.8) August 3, 2018                                         www.xilinx.com
+                                                                                              Chapter 12: Security
+
+
+       PUF Helper Data
+
+       The PUF uses approximately 4 Kb of helper data to help the PUF recreate the original KEK
+       value over the complete guaranteed operating temperature and voltage range over the life
+       of the part. The helper data consists of a Syndrome value, an Aux value, and a Chash value
+       (see Table 12-6). The helper data can either be stored in eFUSEs or in the boot image.
+
+       Table 12-6:   PUF Helper Data
+            Field            Size (Bits)                                Description
+                                           These bits aid the PUF in recovering the proper PUF signature given
+          Syndrome             4060        slight variations in the ring oscillators over temperature, voltage, and
+                                           time
+                                           This is a Hamming code that allows the PUF to perform some level of
+             Aux                 24
+                                           error correction on the PUF signature.
+                                           This is a hash of the PUF signature that allows the PUF to recognize if
+            Chash                32
+                                           the regenerated signature is correct.
+
+       PUF Operations
+
+       Access to the PUF is restricted by the CSU. The CSU offers the PUF as a CSU service. The PUF
+       can be accessed through the CSU registers. The CSU supports the user commands listed in
+       Table 12-7.
+
+       Table 12-7:   CSU User Commands
+             Command                                               Description
+            Registration         Create a new KEK and associated helper data (first time).
+           Re-registration       Create a new KEK and associated new helper data.
+                                 Encrypt/decrypt with the existing KEK and associated helper data (valid for
+               Reuse
+                                 eFUSE helper data only).
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                Send Feedback
+                                                                                                                 269
+UG1085 (v1.8) August 3, 2018                     www.xilinx.com
+                                                                                                                    Chapter 12: Security
+
+
+                             Figure 12-6 shows a block diagram of how the PUF is connected inside the CSU.
+X-Ref Target - Figure 12-6
+
+
+
+
+                                      CSU                            CSU                                                 eFUSE
+                                      AXIM                           APB                                                  APB
+
+
+
+
+                                                                    CSU
+                                                                  Registers
+
+
+                                                                                           4K PUF syndrome data
+
+
+
+                                                                                   dev_key_sel
+                                                                     CSU
+                                                               Private Registers
+
+                                      CSU
+                                   MicroBlaze
+                                                                                     Key
+                                                                     PUF                                 AES            eFUSE
+
+
+
+                                                                                                                          X18925-080318
+
+
+
+                                                Figure 12-6:   Block Diagram of PUF Connection in CSU
+
+                             The PUF undergoes a registration process when a key is initially loaded into the device. The
+                             registration process initializes the PUF so that a KEK is created. The registration software
+                             can then use the KEK to encrypt the user key and program the eFUSEs. Alternatively, the
+                             encrypted user key can be output for inclusion into a boot image. The registration software
+                             also programs the helper data into the eFUSEs. Alternatively, the helper data can be output
+                             for inclusion into a boot image. The helper data and the encrypted user key must be stored
+                             in the same location (i.e., both in eFUSE or both in the boot image).
+
+                             When the device powers on, the CSU bootROM examines the authenticated boot image
+                             header. The boot image header contains information on whether the PUF is used, where the
+                             encrypted key is stored (eFUSE or boot image), and where the helper data is stored (eFUSE
+                             or boot image). The CSU then initializes the PUF, loads the helper data, and regenerates the
+                             KEK. This process is called regeneration. Once the KEK is regenerated, the CSU bootROM
+                             can use it to decrypt the user key, which is then used to decrypt the rest of the boot image.
+
+                             In cases where the helper data and encrypted user key are stored in eFUSEs, the
+                             regeneration process can be used by the user’s application software to regenerate the KEK.
+                             This KEK can then be used to encrypt data, such as additional user keys, using the device
+                             unique KEK. This encrypted user data can then be stored off-chip or in the user eFUSEs and
+                             decrypted using the same process at a later time.
+
+                             Note: When the PUF is used in this manner, it becomes the device key and the device key selection
+                             cannot be changed back to the BBRAM or eFUSE key without a power on reset. The user can still
+                             choose between the Key Update Register and the PUF (see Figure 12-2.)
+
+
+
+
+Zynq UltraScale+ Device TRM                                                                                       Send Feedback
+                                                                                                                                          270
+UG1085 (v1.8) August 3, 2018                                         www.xilinx.com
+                                                                                              Chapter 12: Security
+
+
+        PUF Control eFUSEs
+
+        The eFUSEs listed in Table 12-8 control additional PUF behaviors.
+
+        Table 12-8:      PUF Control eFUSEs
+               eFUSE Name                                   Description
+                  REG_DIS         Disables registrations of the PUF.
+               SYN_INVALID        Invalidates the helper data contained in the eFUSEs.
+                                  Prevents modification of the helper data contained in the
+                 SYN_LOCK
+                                  eFUSEs.
+
+        PUF Characterization, Testing, and Ordering
+
+        The Zynq UltraScale+ MPSoC PUF Characterization Report (RPT236) is a Xilinx proprietary
+        document that covers additional characterization testing performed on the PUF. This
+        characterization covers the PUF's stability (i.e., ability to accurately regenerate the KEK) over
+        the voltage, temperature, and aging. It also covers characterization of the entropy, or
+        security strength, of the KEK. Contact your local Xilinx FAE or sales person for details on how
+        to obtain a copy of the report.
+
+        Special ordering codes are required for devices where additional manufacturing tests have
+        been performed on the PUF to help ensure entropy (i.e., key strength).
+
+        Key Management Summary
+        The device provides a variety of options for securing both boot images and user data. Boot
+        image keys can be stored in BBRAM, eFUSE, or in the boot image itself. These keys can be
+        in plain text (red), obfuscated with the family key (gray), or encrypted with the PUF KEK
+        (black). These options are described in Table 12-9.
+
+Table 12-9:     Boot Image Keys
+              Features                    BBRAM                        eFUSE                    Boot Image
+Programming method                Internal via software      Internal via software       Bootgen
+                                  External via JTAG          External via JTAG           Bootgen + PUF
+                                                             PUF registration software   Registration software
+
+
+Program verification              CRC32 Only                 CRC32 Only                  N/A
+Key state during storage          Red                        Red, black, or obfuscated   Black or obfuscated
+In-use protections                Temporary storage in registers, not RAM.
+                                  Transferred in parallel, not serial.
+                                  Boot: DPA counter measures and zeroization after use.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                               Send Feedback
+                                                                                                                 271
+UG1085 (v1.8) August 3, 2018                     www.xilinx.com
+                                                                                 Chapter 12: Security
+
+
+       Protecting Test Interfaces
+       JTAG Interface Protections
+       On power-up, the default boot state is secure, and the JTAG interface only accepts a limited
+       set of commands. These commands are listed here.
+
+       •   IDCODE
+       •   HIGHZ_I/O
+       •   JTAG_STATUS
+       •   PS_ERROR_STATUS
+       •   BYPASS
+
+       The device can boot up in secure and non-secure mode. A secure boot is one in which either
+       authentication, encryption, or both encryption and authentication are used. All other boots
+       are non-secure.
+
+       Figure 12-7 shows the JTAG capabilities throughout the secure and non-secure boot
+       process. For non-secure boots, once the boot is complete, either successfully or
+       unsuccessfully, the full suite of JTAG commands are enabled.
+
+       For secure boots, if the boot is completed successfully, the authenticated software is
+       capable of enabling the additional JTAG commands. Otherwise, only the IDCODE, HIGHZ_IO,
+       BYPASS, JTAG_STATUS, and PS_ERROR_STATUS commands are available. In the event of a
+       failed secure boot, the JTAG capabilities are dependent on how the device was provisioned.
+
+       •   Programming the SEC_LK eFUSE forces every failed secure boot to enter secure
+           lockdown.
+       •   In the event that SEC_LK is not programmed:
+
+           °   User integration and test is supported via commanding authentication and
+               encryption through the boot header. See Integration and Test Support (BH RSA
+               Option) for more details. In the event of a failed secure boot, JTAG is enabled.
+
+           °   For fielded systems, where authentication or encryption is forced upon every boot,
+               the device enables the BSCAN capabilities only to support continuity testing. In this
+               state, internal memory and registers are zeroized, and both the A53s and the R5s
+               are held in reset.
+
+
+
+
+Zynq UltraScale+ Device TRM                                                   Send Feedback
+                                                                                                  272
+UG1085 (v1.8) August 3, 2018               www.xilinx.com
+                                                                                                                                                     Chapter 12: Security
+
+X-Ref Target - Figure 12-7
+
+
+
+
+                                                                                     PS RESET
+                                                                                     (PORB = 0)
+
+
+
+
+                                                                                     PS in Boot
+
+
+
+
+                                                  Successful Boot      Failed Boot           Successful Secure   Failed Secure Boot
+                                                   Non-Secure          Non-Secure                  Boot          Secure Lockdown
+
+
+
+
+                                                                                                                      Disable
+                                                                                             Authenticated SW       Reboot Fuse
+                                                                                                                                      Yes           Secure Lockdown
+                                                                                              enables JTAG?           Blown?
+                                                                          Yes                                        (SEC_LK)
+
+                         IDCODE, BYPASS, PS_ERROR_STATUS,
+                              JTAG_STATUS, HIGHZ_IO
+                                                                                                    No                   No
+
+
+                                 IDCODE, BYPASS, STATUS
+                                         EXTEST                       JTAG Enabled           JTAG not Enabled
+                                                                                                                     AES or RSA
+                                    PRELOAD/SAMPLE                                                                                            Yes
+                                                                                                                    eFuse Blown?
+
+
+                                IDCODE, BYPASS, STATUS
+                                        EXTEST                                                                           No
+                             PRELOAD/SAMPLE, DAP, PL Support
+
+                                                                                                                    SOFT RESET           SOFT RESET
+
+
+
+
+                                                                                                                     PS in Boot             PS in Boot
+
+
+
+
+                                                                                                                      JTAG Boot         Enable BSCAN         Secure BSCAN
+                                                                                                                  Full JTAG Access    Device Held in Reset       Mode
+
+
+
+                                                                                                                                                                      X18920-052418
+
+
+
+                                                                    Figure 12-7:          JTAG Interface Protections
+
+                                In addition to disabling specific JTAG commands, specific JTAG sites are disabled by default
+                                on power-on by software-controlled security gates. Triple redundancy is used to maintain
+                                the state of these security gates. The location of these gates is shown in Figure 39-1 in
+                                Chapter 39, System Test and Debug.

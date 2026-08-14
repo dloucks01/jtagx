@@ -1,0 +1,29 @@
+// NXP Kinetis K64 (Cortex-M4) — Paradigm B (Cortex-M). Build "more families" 2026-06-11. auto_match:false -> --profile kinetis.
+// Flash security via FTFE_FSEC (SEC/MEEN).  HW-UNVALIDATED; addresses cited in openocd/cortexm-protect.tcl + docs/25.
+{
+  "schema_version": 1,
+  "name": "NXP Kinetis K64 (Cortex-M4)",
+  "soc": "kinetis",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-kinetis.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/cortexm-flash.bin",
+               "note": "Internal flash + SRAM via the mem-AP. Constants from the cfg.", "env": {} }
+  },
+  "reopen": [],
+  "absent": { "reopen": "no non-destructive reopen — FSEC unlock is an MDM-AP mass-erase (WIPES flash); MEEN=10 = no recovery" },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "kx.cpu", "PATCH_AXI": "kx.cpu", "PATCH_DAP": "kx.dap" } },
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/cortexm-flash-patched.bin" },
+               "note": "Reflash internal flash via OpenOCD's driver. DESTRUCTIVE; part must be RDP-0 / APPROTECT-off." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto"
+}

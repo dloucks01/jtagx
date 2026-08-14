@@ -1,0 +1,4057 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "timestamp": "2026-06-10-105937",
+    "board": "ZCU102",
+    "tool": "enumerate.tcl",
+    "tool_version": "1.0",
+    "raw_path": "reports/raw-2026-06-10-105937.json",
+    "report_path": "reports/enumerate-2026-06-10-105937.md"
+  },
+  "chain": {"taps": []},
+  "variant": {
+    "part_id": "0x4738",
+    "silicon_rev": 2,
+    "idcode_raw": "0x24738093",
+    "family": "zynqmp",
+    "die": "XCZU9",
+    "marketed_as": ["EG", "CG"],
+    "a53_cores": 4,
+    "r5_cores": 2,
+    "has_gpu": 1,
+    "may_have_vcu": 0,
+    "has_rf": 0,
+    "gem_count": 4,
+    "notes": ["Quad", "A53;", "ZCU102", "ships", "with", "ZU9EG", "—", "no", "VCU", "on", "this", "die"],
+    "device_dna_0": "0x44804345",
+    "device_dna_1": "0x0170cfa7",
+    "device_dna_2": "0x40000000"
+  },
+  "registers": {
+    "0xFFCA0040": {
+      "name": "IDCODE",
+      "block": "CSU",
+      "address": "0xFFCA0040",
+      "value": "0x24738093",
+      "value_int": 611549331,
+      "fields": {
+      "CONST_1": {
+        "bits": 0,
+        "value": 1
+      },
+      "MANUF_ID": {
+        "bits": "11:1",
+        "value": 73
+      },
+      "PART_ID": {
+        "bits": "27:12",
+        "value": 18232
+      },
+      "REVISION": {
+        "bits": "31:28",
+        "value": 2
+      }
+      }
+    },
+    "0xFFCA0044": {
+      "name": "VERSION",
+      "block": "CSU",
+      "address": "0xFFCA0044",
+      "value": "0x00000513",
+      "value_int": 1299,
+      "fields": {
+      "PLATFORM": {
+        "bits": "15:12",
+        "value": 0
+      },
+      "PS_VERSION": {
+        "bits": "3:0",
+        "value": 3
+      }
+      }
+    },
+    "0xFF5E0200": {
+      "name": "BOOT_MODE_USER",
+      "block": "CRL_APB",
+      "address": "0xFF5E0200",
+      "value": "0x00000002",
+      "value_int": 2,
+      "fields": {
+      "ALT_BOOT_MODE": {
+        "bits": "15:12",
+        "value": 0
+      },
+      "USE_ALT": {
+        "bits": 8,
+        "value": 0
+      },
+      "BOOT_MODE": {
+        "bits": "3:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFF5E0204": {
+      "name": "BOOT_MODE_POR",
+      "block": "CRL_APB",
+      "address": "0xFF5E0204",
+      "value": "0x00000222",
+      "value_int": 546,
+      "fields": {
+      "BOOT_MODE2": {
+        "bits": "11:8",
+        "value": 2
+      },
+      "BOOT_MODE1": {
+        "bits": "7:4",
+        "value": 2
+      },
+      "BOOT_MODE0": {
+        "bits": "3:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFFCA0010": {
+      "name": "CSU_MULTI_BOOT",
+      "block": "CSU",
+      "address": "0xFFCA0010",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFF5E0220": {
+      "name": "RESET_REASON",
+      "block": "CRL_APB",
+      "address": "0xFF5E0220",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "MIMIC": {
+        "bits": 15,
+        "value": 0
+      },
+      "DEBUG_SYS": {
+        "bits": 6,
+        "value": 0
+      },
+      "SOFT": {
+        "bits": 5,
+        "value": 0
+      },
+      "SRST": {
+        "bits": 4,
+        "value": 0
+      },
+      "PSONLY_RESET_REQ": {
+        "bits": 3,
+        "value": 0
+      },
+      "PMU_SYS_RESET": {
+        "bits": 2,
+        "value": 0
+      },
+      "INTERNAL_POR": {
+        "bits": 1,
+        "value": 0
+      },
+      "EXTERNAL_POR": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFCA0000": {
+      "name": "CSU_STATUS",
+      "block": "CSU",
+      "address": "0xFFCA0000",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BOOT_ENC": {
+        "bits": 1,
+        "value": 0
+      },
+      "BOOT_AUTH": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA0038": {
+      "name": "JTAG_SEC",
+      "block": "CSU",
+      "address": "0xFFCA0038",
+      "value": "0x0000003F",
+      "value_int": 63,
+      "fields": {
+      "SSSS_PMU_SEC": {
+        "bits": "8:6",
+        "value": 0
+      },
+      "SSSS_PLTAP_SEC": {
+        "bits": "5:3",
+        "value": 7
+      },
+      "SSSS_DAP_SEC": {
+        "bits": "2:0",
+        "value": 7
+      }
+      }
+    },
+    "0xFFCA003C": {
+      "name": "JTAG_DAP_CFG",
+      "block": "CSU",
+      "address": "0xFFCA003C",
+      "value": "0x000000FF",
+      "value_int": 255,
+      "fields": {
+      "SSSS_RPU_NIDEN": {
+        "bits": 5,
+        "value": 1
+      },
+      "SSSS_RPU_DBGEN": {
+        "bits": 4,
+        "value": 1
+      },
+      "SSSS_APU_SPNIDEN": {
+        "bits": 3,
+        "value": 1
+      },
+      "SSSS_APU_SPIDEN": {
+        "bits": 2,
+        "value": 1
+      },
+      "SSSS_APU_NIDEN": {
+        "bits": 1,
+        "value": 1
+      },
+      "SSSS_APU_DBGEN": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFCA0034": {
+      "name": "JTAG_CHAIN_STATUS",
+      "block": "CSU",
+      "address": "0xFFCA0034",
+      "value": "0x00000003",
+      "value_int": 3,
+      "fields": {
+      "ARM_DAP": {
+        "bits": 1,
+        "value": 1
+      },
+      "PL_TAP": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFCA0030": {
+      "name": "JTAG_CHAIN_STATUS_WR",
+      "block": "CSU",
+      "address": "0xFFCA0030",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "SETUP": {
+        "bits": "1:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFFCC0008": {
+      "name": "STATUS",
+      "block": "EFUSE",
+      "address": "0xFFCC0008",
+      "value": "0x00000027",
+      "value_int": 39,
+      "fields": {
+      "AES_CRC_PASS": {
+        "bits": 7,
+        "value": 0
+      },
+      "AES_CRC_DONE": {
+        "bits": 6,
+        "value": 0
+      },
+      "CACHE_DONE": {
+        "bits": 5,
+        "value": 1
+      },
+      "CACHE_LOAD": {
+        "bits": 4,
+        "value": 0
+      },
+      "EFUSE_3_TBIT": {
+        "bits": 2,
+        "value": 1
+      },
+      "EFUSE_2_TBIT": {
+        "bits": 1,
+        "value": 1
+      },
+      "EFUSE_0_TBIT": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFCC1058": {
+      "name": "SEC_CTRL",
+      "block": "EFUSE",
+      "address": "0xFFCC1058",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PPK1_INVLD": {
+        "bits": "31:30",
+        "value": 0
+      },
+      "PPK1_WRLK": {
+        "bits": 29,
+        "value": 0
+      },
+      "PPK0_INVLD": {
+        "bits": "28:27",
+        "value": 0
+      },
+      "PPK0_WRLK": {
+        "bits": 26,
+        "value": 0
+      },
+      "RSA_EN": {
+        "bits": "25:11",
+        "value": 0
+      },
+      "SEC_LOCK": {
+        "bits": 10,
+        "value": 0
+      },
+      "PROG_GATE_2": {
+        "bits": 9,
+        "value": 0
+      },
+      "PROG_GATE_1": {
+        "bits": 8,
+        "value": 0
+      },
+      "PROG_GATE_0": {
+        "bits": 7,
+        "value": 0
+      },
+      "DFT_DIS": {
+        "bits": 6,
+        "value": 0
+      },
+      "JTAG_DIS": {
+        "bits": 5,
+        "value": 0
+      },
+      "ERROR_DIS": {
+        "bits": 4,
+        "value": 0
+      },
+      "BBRAM_DIS": {
+        "bits": 3,
+        "value": 0
+      },
+      "ENC_ONLY": {
+        "bits": 2,
+        "value": 0
+      },
+      "AES_WRLK": {
+        "bits": 1,
+        "value": 0
+      },
+      "AES_RDLK": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCC0000": {
+      "name": "WR_LOCK",
+      "block": "EFUSE",
+      "address": "0xFFCC0000",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "LOCK": {
+        "bits": "15:0",
+        "value": 1
+      }
+      }
+    },
+    "0xFFCC0030": {
+      "name": "EFUSE_ISR",
+      "block": "EFUSE",
+      "address": "0xFFCC0030",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "APB_SLVERR": {
+        "bits": 31,
+        "value": 0
+      },
+      "CACHE_ERROR": {
+        "bits": 4,
+        "value": 0
+      },
+      "RD_ERROR": {
+        "bits": 3,
+        "value": 0
+      },
+      "RD_DONE": {
+        "bits": 2,
+        "value": 0
+      },
+      "PGM_ERROR": {
+        "bits": 1,
+        "value": 0
+      },
+      "PGM_DONE": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCC0044": {
+      "name": "EFUSE_PGM_LOCK",
+      "block": "EFUSE",
+      "address": "0xFFCC0044",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "SPK_ID_LOCK": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCC0048": {
+      "name": "EFUSE_AES_CRC",
+      "block": "EFUSE",
+      "address": "0xFFCC0048",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCA0004": {
+      "name": "CSU_CTRL",
+      "block": "CSU",
+      "address": "0xFFCA0004",
+      "value": "0x00000010",
+      "value_int": 16,
+      "fields": {
+      "SLVERR_ENABLE": {
+        "bits": 4,
+        "value": 1
+      },
+      "CSU_CLK_SEL": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA0008": {
+      "name": "CSU_SSS_CFG",
+      "block": "CSU",
+      "address": "0xFFCA0008",
+      "value": "0x00005000",
+      "value_int": 20480,
+      "fields": {
+      "SHA_SSS": {
+        "bits": "15:12",
+        "value": 5
+      },
+      "AES_SSS": {
+        "bits": "11:8",
+        "value": 0
+      },
+      "DMA_SSS": {
+        "bits": "7:4",
+        "value": 0
+      },
+      "PCAP_SSS": {
+        "bits": "3:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA0018": {
+      "name": "CSU_FT_STATUS",
+      "block": "CSU",
+      "address": "0xFFCA0018",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "R_UE": {
+        "bits": 31,
+        "value": 0
+      },
+      "R_VOTER_ERROR": {
+        "bits": 30,
+        "value": 0
+      },
+      "R_COMP_ERR_23": {
+        "bits": 29,
+        "value": 0
+      },
+      "R_COMP_ERR_13": {
+        "bits": 28,
+        "value": 0
+      },
+      "R_COMP_ERR_12": {
+        "bits": 27,
+        "value": 0
+      },
+      "R_MISMATCH_23_A": {
+        "bits": 26,
+        "value": 0
+      },
+      "R_MISMATCH_13_A": {
+        "bits": 25,
+        "value": 0
+      },
+      "R_MISMATCH_12_A": {
+        "bits": 24,
+        "value": 0
+      },
+      "R_FT_ST_MISMATCH": {
+        "bits": 23,
+        "value": 0
+      },
+      "R_CPU_ID_MISMATCH": {
+        "bits": 22,
+        "value": 0
+      },
+      "R_SLEEP_RESET": {
+        "bits": 19,
+        "value": 0
+      },
+      "R_MISMATCH_23_B": {
+        "bits": 18,
+        "value": 0
+      },
+      "R_MISMATCH_13_B": {
+        "bits": 17,
+        "value": 0
+      },
+      "R_MISMATCH_12_B": {
+        "bits": 16,
+        "value": 0
+      },
+      "N_UE": {
+        "bits": 15,
+        "value": 0
+      },
+      "N_VOTER_ERROR": {
+        "bits": 14,
+        "value": 0
+      },
+      "N_COMP_ERR_23": {
+        "bits": 13,
+        "value": 0
+      },
+      "N_COMP_ERR_13": {
+        "bits": 12,
+        "value": 0
+      },
+      "N_COMP_ERR_12": {
+        "bits": 11,
+        "value": 0
+      },
+      "N_MISMATCH_23_A": {
+        "bits": 10,
+        "value": 0
+      },
+      "N_MISMATCH_13_A": {
+        "bits": 9,
+        "value": 0
+      },
+      "N_MISMATCH_12_A": {
+        "bits": 8,
+        "value": 0
+      },
+      "N_FT_ST_MISMATCH": {
+        "bits": 7,
+        "value": 0
+      },
+      "N_CPU_ID_MISMATCH": {
+        "bits": 6,
+        "value": 0
+      },
+      "N_SLEEP_RESET": {
+        "bits": 3,
+        "value": 0
+      },
+      "N_MISMATCH_23_B": {
+        "bits": 2,
+        "value": 0
+      },
+      "N_MISMATCH_13_B": {
+        "bits": 1,
+        "value": 0
+      },
+      "N_MISMATCH_12_B": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5000": {
+      "name": "TAMPER_STATUS",
+      "block": "CSU",
+      "address": "0xFFCA5000",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "TAMPER_13": {
+        "bits": 13,
+        "value": 0
+      },
+      "TAMPER_12": {
+        "bits": 12,
+        "value": 0
+      },
+      "TAMPER_11": {
+        "bits": 11,
+        "value": 0
+      },
+      "TAMPER_10": {
+        "bits": 10,
+        "value": 0
+      },
+      "TAMPER_9": {
+        "bits": 9,
+        "value": 0
+      },
+      "TAMPER_8": {
+        "bits": 8,
+        "value": 0
+      },
+      "TAMPER_7": {
+        "bits": 7,
+        "value": 0
+      },
+      "TAMPER_6": {
+        "bits": 6,
+        "value": 0
+      },
+      "TAMPER_5": {
+        "bits": 5,
+        "value": 0
+      },
+      "TAMPER_4": {
+        "bits": 4,
+        "value": 0
+      },
+      "TAMPER_3": {
+        "bits": 3,
+        "value": 0
+      },
+      "TAMPER_2": {
+        "bits": 2,
+        "value": 0
+      },
+      "TAMPER_1": {
+        "bits": 1,
+        "value": 0
+      },
+      "TAMPER_0": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA0014": {
+      "name": "CSU_TAMPER_TRIG",
+      "block": "CSU",
+      "address": "0xFFCA0014",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "TAMPER": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5004": {
+      "name": "CSU_TAMPER_0",
+      "block": "CSU",
+      "address": "0xFFCA5004",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5008": {
+      "name": "CSU_TAMPER_1",
+      "block": "CSU",
+      "address": "0xFFCA5008",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA500C": {
+      "name": "CSU_TAMPER_2",
+      "block": "CSU",
+      "address": "0xFFCA500C",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5010": {
+      "name": "CSU_TAMPER_3",
+      "block": "CSU",
+      "address": "0xFFCA5010",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5014": {
+      "name": "CSU_TAMPER_4",
+      "block": "CSU",
+      "address": "0xFFCA5014",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5018": {
+      "name": "CSU_TAMPER_5",
+      "block": "CSU",
+      "address": "0xFFCA5018",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA501C": {
+      "name": "CSU_TAMPER_6",
+      "block": "CSU",
+      "address": "0xFFCA501C",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5020": {
+      "name": "CSU_TAMPER_7",
+      "block": "CSU",
+      "address": "0xFFCA5020",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5024": {
+      "name": "CSU_TAMPER_8",
+      "block": "CSU",
+      "address": "0xFFCA5024",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5028": {
+      "name": "CSU_TAMPER_9",
+      "block": "CSU",
+      "address": "0xFFCA5028",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA502C": {
+      "name": "CSU_TAMPER_10",
+      "block": "CSU",
+      "address": "0xFFCA502C",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5030": {
+      "name": "CSU_TAMPER_11",
+      "block": "CSU",
+      "address": "0xFFCA5030",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA5034": {
+      "name": "CSU_TAMPER_12",
+      "block": "CSU",
+      "address": "0xFFCA5034",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "BBRAM_ERASE": {
+        "bits": 5,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_1": {
+        "bits": 3,
+        "value": 0
+      },
+      "SEC_LOCKDOWN_0": {
+        "bits": 2,
+        "value": 0
+      },
+      "SYS_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "SYS_INTERRUPT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA1000": {
+      "name": "AES_STATUS",
+      "block": "CSU",
+      "address": "0xFFCA1000",
+      "value": "0x00000F00",
+      "value_int": 3840,
+      "fields": {
+      "OKR_ZEROED": {
+        "bits": 11,
+        "value": 1
+      },
+      "BOOT_ZEROED": {
+        "bits": 10,
+        "value": 1
+      },
+      "KUP_ZEROED": {
+        "bits": 9,
+        "value": 1
+      },
+      "AES_KEY_ZEROED": {
+        "bits": 8,
+        "value": 1
+      },
+      "KEY_INIT_DONE": {
+        "bits": 4,
+        "value": 0
+      },
+      "GCM_TAG_PASS": {
+        "bits": 3,
+        "value": 0
+      },
+      "DONE": {
+        "bits": 2,
+        "value": 0
+      },
+      "READY": {
+        "bits": 1,
+        "value": 0
+      },
+      "BUSY": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCC10A0": {
+      "name": "PPK0_0",
+      "block": "EFUSE",
+      "address": "0xFFCC10A0",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10A4": {
+      "name": "PPK0_1",
+      "block": "EFUSE",
+      "address": "0xFFCC10A4",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10A8": {
+      "name": "PPK0_2",
+      "block": "EFUSE",
+      "address": "0xFFCC10A8",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10AC": {
+      "name": "PPK0_3",
+      "block": "EFUSE",
+      "address": "0xFFCC10AC",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10B0": {
+      "name": "PPK0_4",
+      "block": "EFUSE",
+      "address": "0xFFCC10B0",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10B4": {
+      "name": "PPK0_5",
+      "block": "EFUSE",
+      "address": "0xFFCC10B4",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10B8": {
+      "name": "PPK0_6",
+      "block": "EFUSE",
+      "address": "0xFFCC10B8",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10BC": {
+      "name": "PPK0_7",
+      "block": "EFUSE",
+      "address": "0xFFCC10BC",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10C0": {
+      "name": "PPK0_8",
+      "block": "EFUSE",
+      "address": "0xFFCC10C0",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10C4": {
+      "name": "PPK0_9",
+      "block": "EFUSE",
+      "address": "0xFFCC10C4",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10C8": {
+      "name": "PPK0_10",
+      "block": "EFUSE",
+      "address": "0xFFCC10C8",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10CC": {
+      "name": "PPK0_11",
+      "block": "EFUSE",
+      "address": "0xFFCC10CC",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10D0": {
+      "name": "PPK1_0",
+      "block": "EFUSE",
+      "address": "0xFFCC10D0",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10D4": {
+      "name": "PPK1_1",
+      "block": "EFUSE",
+      "address": "0xFFCC10D4",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10D8": {
+      "name": "PPK1_2",
+      "block": "EFUSE",
+      "address": "0xFFCC10D8",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10DC": {
+      "name": "PPK1_3",
+      "block": "EFUSE",
+      "address": "0xFFCC10DC",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10E0": {
+      "name": "PPK1_4",
+      "block": "EFUSE",
+      "address": "0xFFCC10E0",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10E4": {
+      "name": "PPK1_5",
+      "block": "EFUSE",
+      "address": "0xFFCC10E4",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10E8": {
+      "name": "PPK1_6",
+      "block": "EFUSE",
+      "address": "0xFFCC10E8",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10EC": {
+      "name": "PPK1_7",
+      "block": "EFUSE",
+      "address": "0xFFCC10EC",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10F0": {
+      "name": "PPK1_8",
+      "block": "EFUSE",
+      "address": "0xFFCC10F0",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10F4": {
+      "name": "PPK1_9",
+      "block": "EFUSE",
+      "address": "0xFFCC10F4",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10F8": {
+      "name": "PPK1_10",
+      "block": "EFUSE",
+      "address": "0xFFCC10F8",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFCC10FC": {
+      "name": "PPK1_11",
+      "block": "EFUSE",
+      "address": "0xFFCC10FC",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFFD80000": {
+      "name": "GLOBAL_CNTRL",
+      "block": "PMU_GLOBAL",
+      "address": "0xFFD80000",
+      "value": "0x00018812",
+      "value_int": 100370,
+      "fields": {
+      "MB_SLEEP": {
+        "bits": 16,
+        "value": 1
+      },
+      "WRITE_QOS": {
+        "bits": "15:12",
+        "value": 8
+      },
+      "READ_QOS": {
+        "bits": "11:8",
+        "value": 8
+      },
+      "FW_IS_PRESENT": {
+        "bits": 4,
+        "value": 1
+      },
+      "COHERENT": {
+        "bits": 2,
+        "value": 0
+      },
+      "SLVERR_ENABLE": {
+        "bits": 1,
+        "value": 1
+      },
+      "DONT_SLEEP": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFD80100": {
+      "name": "PWR_STATE",
+      "block": "PMU_GLOBAL",
+      "address": "0xFFD80100",
+      "value": "0x00DFFCBF",
+      "value_int": 14679231,
+      "fields": {
+      "PL": {
+        "bits": 23,
+        "value": 1
+      },
+      "FP": {
+        "bits": 22,
+        "value": 1
+      },
+      "USB1": {
+        "bits": 21,
+        "value": 0
+      },
+      "USB0": {
+        "bits": 20,
+        "value": 1
+      },
+      "OCM_BANK3": {
+        "bits": 19,
+        "value": 1
+      },
+      "OCM_BANK2": {
+        "bits": 18,
+        "value": 1
+      },
+      "OCM_BANK1": {
+        "bits": 17,
+        "value": 1
+      },
+      "OCM_BANK0": {
+        "bits": 16,
+        "value": 1
+      },
+      "TCM1B": {
+        "bits": 15,
+        "value": 1
+      },
+      "TCM1A": {
+        "bits": 14,
+        "value": 1
+      },
+      "TCM0B": {
+        "bits": 13,
+        "value": 1
+      },
+      "TCM0A": {
+        "bits": 12,
+        "value": 1
+      },
+      "R5_1": {
+        "bits": 11,
+        "value": 1
+      },
+      "R5_0": {
+        "bits": 10,
+        "value": 1
+      },
+      "L2_BANK0": {
+        "bits": 7,
+        "value": 1
+      },
+      "PP1": {
+        "bits": 5,
+        "value": 1
+      },
+      "PP0": {
+        "bits": 4,
+        "value": 1
+      },
+      "ACPU3": {
+        "bits": 3,
+        "value": 1
+      },
+      "ACPU2": {
+        "bits": 2,
+        "value": 1
+      },
+      "ACPU1": {
+        "bits": 1,
+        "value": 1
+      },
+      "ACPU0": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFD80110": {
+      "name": "REQ_PWRUP_STATUS",
+      "block": "PMU_GLOBAL",
+      "address": "0xFFD80110",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PL": {
+        "bits": 23,
+        "value": 0
+      },
+      "FP": {
+        "bits": 22,
+        "value": 0
+      },
+      "USB1": {
+        "bits": 21,
+        "value": 0
+      },
+      "USB0": {
+        "bits": 20,
+        "value": 0
+      },
+      "OCM_BANK3": {
+        "bits": 19,
+        "value": 0
+      },
+      "OCM_BANK2": {
+        "bits": 18,
+        "value": 0
+      },
+      "OCM_BANK1": {
+        "bits": 17,
+        "value": 0
+      },
+      "OCM_BANK0": {
+        "bits": 16,
+        "value": 0
+      },
+      "TCM1B": {
+        "bits": 15,
+        "value": 0
+      },
+      "TCM1A": {
+        "bits": 14,
+        "value": 0
+      },
+      "TCM0B": {
+        "bits": 13,
+        "value": 0
+      },
+      "TCM0A": {
+        "bits": 12,
+        "value": 0
+      },
+      "RPU": {
+        "bits": 10,
+        "value": 0
+      },
+      "L2_BANK0": {
+        "bits": 7,
+        "value": 0
+      },
+      "PP1": {
+        "bits": 5,
+        "value": 0
+      },
+      "PP0": {
+        "bits": 4,
+        "value": 0
+      },
+      "ACPU3": {
+        "bits": 3,
+        "value": 0
+      },
+      "ACPU2": {
+        "bits": 2,
+        "value": 0
+      },
+      "ACPU1": {
+        "bits": 1,
+        "value": 0
+      },
+      "ACPU0": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFD80210": {
+      "name": "REQ_PWRDWN_STATUS",
+      "block": "PMU_GLOBAL",
+      "address": "0xFFD80210",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PL": {
+        "bits": 23,
+        "value": 0
+      },
+      "FP": {
+        "bits": 22,
+        "value": 0
+      },
+      "USB1": {
+        "bits": 21,
+        "value": 0
+      },
+      "USB0": {
+        "bits": 20,
+        "value": 0
+      },
+      "OCM_BANK3": {
+        "bits": 19,
+        "value": 0
+      },
+      "OCM_BANK2": {
+        "bits": 18,
+        "value": 0
+      },
+      "OCM_BANK1": {
+        "bits": 17,
+        "value": 0
+      },
+      "OCM_BANK0": {
+        "bits": 16,
+        "value": 0
+      },
+      "TCM1B": {
+        "bits": 15,
+        "value": 0
+      },
+      "TCM1A": {
+        "bits": 14,
+        "value": 0
+      },
+      "TCM0B": {
+        "bits": 13,
+        "value": 0
+      },
+      "TCM0A": {
+        "bits": 12,
+        "value": 0
+      },
+      "RPU": {
+        "bits": 10,
+        "value": 0
+      },
+      "L2_BANK0": {
+        "bits": 7,
+        "value": 0
+      },
+      "PP1": {
+        "bits": 5,
+        "value": 0
+      },
+      "PP0": {
+        "bits": 4,
+        "value": 0
+      },
+      "ACPU3": {
+        "bits": 3,
+        "value": 0
+      },
+      "ACPU2": {
+        "bits": 2,
+        "value": 0
+      },
+      "ACPU1": {
+        "bits": 1,
+        "value": 0
+      },
+      "ACPU0": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFD80530": {
+      "name": "ERROR_STATUS_1",
+      "block": "PMU_GLOBAL",
+      "address": "0xFFD80530",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "AUX3": {
+        "bits": 31,
+        "value": 0
+      },
+      "AUX2": {
+        "bits": 30,
+        "value": 0
+      },
+      "AUX1": {
+        "bits": 29,
+        "value": 0
+      },
+      "AUX0": {
+        "bits": 28,
+        "value": 0
+      },
+      "DFT": {
+        "bits": 27,
+        "value": 0
+      },
+      "CLK_MON": {
+        "bits": 26,
+        "value": 0
+      },
+      "XMPU": {
+        "bits": "25:24",
+        "value": 0
+      },
+      "PWR_SUPPLY": {
+        "bits": "23:16",
+        "value": 0
+      },
+      "FPD_SWDT": {
+        "bits": 13,
+        "value": 0
+      },
+      "LPD_SWDT": {
+        "bits": 12,
+        "value": 0
+      },
+      "RPU_CCF": {
+        "bits": 9,
+        "value": 0
+      },
+      "RPU_LS": {
+        "bits": "7:6",
+        "value": 0
+      },
+      "FPD_TEMP": {
+        "bits": 5,
+        "value": 0
+      },
+      "LPD_TEMP": {
+        "bits": 4,
+        "value": 0
+      },
+      "RPU1": {
+        "bits": 3,
+        "value": 0
+      },
+      "RPU0": {
+        "bits": 2,
+        "value": 0
+      },
+      "OCM_ECC": {
+        "bits": 1,
+        "value": 0
+      },
+      "DDR_ECC": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFD80540": {
+      "name": "ERROR_STATUS_2",
+      "block": "PMU_GLOBAL",
+      "address": "0xFFD80540",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "CSU_ROM": {
+        "bits": 26,
+        "value": 0
+      },
+      "PMU_PB": {
+        "bits": 25,
+        "value": 0
+      },
+      "PMU_SERVICE": {
+        "bits": 24,
+        "value": 0
+      },
+      "PMU_FW": {
+        "bits": "21:18",
+        "value": 0
+      },
+      "PMU_UC": {
+        "bits": 17,
+        "value": 0
+      },
+      "CSU": {
+        "bits": 16,
+        "value": 0
+      },
+      "PLL_LOCK": {
+        "bits": "12:8",
+        "value": 0
+      },
+      "PL": {
+        "bits": "5:2",
+        "value": 0
+      },
+      "TO": {
+        "bits": "1:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0020": {
+      "name": "APLL_CTRL",
+      "block": "CRF_APB",
+      "address": "0xFD1A0020",
+      "value": "0x00014800",
+      "value_int": 83968,
+      "fields": {
+      "POST_SRC": {
+        "bits": "26:24",
+        "value": 0
+      },
+      "PRE_SRC": {
+        "bits": "22:20",
+        "value": 0
+      },
+      "CLKOUTDIV": {
+        "bits": 17,
+        "value": 0
+      },
+      "DIV2": {
+        "bits": 16,
+        "value": 1
+      },
+      "FBDIV": {
+        "bits": "14:8",
+        "value": 72
+      },
+      "BYPASS": {
+        "bits": 3,
+        "value": 0
+      },
+      "RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0024": {
+      "name": "APLL_CFG",
+      "block": "CRF_APB",
+      "address": "0xFD1A0024",
+      "value": "0x7E4B0C62",
+      "value_int": 2118847586,
+      "fields": {
+      "LOCK_DLY": {
+        "bits": "31:25",
+        "value": 63
+      },
+      "LOCK_CNT": {
+        "bits": "22:13",
+        "value": 600
+      },
+      "LFHF": {
+        "bits": "11:10",
+        "value": 3
+      },
+      "CP": {
+        "bits": "8:5",
+        "value": 3
+      },
+      "RES": {
+        "bits": "3:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFD1A002C": {
+      "name": "DPLL_CTRL",
+      "block": "CRF_APB",
+      "address": "0xFD1A002C",
+      "value": "0x00014000",
+      "value_int": 81920,
+      "fields": {
+      "POST_SRC": {
+        "bits": "26:24",
+        "value": 0
+      },
+      "PRE_SRC": {
+        "bits": "22:20",
+        "value": 0
+      },
+      "CLKOUTDIV": {
+        "bits": 17,
+        "value": 0
+      },
+      "DIV2": {
+        "bits": 16,
+        "value": 1
+      },
+      "FBDIV": {
+        "bits": "14:8",
+        "value": 64
+      },
+      "BYPASS": {
+        "bits": 3,
+        "value": 0
+      },
+      "RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0030": {
+      "name": "DPLL_CFG",
+      "block": "CRF_APB",
+      "address": "0xFD1A0030",
+      "value": "0x7E4B0C62",
+      "value_int": 2118847586,
+      "fields": {
+      "LOCK_DLY": {
+        "bits": "31:25",
+        "value": 63
+      },
+      "LOCK_CNT": {
+        "bits": "22:13",
+        "value": 600
+      },
+      "LFHF": {
+        "bits": "11:10",
+        "value": 3
+      },
+      "CP": {
+        "bits": "8:5",
+        "value": 3
+      },
+      "RES": {
+        "bits": "3:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFD1A0038": {
+      "name": "VPLL_CTRL",
+      "block": "CRF_APB",
+      "address": "0xFD1A0038",
+      "value": "0x00014700",
+      "value_int": 83712,
+      "fields": {
+      "POST_SRC": {
+        "bits": "26:24",
+        "value": 0
+      },
+      "PRE_SRC": {
+        "bits": "22:20",
+        "value": 0
+      },
+      "CLKOUTDIV": {
+        "bits": 17,
+        "value": 0
+      },
+      "DIV2": {
+        "bits": 16,
+        "value": 1
+      },
+      "FBDIV": {
+        "bits": "14:8",
+        "value": 71
+      },
+      "BYPASS": {
+        "bits": 3,
+        "value": 0
+      },
+      "RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A003C": {
+      "name": "VPLL_CFG",
+      "block": "CRF_APB",
+      "address": "0xFD1A003C",
+      "value": "0x7E4B0C62",
+      "value_int": 2118847586,
+      "fields": {
+      "LOCK_DLY": {
+        "bits": "31:25",
+        "value": 63
+      },
+      "LOCK_CNT": {
+        "bits": "22:13",
+        "value": 600
+      },
+      "LFHF": {
+        "bits": "11:10",
+        "value": 3
+      },
+      "CP": {
+        "bits": "8:5",
+        "value": 3
+      },
+      "RES": {
+        "bits": "3:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFD1A0044": {
+      "name": "PLL_STATUS",
+      "block": "CRF_APB",
+      "address": "0xFD1A0044",
+      "value": "0x0000003F",
+      "value_int": 63,
+      "fields": {
+      "VPLL_STABLE": {
+        "bits": 5,
+        "value": 1
+      },
+      "DPLL_STABLE": {
+        "bits": 4,
+        "value": 1
+      },
+      "APLL_STABLE": {
+        "bits": 3,
+        "value": 1
+      },
+      "VPLL_LOCK": {
+        "bits": 2,
+        "value": 1
+      },
+      "DPLL_LOCK": {
+        "bits": 1,
+        "value": 1
+      },
+      "APLL_LOCK": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF5E0020": {
+      "name": "IOPLL_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0020",
+      "value": "0x00002D00",
+      "value_int": 11520,
+      "fields": {
+      "POST_SRC": {
+        "bits": "26:24",
+        "value": 0
+      },
+      "PRE_SRC": {
+        "bits": "22:20",
+        "value": 0
+      },
+      "CLKOUTDIV": {
+        "bits": 17,
+        "value": 0
+      },
+      "DIV2": {
+        "bits": 16,
+        "value": 0
+      },
+      "FBDIV": {
+        "bits": "14:8",
+        "value": 45
+      },
+      "BYPASS": {
+        "bits": 3,
+        "value": 0
+      },
+      "RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0024": {
+      "name": "IOPLL_CFG",
+      "block": "CRL_APB",
+      "address": "0xFF5E0024",
+      "value": "0x7E672C6C",
+      "value_int": 2120690796,
+      "fields": {
+      "LOCK_DLY": {
+        "bits": "31:25",
+        "value": 63
+      },
+      "LOCK_CNT": {
+        "bits": "22:13",
+        "value": 825
+      },
+      "LFHF": {
+        "bits": "11:10",
+        "value": 3
+      },
+      "CP": {
+        "bits": "8:5",
+        "value": 3
+      },
+      "RES": {
+        "bits": "3:0",
+        "value": 12
+      }
+      }
+    },
+    "0xFF5E0030": {
+      "name": "RPLL_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0030",
+      "value": "0x00014600",
+      "value_int": 83456,
+      "fields": {
+      "POST_SRC": {
+        "bits": "26:24",
+        "value": 0
+      },
+      "PRE_SRC": {
+        "bits": "22:20",
+        "value": 0
+      },
+      "CLKOUTDIV": {
+        "bits": 17,
+        "value": 0
+      },
+      "DIV2": {
+        "bits": 16,
+        "value": 1
+      },
+      "FBDIV": {
+        "bits": "14:8",
+        "value": 70
+      },
+      "BYPASS": {
+        "bits": 3,
+        "value": 0
+      },
+      "RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0034": {
+      "name": "RPLL_CFG",
+      "block": "CRL_APB",
+      "address": "0xFF5E0034",
+      "value": "0x7E4B0C62",
+      "value_int": 2118847586,
+      "fields": {
+      "LOCK_DLY": {
+        "bits": "31:25",
+        "value": 63
+      },
+      "LOCK_CNT": {
+        "bits": "22:13",
+        "value": 600
+      },
+      "LFHF": {
+        "bits": "11:10",
+        "value": 3
+      },
+      "CP": {
+        "bits": "8:5",
+        "value": 3
+      },
+      "RES": {
+        "bits": "3:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFF5E0040": {
+      "name": "PLL_STATUS",
+      "block": "CRL_APB",
+      "address": "0xFF5E0040",
+      "value": "0x0000001B",
+      "value_int": 27,
+      "fields": {
+      "RPLL_STABLE": {
+        "bits": 4,
+        "value": 1
+      },
+      "IOPLL_STABLE": {
+        "bits": 3,
+        "value": 1
+      },
+      "RPLL_LOCK": {
+        "bits": 1,
+        "value": 1
+      },
+      "IOPLL_LOCK": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF5E0074": {
+      "name": "UART0_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0074",
+      "value": "0x01010F00",
+      "value_int": 16846592,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 15
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0078": {
+      "name": "UART1_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0078",
+      "value": "0x01010F00",
+      "value_int": 16846592,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 15
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E007C": {
+      "name": "SPI0_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E007C",
+      "value": "0x01001800",
+      "value_int": 16783360,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 0
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 24
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0080": {
+      "name": "SPI1_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0080",
+      "value": "0x01001800",
+      "value_int": 16783360,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 0
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 24
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0120": {
+      "name": "I2C0_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0120",
+      "value": "0x01010F00",
+      "value_int": 16846592,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 15
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0124": {
+      "name": "I2C1_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0124",
+      "value": "0x01010F00",
+      "value_int": 16846592,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 15
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0060": {
+      "name": "USB0_BUS_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0060",
+      "value": "0x02010600",
+      "value_int": 33621504,
+      "fields": {
+      "CLKACT": {
+        "bits": 25,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 6
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0064": {
+      "name": "USB1_BUS_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0064",
+      "value": "0x00010C00",
+      "value_int": 68608,
+      "fields": {
+      "CLKACT": {
+        "bits": 25,
+        "value": 0
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 12
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0050": {
+      "name": "GEM0_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0050",
+      "value": "0x02011800",
+      "value_int": 33626112,
+      "fields": {
+      "RX_CLKACT": {
+        "bits": 26,
+        "value": 0
+      },
+      "CLKACT": {
+        "bits": 25,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 24
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0054": {
+      "name": "GEM1_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0054",
+      "value": "0x02011800",
+      "value_int": 33626112,
+      "fields": {
+      "RX_CLKACT": {
+        "bits": 26,
+        "value": 0
+      },
+      "CLKACT": {
+        "bits": 25,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 24
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0058": {
+      "name": "GEM2_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0058",
+      "value": "0x02011800",
+      "value_int": 33626112,
+      "fields": {
+      "RX_CLKACT": {
+        "bits": 26,
+        "value": 0
+      },
+      "CLKACT": {
+        "bits": 25,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 24
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E005C": {
+      "name": "GEM3_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E005C",
+      "value": "0x06013C00",
+      "value_int": 100744192,
+      "fields": {
+      "RX_CLKACT": {
+        "bits": 26,
+        "value": 1
+      },
+      "CLKACT": {
+        "bits": 25,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 60
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E006C": {
+      "name": "SDIO0_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E006C",
+      "value": "0x01000F00",
+      "value_int": 16781056,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 0
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 15
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0070": {
+      "name": "SDIO1_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0070",
+      "value": "0x01010800",
+      "value_int": 16844800,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 8
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0068": {
+      "name": "QSPI_REF_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E0068",
+      "value": "0x01010C00",
+      "value_int": 16845824,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR1": {
+        "bits": "21:16",
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 12
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E00AC": {
+      "name": "LPD_LSBUS_CTRL",
+      "block": "CRL_APB",
+      "address": "0xFF5E00AC",
+      "value": "0x01000F02",
+      "value_int": 16781058,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 15
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFD1A0060": {
+      "name": "ACPU_CTRL",
+      "block": "CRF_APB",
+      "address": "0xFD1A0060",
+      "value": "0x03000100",
+      "value_int": 50331904,
+      "fields": {
+      "CLKACT_HALF": {
+        "bits": 25,
+        "value": 1
+      },
+      "CLKACT_FULL": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 1
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0064": {
+      "name": "DBG_TRACE_CTRL",
+      "block": "CRF_APB",
+      "address": "0xFD1A0064",
+      "value": "0x00002500",
+      "value_int": 9472,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 0
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 37
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0068": {
+      "name": "DBG_FPD_CTRL",
+      "block": "CRF_APB",
+      "address": "0xFD1A0068",
+      "value": "0x01000200",
+      "value_int": 16777728,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 2
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A00B8": {
+      "name": "GDMA_REF_CTRL",
+      "block": "CRF_APB",
+      "address": "0xFD1A00B8",
+      "value": "0x01000200",
+      "value_int": 16777728,
+      "fields": {
+      "CLKACT": {
+        "bits": 24,
+        "value": 1
+      },
+      "DIVISOR0": {
+        "bits": "13:8",
+        "value": 2
+      },
+      "SRCSEL": {
+        "bits": "2:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0104": {
+      "name": "RST_FPD_APU",
+      "block": "CRF_APB",
+      "address": "0xFD1A0104",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "ACPU3_PWRON_RESET": {
+        "bits": 13,
+        "value": 0
+      },
+      "ACPU2_PWRON_RESET": {
+        "bits": 12,
+        "value": 0
+      },
+      "ACPU1_PWRON_RESET": {
+        "bits": 11,
+        "value": 0
+      },
+      "ACPU0_PWRON_RESET": {
+        "bits": 10,
+        "value": 0
+      },
+      "APU_L2_RESET": {
+        "bits": 8,
+        "value": 0
+      },
+      "ACPU3_RESET": {
+        "bits": 3,
+        "value": 0
+      },
+      "ACPU2_RESET": {
+        "bits": 2,
+        "value": 0
+      },
+      "ACPU1_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "ACPU0_RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0100": {
+      "name": "RST_FPD_TOP",
+      "block": "CRF_APB",
+      "address": "0xFD1A0100",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PCIE_CFG_RESET": {
+        "bits": 19,
+        "value": 0
+      },
+      "PCIE_BRIDGE_RESET": {
+        "bits": 18,
+        "value": 0
+      },
+      "PCIE_CTRL_RESET": {
+        "bits": 17,
+        "value": 0
+      },
+      "DP_RESET": {
+        "bits": 16,
+        "value": 0
+      },
+      "SWDT_RESET": {
+        "bits": 15,
+        "value": 0
+      },
+      "AFI_FM5_RESET": {
+        "bits": 12,
+        "value": 0
+      },
+      "AFI_FM4_RESET": {
+        "bits": 11,
+        "value": 0
+      },
+      "AFI_FM3_RESET": {
+        "bits": 10,
+        "value": 0
+      },
+      "AFI_FM2_RESET": {
+        "bits": 9,
+        "value": 0
+      },
+      "AFI_FM1_RESET": {
+        "bits": 8,
+        "value": 0
+      },
+      "AFI_FM0_RESET": {
+        "bits": 7,
+        "value": 0
+      },
+      "GDMA_RESET": {
+        "bits": 6,
+        "value": 0
+      },
+      "GPU_PP1_RESET": {
+        "bits": 5,
+        "value": 0
+      },
+      "GPU_PP0_RESET": {
+        "bits": 4,
+        "value": 0
+      },
+      "GPU_RESET": {
+        "bits": 3,
+        "value": 0
+      },
+      "GT_RESET": {
+        "bits": 2,
+        "value": 0
+      },
+      "SATA_RESET": {
+        "bits": 1,
+        "value": 0
+      }
+      }
+    },
+    "0xFD1A0108": {
+      "name": "RST_DDR_SS",
+      "block": "CRF_APB",
+      "address": "0xFD1A0108",
+      "value": "0x00000003",
+      "value_int": 3,
+      "fields": {
+      "DDR_RESET": {
+        "bits": 3,
+        "value": 0
+      },
+      "APM_RESET": {
+        "bits": 2,
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E0230": {
+      "name": "RST_LPD_IOU0",
+      "block": "CRL_APB",
+      "address": "0xFF5E0230",
+      "value": "0x00000007",
+      "value_int": 7,
+      "fields": {
+      "GEM3_RESET": {
+        "bits": 3,
+        "value": 0
+      },
+      "GEM2_RESET": {
+        "bits": 2,
+        "value": 1
+      },
+      "GEM1_RESET": {
+        "bits": 1,
+        "value": 1
+      },
+      "GEM0_RESET": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF5E0238": {
+      "name": "RST_LPD_IOU2",
+      "block": "CRL_APB",
+      "address": "0xFF5E0238",
+      "value": "0x000100B8",
+      "value_int": 65720,
+      "fields": {
+      "TIMESTAMP_RESET": {
+        "bits": 20,
+        "value": 0
+      },
+      "IOU_CC_RESET": {
+        "bits": 19,
+        "value": 0
+      },
+      "GPIO_RESET": {
+        "bits": 18,
+        "value": 0
+      },
+      "ADMA_RESET": {
+        "bits": 17,
+        "value": 0
+      },
+      "NAND_RESET": {
+        "bits": 16,
+        "value": 1
+      },
+      "SWDT_RESET": {
+        "bits": 15,
+        "value": 0
+      },
+      "TTC3_RESET": {
+        "bits": 14,
+        "value": 0
+      },
+      "TTC2_RESET": {
+        "bits": 13,
+        "value": 0
+      },
+      "TTC1_RESET": {
+        "bits": 12,
+        "value": 0
+      },
+      "TTC0_RESET": {
+        "bits": 11,
+        "value": 0
+      },
+      "I2C1_RESET": {
+        "bits": 10,
+        "value": 0
+      },
+      "I2C0_RESET": {
+        "bits": 9,
+        "value": 0
+      },
+      "CAN1_RESET": {
+        "bits": 8,
+        "value": 0
+      },
+      "CAN0_RESET": {
+        "bits": 7,
+        "value": 1
+      },
+      "SDIO1_RESET": {
+        "bits": 6,
+        "value": 0
+      },
+      "SDIO0_RESET": {
+        "bits": 5,
+        "value": 1
+      },
+      "SPI1_RESET": {
+        "bits": 4,
+        "value": 1
+      },
+      "SPI0_RESET": {
+        "bits": 3,
+        "value": 1
+      },
+      "UART1_RESET": {
+        "bits": 2,
+        "value": 0
+      },
+      "UART0_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "QSPI_RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF5E023C": {
+      "name": "RST_LPD_TOP",
+      "block": "CRL_APB",
+      "address": "0xFF5E023C",
+      "value": "0x00000A80",
+      "value_int": 2688,
+      "fields": {
+      "FPD_RESET": {
+        "bits": 23,
+        "value": 0
+      },
+      "LPD_SWDT_RESET": {
+        "bits": 20,
+        "value": 0
+      },
+      "AFI_FM6_RESET": {
+        "bits": 19,
+        "value": 0
+      },
+      "SYSMON_RESET": {
+        "bits": 17,
+        "value": 0
+      },
+      "RTC_RESET": {
+        "bits": 16,
+        "value": 0
+      },
+      "APM_RESET": {
+        "bits": 15,
+        "value": 0
+      },
+      "IPI_RESET": {
+        "bits": 14,
+        "value": 0
+      },
+      "USB1_APB_RESET": {
+        "bits": 11,
+        "value": 1
+      },
+      "USB0_APB_RESET": {
+        "bits": 10,
+        "value": 0
+      },
+      "USB1_HIBERRESET": {
+        "bits": 9,
+        "value": 1
+      },
+      "USB0_HIBERRESET": {
+        "bits": 8,
+        "value": 0
+      },
+      "USB1_CORERESET": {
+        "bits": 7,
+        "value": 1
+      },
+      "USB0_CORERESET": {
+        "bits": 6,
+        "value": 0
+      },
+      "RPU_PGE_RESET": {
+        "bits": 4,
+        "value": 0
+      },
+      "OCM_RESET": {
+        "bits": 3,
+        "value": 0
+      },
+      "RPU_AMBA_RESET": {
+        "bits": 2,
+        "value": 0
+      },
+      "RPU_R51_RESET": {
+        "bits": 1,
+        "value": 0
+      },
+      "RPU_R50_RESET": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF980000": {
+      "name": "CTRL",
+      "block": "XPPU",
+      "address": "0xFF980000",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "APER_PARITY_EN": {
+        "bits": 2,
+        "value": 0
+      },
+      "MID_PARITY_EN": {
+        "bits": 1,
+        "value": 0
+      },
+      "ENABLE": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF980004": {
+      "name": "ERR_STATUS1",
+      "block": "XPPU",
+      "address": "0xFF980004",
+      "value": "0x00000000",
+      "value_int": 0
+    },
+    "0xFF980008": {
+      "name": "ERR_STATUS2",
+      "block": "XPPU",
+      "address": "0xFF980008",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "AXI_ID": {
+        "bits": "9:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF980010": {
+      "name": "ISR",
+      "block": "XPPU",
+      "address": "0xFF980010",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "APER_PARITY": {
+        "bits": 7,
+        "value": 0
+      },
+      "APER_TZ": {
+        "bits": 6,
+        "value": 0
+      },
+      "APER_PERM": {
+        "bits": 5,
+        "value": 0
+      },
+      "MID_PARITY": {
+        "bits": 3,
+        "value": 0
+      },
+      "MID_RO": {
+        "bits": 2,
+        "value": 0
+      },
+      "MID_MISS": {
+        "bits": 1,
+        "value": 0
+      },
+      "INV_APB": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF980014": {
+      "name": "IMR",
+      "block": "XPPU",
+      "address": "0xFF980014",
+      "value": "0x000000EF",
+      "value_int": 239,
+      "fields": {
+      "APER_PARITY": {
+        "bits": 7,
+        "value": 1
+      },
+      "APER_TZ": {
+        "bits": 6,
+        "value": 1
+      },
+      "APER_PERM": {
+        "bits": 5,
+        "value": 1
+      },
+      "MID_PARITY": {
+        "bits": 3,
+        "value": 1
+      },
+      "MID_RO": {
+        "bits": 2,
+        "value": 1
+      },
+      "MID_MISS": {
+        "bits": 1,
+        "value": 1
+      },
+      "INV_APB": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF98003C": {
+      "name": "M_MASTER_IDS",
+      "block": "XPPU",
+      "address": "0xFF98003C",
+      "value": "0x00000014",
+      "value_int": 20
+    },
+    "0xFF980044": {
+      "name": "M_APERTURE_64KB",
+      "block": "XPPU",
+      "address": "0xFF980044",
+      "value": "0x00000100",
+      "value_int": 256
+    },
+    "0xFF980048": {
+      "name": "M_APERTURE_1MB",
+      "block": "XPPU",
+      "address": "0xFF980048",
+      "value": "0x00000010",
+      "value_int": 16
+    },
+    "0xFF98004C": {
+      "name": "M_APERTURE_512MB",
+      "block": "XPPU",
+      "address": "0xFF98004C",
+      "value": "0x00000001",
+      "value_int": 1
+    },
+    "0xFF980054": {
+      "name": "BASE_64KB",
+      "block": "XPPU",
+      "address": "0xFF980054",
+      "value": "0xFF000000",
+      "value_int": 4278190080
+    },
+    "0xFF980058": {
+      "name": "BASE_1MB",
+      "block": "XPPU",
+      "address": "0xFF980058",
+      "value": "0xFE000000",
+      "value_int": 4261412864
+    },
+    "0xFF98005C": {
+      "name": "BASE_512MB",
+      "block": "XPPU",
+      "address": "0xFF98005C",
+      "value": "0xC0000000",
+      "value_int": 3221225472
+    },
+    "0xFF9A0000": {
+      "name": "RPU_GLBL_CNTL",
+      "block": "RPU",
+      "address": "0xFF9A0000",
+      "value": "0x00000050",
+      "value_int": 80,
+      "fields": {
+      "GIC_AXPROT": {
+        "bits": 10,
+        "value": 0
+      },
+      "TCM_CLK_CNTL": {
+        "bits": 8,
+        "value": 0
+      },
+      "TCM_WAIT": {
+        "bits": 7,
+        "value": 0
+      },
+      "TCM_COMB": {
+        "bits": 6,
+        "value": 1
+      },
+      "TEINIT": {
+        "bits": 5,
+        "value": 0
+      },
+      "SLCLAMP": {
+        "bits": 4,
+        "value": 1
+      },
+      "SLSPLIT": {
+        "bits": 3,
+        "value": 0
+      },
+      "DBGNOCLKSTOP": {
+        "bits": 2,
+        "value": 0
+      },
+      "CFGIE": {
+        "bits": 1,
+        "value": 0
+      },
+      "CFGEE": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF9A0004": {
+      "name": "RPU_GLBL_STATUS",
+      "block": "RPU",
+      "address": "0xFF9A0004",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "DBGNOPWRDWN": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF9A0008": {
+      "name": "RPU_ERR_CNTL",
+      "block": "RPU",
+      "address": "0xFF9A0008",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "APB_ERR_RES": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF9A0100": {
+      "name": "RPU_0_CFG",
+      "block": "RPU",
+      "address": "0xFF9A0100",
+      "value": "0x00000004",
+      "value_int": 4,
+      "fields": {
+      "CFGNMFI0": {
+        "bits": 3,
+        "value": 0
+      },
+      "VINITHI": {
+        "bits": 2,
+        "value": 1
+      },
+      "COHERENT": {
+        "bits": 1,
+        "value": 0
+      },
+      "NCPUHALT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF9A0104": {
+      "name": "RPU_0_STATUS",
+      "block": "RPU",
+      "address": "0xFF9A0104",
+      "value": "0x0000003F",
+      "value_int": 63,
+      "fields": {
+      "NVALRESET": {
+        "bits": 5,
+        "value": 1
+      },
+      "NVALIRQ": {
+        "bits": 4,
+        "value": 1
+      },
+      "NVALFIQ": {
+        "bits": 3,
+        "value": 1
+      },
+      "NWFIPIPESTOPPED": {
+        "bits": 2,
+        "value": 1
+      },
+      "NWFEPIPESTOPPED": {
+        "bits": 1,
+        "value": 1
+      },
+      "NCLKSTOPPED": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF9A0124": {
+      "name": "RPU_0_SLV_BASE",
+      "block": "RPU",
+      "address": "0xFF9A0124",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "ADDR": {
+        "bits": "7:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF9A0200": {
+      "name": "RPU_1_CFG",
+      "block": "RPU",
+      "address": "0xFF9A0200",
+      "value": "0x00000004",
+      "value_int": 4,
+      "fields": {
+      "CFGNMFI1": {
+        "bits": 3,
+        "value": 0
+      },
+      "VINITHI": {
+        "bits": 2,
+        "value": 1
+      },
+      "COHERENT": {
+        "bits": 1,
+        "value": 0
+      },
+      "NCPUHALT": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF9A0204": {
+      "name": "RPU_1_STATUS",
+      "block": "RPU",
+      "address": "0xFF9A0204",
+      "value": "0x00000038",
+      "value_int": 56,
+      "fields": {
+      "NVALRESET": {
+        "bits": 5,
+        "value": 1
+      },
+      "NVALIRQ": {
+        "bits": 4,
+        "value": 1
+      },
+      "NVALFIQ": {
+        "bits": 3,
+        "value": 1
+      },
+      "NWFIPIPESTOPPED": {
+        "bits": 2,
+        "value": 0
+      },
+      "NWFEPIPESTOPPED": {
+        "bits": 1,
+        "value": 0
+      },
+      "NCLKSTOPPED": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF9A0224": {
+      "name": "RPU_1_SLV_BASE",
+      "block": "RPU",
+      "address": "0xFF9A0224",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "ADDR": {
+        "bits": "7:0",
+        "value": 0
+      }
+      }
+    },
+    "0xFF300000": {
+      "name": "IPI_TRIG",
+      "block": "IPI",
+      "address": "0xFF300000",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PL_3": {
+        "bits": 27,
+        "value": 0
+      },
+      "PL_2": {
+        "bits": 26,
+        "value": 0
+      },
+      "PL_1": {
+        "bits": 25,
+        "value": 0
+      },
+      "PL_0": {
+        "bits": 24,
+        "value": 0
+      },
+      "PMU_3": {
+        "bits": 19,
+        "value": 0
+      },
+      "PMU_2": {
+        "bits": 18,
+        "value": 0
+      },
+      "PMU_1": {
+        "bits": 17,
+        "value": 0
+      },
+      "PMU_0": {
+        "bits": 16,
+        "value": 0
+      },
+      "RPU_1": {
+        "bits": 9,
+        "value": 0
+      },
+      "RPU_0": {
+        "bits": 8,
+        "value": 0
+      },
+      "APU": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF300004": {
+      "name": "IPI_OBS",
+      "block": "IPI",
+      "address": "0xFF300004",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PL_3": {
+        "bits": 27,
+        "value": 0
+      },
+      "PL_2": {
+        "bits": 26,
+        "value": 0
+      },
+      "PL_1": {
+        "bits": 25,
+        "value": 0
+      },
+      "PL_0": {
+        "bits": 24,
+        "value": 0
+      },
+      "PMU_3": {
+        "bits": 19,
+        "value": 0
+      },
+      "PMU_2": {
+        "bits": 18,
+        "value": 0
+      },
+      "PMU_1": {
+        "bits": 17,
+        "value": 0
+      },
+      "PMU_0": {
+        "bits": 16,
+        "value": 0
+      },
+      "RPU_1": {
+        "bits": 9,
+        "value": 0
+      },
+      "RPU_0": {
+        "bits": 8,
+        "value": 0
+      },
+      "APU": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF300010": {
+      "name": "IPI_ISR",
+      "block": "IPI",
+      "address": "0xFF300010",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PL_3": {
+        "bits": 27,
+        "value": 0
+      },
+      "PL_2": {
+        "bits": 26,
+        "value": 0
+      },
+      "PL_1": {
+        "bits": 25,
+        "value": 0
+      },
+      "PL_0": {
+        "bits": 24,
+        "value": 0
+      },
+      "PMU_3": {
+        "bits": 19,
+        "value": 0
+      },
+      "PMU_2": {
+        "bits": 18,
+        "value": 0
+      },
+      "PMU_1": {
+        "bits": 17,
+        "value": 0
+      },
+      "PMU_0": {
+        "bits": 16,
+        "value": 0
+      },
+      "RPU_1": {
+        "bits": 9,
+        "value": 0
+      },
+      "RPU_0": {
+        "bits": 8,
+        "value": 0
+      },
+      "APU": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF300014": {
+      "name": "IPI_IMR",
+      "block": "IPI",
+      "address": "0xFF300014",
+      "value": "0x0F0F0301",
+      "value_int": 252642049,
+      "fields": {
+      "PL_3": {
+        "bits": 27,
+        "value": 1
+      },
+      "PL_2": {
+        "bits": 26,
+        "value": 1
+      },
+      "PL_1": {
+        "bits": 25,
+        "value": 1
+      },
+      "PL_0": {
+        "bits": 24,
+        "value": 1
+      },
+      "PMU_3": {
+        "bits": 19,
+        "value": 1
+      },
+      "PMU_2": {
+        "bits": 18,
+        "value": 1
+      },
+      "PMU_1": {
+        "bits": 17,
+        "value": 1
+      },
+      "PMU_0": {
+        "bits": 16,
+        "value": 1
+      },
+      "RPU_1": {
+        "bits": 9,
+        "value": 1
+      },
+      "RPU_0": {
+        "bits": 8,
+        "value": 1
+      },
+      "APU": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFA70000": {
+      "name": "CTRL",
+      "block": "OCM_XMPU",
+      "address": "0xFFA70000",
+      "value": "0x00000003",
+      "value_int": 3,
+      "fields": {
+      "ALIGNCFG": {
+        "bits": 3,
+        "value": 0
+      },
+      "HIDEALLOWED": {
+        "bits": 2,
+        "value": 0
+      },
+      "DEFWRALLOWED": {
+        "bits": 1,
+        "value": 1
+      },
+      "DEFRDALLOWED": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFA70010": {
+      "name": "ISR",
+      "block": "OCM_XMPU",
+      "address": "0xFFA70010",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "SECURITYVIO": {
+        "bits": 3,
+        "value": 0
+      },
+      "WRPERMVIO": {
+        "bits": 2,
+        "value": 0
+      },
+      "RDPERMVIO": {
+        "bits": 1,
+        "value": 0
+      },
+      "INV_APB": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFA70014": {
+      "name": "IMR",
+      "block": "OCM_XMPU",
+      "address": "0xFFA70014",
+      "value": "0x0000000F",
+      "value_int": 15,
+      "fields": {
+      "SECURITYVIO": {
+        "bits": 3,
+        "value": 1
+      },
+      "WRPERMVIO": {
+        "bits": 2,
+        "value": 1
+      },
+      "RDPERMVIO": {
+        "bits": 1,
+        "value": 1
+      },
+      "INV_APB": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFA70020": {
+      "name": "LOCK",
+      "block": "OCM_XMPU",
+      "address": "0xFFA70020",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "REGWRDIS": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFD000000": {
+      "name": "CTRL",
+      "block": "DDR_XMPU0",
+      "address": "0xFD000000",
+      "value": "0x0000000B",
+      "value_int": 11,
+      "fields": {
+      "ALIGNCFG": {
+        "bits": 3,
+        "value": 1
+      },
+      "HIDEALLOWED": {
+        "bits": 2,
+        "value": 0
+      },
+      "DEFWRALLOWED": {
+        "bits": 1,
+        "value": 1
+      },
+      "DEFRDALLOWED": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFD000010": {
+      "name": "ISR",
+      "block": "DDR_XMPU0",
+      "address": "0xFD000010",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "SECURITYVIO": {
+        "bits": 3,
+        "value": 0
+      },
+      "WRPERMVIO": {
+        "bits": 2,
+        "value": 0
+      },
+      "RDPERMVIO": {
+        "bits": 1,
+        "value": 0
+      },
+      "INV_APB": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFD000014": {
+      "name": "IMR",
+      "block": "DDR_XMPU0",
+      "address": "0xFD000014",
+      "value": "0x0000000F",
+      "value_int": 15,
+      "fields": {
+      "SECURITYVIO": {
+        "bits": 3,
+        "value": 1
+      },
+      "WRPERMVIO": {
+        "bits": 2,
+        "value": 1
+      },
+      "RDPERMVIO": {
+        "bits": 1,
+        "value": 1
+      },
+      "INV_APB": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFD000020": {
+      "name": "LOCK",
+      "block": "DDR_XMPU0",
+      "address": "0xFD000020",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "REGWRDIS": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA3000": {
+      "name": "PCAP_PROG",
+      "block": "CSU",
+      "address": "0xFFCA3000",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PCFG_PROG_B": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA3004": {
+      "name": "PCAP_RDWR",
+      "block": "CSU",
+      "address": "0xFFCA3004",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "PCAP_RDWR_B": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFFCA3008": {
+      "name": "PCAP_CTRL",
+      "block": "CSU",
+      "address": "0xFFCA3008",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "PCFG_GSR": {
+        "bits": 3,
+        "value": 0
+      },
+      "PCFG_GTS": {
+        "bits": 2,
+        "value": 0
+      },
+      "PCFG_POR_CNT_4K": {
+        "bits": 1,
+        "value": 0
+      },
+      "PCAP_PR": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFCA300C": {
+      "name": "PCAP_RESET",
+      "block": "CSU",
+      "address": "0xFFCA300C",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "RESET": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFFCA3010": {
+      "name": "PCAP_STATUS",
+      "block": "CSU",
+      "address": "0xFFCA3010",
+      "value": "0x00000A02",
+      "value_int": 2562,
+      "fields": {
+      "PCFG_GWE": {
+        "bits": 13,
+        "value": 0
+      },
+      "PCFG_MCAP_MODE": {
+        "bits": 12,
+        "value": 0
+      },
+      "PL_GTS_USR_B": {
+        "bits": 11,
+        "value": 1
+      },
+      "PL_GTS_CFG_B": {
+        "bits": 10,
+        "value": 0
+      },
+      "PL_GPWRDWN_B": {
+        "bits": 9,
+        "value": 1
+      },
+      "PL_GHIGH_B": {
+        "bits": 8,
+        "value": 0
+      },
+      "PL_FST_CFG": {
+        "bits": 7,
+        "value": 0
+      },
+      "PL_CFG_RESET_B": {
+        "bits": 6,
+        "value": 0
+      },
+      "PL_SEU_ERROR": {
+        "bits": 5,
+        "value": 0
+      },
+      "PL_EOS": {
+        "bits": 4,
+        "value": 0
+      },
+      "PL_DONE": {
+        "bits": 3,
+        "value": 0
+      },
+      "PL_INIT": {
+        "bits": 2,
+        "value": 0
+      },
+      "PCAP_RD_IDLE": {
+        "bits": 1,
+        "value": 1
+      },
+      "PCAP_WR_IDLE": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF410000": {
+      "name": "WPROT0",
+      "block": "LPD_SLCR",
+      "address": "0xFF410000",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "ACTIVE": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF410004": {
+      "name": "CTRL",
+      "block": "LPD_SLCR",
+      "address": "0xFF410004",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "SLVERR_ENABLE": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF410008": {
+      "name": "ISR",
+      "block": "LPD_SLCR",
+      "address": "0xFF410008",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "ADDR_DECODE_ERR": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFF41000C": {
+      "name": "IMR",
+      "block": "LPD_SLCR",
+      "address": "0xFF41000C",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "ADDR_DECODE_ERR": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFD610000": {
+      "name": "WPROT0",
+      "block": "FPD_SLCR",
+      "address": "0xFD610000",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "ACTIVE": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFD610004": {
+      "name": "CTRL",
+      "block": "FPD_SLCR",
+      "address": "0xFD610004",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "SLVERR_ENABLE": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFD610008": {
+      "name": "ISR",
+      "block": "FPD_SLCR",
+      "address": "0xFD610008",
+      "value": "0x00000000",
+      "value_int": 0,
+      "fields": {
+      "ADDR_DECODE_ERR": {
+        "bits": 0,
+        "value": 0
+      }
+      }
+    },
+    "0xFD61000C": {
+      "name": "IMR",
+      "block": "FPD_SLCR",
+      "address": "0xFD61000C",
+      "value": "0x00000001",
+      "value_int": 1,
+      "fields": {
+      "ADDR_DECODE_ERR": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    },
+    "0xFF240000": {
+      "name": "IOU_AXI_WPRTCN",
+      "block": "IOU_SECURE_SLCR",
+      "address": "0xFF240000",
+      "value": "0x04920492",
+      "value_int": 76678290,
+      "fields": {
+      "SD1_AXI_AWPROT": {
+        "bits": "21:19",
+        "value": 2
+      },
+      "SD0_AXI_AWPROT": {
+        "bits": "18:16",
+        "value": 2
+      },
+      "GEM3_AXI_AWPROT": {
+        "bits": "11:9",
+        "value": 2
+      },
+      "GEM2_AXI_AWPROT": {
+        "bits": "8:6",
+        "value": 2
+      },
+      "GEM1_AXI_AWPROT": {
+        "bits": "5:3",
+        "value": 2
+      },
+      "GEM0_AXI_AWPROT": {
+        "bits": "2:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFF240004": {
+      "name": "IOU_AXI_RPRTCN",
+      "block": "IOU_SECURE_SLCR",
+      "address": "0xFF240004",
+      "value": "0x00920492",
+      "value_int": 9569426,
+      "fields": {
+      "SD1_AXI_ARPROT": {
+        "bits": "21:19",
+        "value": 2
+      },
+      "SD0_AXI_ARPROT": {
+        "bits": "18:16",
+        "value": 2
+      },
+      "GEM3_AXI_ARPROT": {
+        "bits": "11:9",
+        "value": 2
+      },
+      "GEM2_AXI_ARPROT": {
+        "bits": "8:6",
+        "value": 2
+      },
+      "GEM1_AXI_ARPROT": {
+        "bits": "5:3",
+        "value": 2
+      },
+      "GEM0_AXI_ARPROT": {
+        "bits": "2:0",
+        "value": 2
+      }
+      }
+    },
+    "0xFF4B0034": {
+      "name": "SLCR_USB",
+      "block": "LPD_SLCR_SECURE",
+      "address": "0xFF4B0034",
+      "value": "0x00000003",
+      "value_int": 3,
+      "fields": {
+      "TZ_USB3_1": {
+        "bits": 1,
+        "value": 1
+      },
+      "TZ_USB3_0": {
+        "bits": 0,
+        "value": 1
+      }
+      }
+    }
+  },
+  "a53": {
+    "core0_invasive": "open",
+    "core0_pc": "0x803ed870",
+    "core0_pinned": true,
+    "core1_invasive": "open",
+    "core1_pc": "0x803ed870",
+    "core1_pinned": true,
+    "core2_invasive": "open",
+    "core2_pc": "0x803ed870",
+    "core2_pinned": true,
+    "core3_invasive": "open",
+    "core3_pc": "0x803ed870",
+    "core3_pinned": true,
+    "release_attempted": false,
+    "firmware_running": true,
+    "pc_sampling": true,
+    "invasive_debug": "open",
+    "cores_summary": ["c0=open", "c1=open", "c2=open", "c3=open"],
+    "live_pc": "0x803ed870"
+  },
+  "memory_probes": {
+    "ocm_bank0_first": ["address", "0xFFFC0000", "first_word", "0x1400024E"],
+    "ocm_alt_first": ["address", "0xFFFE0000", "first_word", "0x00000000"],
+    "ddr_scan_skipped": false,
+    "ddr_responsive": true,
+    "csu_rom_digest_addr": "0x26042731"
+  },
+  "boot_state": {
+    "boot_mode_value": 2,
+    "reset_reason_raw": "0x00000001"
+  },
+  "coresight": {
+    "ap_info": {
+      "0": "AP # 0x0\n\t\tAP ID register 0x34770004\n\t\tType is MEM-AP AXI3 or AXI4\nMEM-AP BASE 0xfeff0002\n\t\tNo ROM table present\n",
+      "1": "AP # 0x1\n\t\tAP ID register 0x44770002\n\t\tType is MEM-AP APB2 or APB3\nMEM-AP BASE 0x80000003\n\t\tValid ROM table present\n\t\tComponent base address 0x80000000\n\t\tPeripheral ID 0x0100293738\n\t\tDesigner is 0x093, TCSI\n\t\tPart is 0x738, Unrecognized \n\t\tComponent class is 0x1, ROM table\n\t\tMEMTYPE system memory not present: dedicated debug bus\n\tROMTABLE[0x0] = 0x00100003\n\t\tComponent base address 0x80100000\n\t\tPeripheral ID 0x04001bb101\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x101, Unrecognized \n\t\tComponent class is 0xf, CoreLink, PrimeCell or System component\n\tROMTABLE[0x4] = 0x00110003\n\t\tComponent base address 0x80110000\n\t\tPeripheral ID 0x04002bb908\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x908, CoreSight CSTF (Trace Funnel)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x12, Trace Link, Funnel, router\n\tROMTABLE[0x8] = 0x00120003\n\t\tComponent base address 0x80120000\n\t\tPeripheral ID 0x04002bb908\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x908, CoreSight CSTF (Trace Funnel)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x12, Trace Link, Funnel, router\n\tROMTABLE[0xc] = 0x00130003\n\t\tComponent base address 0x80130000\n\t\tPeripheral ID 0x04002bb908\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x908, CoreSight CSTF (Trace Funnel)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x12, Trace Link, Funnel, router\n\tROMTABLE[0x10] = 0x00140003\n\t\tComponent base address 0x80140000\n\t\tPeripheral ID 0x04001bb961\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x961, CoreSight TMC (Trace Memory Controller)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x32, Trace Link, FIFO, buffer\n\tROMTABLE[0x14] = 0x00150003\n\t\tComponent base address 0x80150000\n\t\tPeripheral ID 0x04001bb961\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x961, CoreSight TMC (Trace Memory Controller)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x32, Trace Link, FIFO, buffer\n\tROMTABLE[0x18] = 0x00160003\n\t\tComponent base address 0x80160000\n\t\tPeripheral ID 0x04001bb909\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x909, CoreSight ATBR (Advanced Trace Bus Replicator)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x22, Trace Link, Filter\n\tROMTABLE[0x1c] = 0x00170003\n\t\tComponent base address 0x80170000\n\t\tPeripheral ID 0x04001bb961\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x961, CoreSight TMC (Trace Memory Controller)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x21, Trace Sink, Buffer\n\tROMTABLE[0x20] = 0x00180003\n\t\tComponent base address 0x80180000\n\t\tPeripheral ID 0x04004bb912\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x912, CoreSight TPIU (Trace Port Interface Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x11, Trace Sink, Port\n\tROMTABLE[0x24] = 0x00190003\n\t\tComponent base address 0x80190000\n\t\tPeripheral ID 0x04004bb906\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x906, CoreSight CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\tROMTABLE[0x28] = 0x001a0003\n\t\tComponent base address 0x801a0000\n\t\tPeripheral ID 0x04004bb906\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x906, CoreSight CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\tROMTABLE[0x2c] = 0x001b0003\n\t\tComponent base address 0x801b0000\n\t\tPeripheral ID 0x04004bb906\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x906, CoreSight CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\tROMTABLE[0x30] = 0x001c0003\n\t\tComponent base address 0x801c0000\n\t\tPeripheral ID 0x04001bb963\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x963, Unrecognized \n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x63, Trace Source, Software\n\t\tDev Arch is 0x47710a63, ARM Ltd \"System Trace Macrocell (STM) architecture\" rev.1\n\tROMTABLE[0x34] = 0x001d0003\n\t\tComponent base address 0x801d0000\n\t\tPeripheral ID 0x0100093f21\n\t\tDesigner is 0x093, TCSI\n\t\tPart is 0xf21, Unrecognized \n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x00, Miscellaneous, other\n\tROMTABLE[0x38] = 0x001e0003\n\t\tComponent base address 0x801e0000\n\t\tPeripheral ID 0x0100093a21\n\t\tDesigner is 0x093, TCSI\n\t\tPart is 0xa21, Unrecognized \n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x43, Trace Source, Bus\n\tROMTABLE[0x3c] = 0x001f0003\n\t\tComponent base address 0x801f0000\n\t\tPeripheral ID 0x0100093a21\n\t\tDesigner is 0x093, TCSI\n\t\tPart is 0xa21, Unrecognized \n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x43, Trace Source, Bus\n\tROMTABLE[0x40] = 0x003e0003\n\t\tComponent base address 0x803e0000\n\t\tPeripheral ID 0x04000bb4b5\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x4b5, Cortex-R5 ROM (ROM Table)\n\t\tComponent class is 0x1, ROM table\n\t\tMEMTYPE system memory not present: dedicated debug bus\n\t[L01] ROMTABLE[0x0] = 0x00010003\n\t\tComponent base address 0x803f0000\n\t\tPeripheral ID 0x04004bbc15\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0xc15, Cortex-R5 Debug (Debug Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x15, Debug Logic, Processor\n\t[L01] ROMTABLE[0x4] = 0x00012003\n\t\tComponent base address 0x803f2000\n\t\tPeripheral ID 0x04004bbc15\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0xc15, Cortex-R5 Debug (Debug Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x15, Debug Logic, Processor\n\t[L01] ROMTABLE[0x8] = 0x00018003\n\t\tComponent base address 0x803f8000\n\t\tPeripheral ID 0x04004bb906\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x906, CoreSight CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\t[L01] ROMTABLE[0xc] = 0x00019003\n\t\tComponent base address 0x803f9000\n\t\tPeripheral ID 0x04004bb906\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x906, CoreSight CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\t[L01] ROMTABLE[0x10] = 0x0001c003\n\t\tComponent base address 0x803fc000\n\t\tPeripheral ID 0x04000bb931\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x931, Cortex-R5 ETM (Embedded Trace)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x13, Trace Source, Processor\n\t[L01] ROMTABLE[0x14] = 0x0001d003\n\t\tComponent base address 0x803fd000\n\t\tPeripheral ID 0x04000bb931\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x931, Cortex-R5 ETM (Embedded Trace)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x13, Trace Source, Processor\n\t[L01] ROMTABLE[0x18] = 0x00000000\n\t[L01] \tEnd of ROM table\n\tROMTABLE[0x44] = 0x00400003\n\t\tComponent base address 0x80400000\n\t\tPeripheral ID 0x04004bb4a1\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x4a1, Cortex-A53 ROM (v8 Memory Map ROM Table)\n\t\tComponent class is 0x1, ROM table\n\t\tMEMTYPE system memory not present: dedicated debug bus\n\t[L01] ROMTABLE[0x0] = 0x00010003\n\t\tComponent base address 0x80410000\n\t\tPeripheral ID 0x04004bbd03\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0xd03, Cortex-A53 Debug (Debug Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x15, Debug Logic, Processor\n\t\tDev Arch is 0x47706a15, ARM Ltd \"Processor debug architecture (v8.0-A)\" rev.0\n\t[L01] ROMTABLE[0x4] = 0x00020003\n\t\tComponent base address 0x80420000\n\t\tPeripheral ID 0x04004bb9a8\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9a8, Cortex-A53 CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\t\tDev Arch is 0x47701a14, ARM Ltd \"Cross Trigger Interface (CTI) architecture\" rev.0\n\t[L01] ROMTABLE[0x8] = 0x00030003\n\t\tComponent base address 0x80430000\n\t\tPeripheral ID 0x04004bb9d3\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9d3, Cortex-A53 PMU (Performance Monitor Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x16, Performance Monitor, Processor\n\t\tDev Arch is 0x47702a16, ARM Ltd \"Processor Performance Monitor (PMU) architecture\" rev.0\n\t[L01] ROMTABLE[0xc] = 0x00040003\n\t\tComponent base address 0x80440000\n\t\tPeripheral ID 0x04004bb95d\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x95d, Cortex-A53 ETM (Embedded Trace)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x13, Trace Source, Processor\n\t\tDev Arch is 0x47704a13, ARM Ltd \"Embedded Trace Macrocell (ETM) architecture\" rev.0\n\t[L01] ROMTABLE[0x10] = 0x00110003\n\t\tComponent base address 0x80510000\n\t\tPeripheral ID 0x04004bbd03\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0xd03, Cortex-A53 Debug (Debug Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x15, Debug Logic, Processor\n\t\tDev Arch is 0x47706a15, ARM Ltd \"Processor debug architecture (v8.0-A)\" rev.0\n\t[L01] ROMTABLE[0x14] = 0x00120003\n\t\tComponent base address 0x80520000\n\t\tPeripheral ID 0x04004bb9a8\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9a8, Cortex-A53 CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\t\tDev Arch is 0x47701a14, ARM Ltd \"Cross Trigger Interface (CTI) architecture\" rev.0\n\t[L01] ROMTABLE[0x18] = 0x00130003\n\t\tComponent base address 0x80530000\n\t\tPeripheral ID 0x04004bb9d3\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9d3, Cortex-A53 PMU (Performance Monitor Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x16, Performance Monitor, Processor\n\t\tDev Arch is 0x47702a16, ARM Ltd \"Processor Performance Monitor (PMU) architecture\" rev.0\n\t[L01] ROMTABLE[0x1c] = 0x00140003\n\t\tComponent base address 0x80540000\n\t\tPeripheral ID 0x04004bb95d\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x95d, Cortex-A53 ETM (Embedded Trace)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x13, Trace Source, Processor\n\t\tDev Arch is 0x47704a13, ARM Ltd \"Embedded Trace Macrocell (ETM) architecture\" rev.0\n\t[L01] ROMTABLE[0x20] = 0x00210003\n\t\tComponent base address 0x80610000\n\t\tPeripheral ID 0x04004bbd03\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0xd03, Cortex-A53 Debug (Debug Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x15, Debug Logic, Processor\n\t\tDev Arch is 0x47706a15, ARM Ltd \"Processor debug architecture (v8.0-A)\" rev.0\n\t[L01] ROMTABLE[0x24] = 0x00220003\n\t\tComponent base address 0x80620000\n\t\tPeripheral ID 0x04004bb9a8\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9a8, Cortex-A53 CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\t\tDev Arch is 0x47701a14, ARM Ltd \"Cross Trigger Interface (CTI) architecture\" rev.0\n\t[L01] ROMTABLE[0x28] = 0x00230003\n\t\tComponent base address 0x80630000\n\t\tPeripheral ID 0x04004bb9d3\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9d3, Cortex-A53 PMU (Performance Monitor Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x16, Performance Monitor, Processor\n\t\tDev Arch is 0x47702a16, ARM Ltd \"Processor Performance Monitor (PMU) architecture\" rev.0\n\t[L01] ROMTABLE[0x2c] = 0x00240003\n\t\tComponent base address 0x80640000\n\t\tPeripheral ID 0x04004bb95d\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x95d, Cortex-A53 ETM (Embedded Trace)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x13, Trace Source, Processor\n\t\tDev Arch is 0x47704a13, ARM Ltd \"Embedded Trace Macrocell (ETM) architecture\" rev.0\n\t[L01] ROMTABLE[0x30] = 0x00310003\n\t\tComponent base address 0x80710000\n\t\tPeripheral ID 0x04004bbd03\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0xd03, Cortex-A53 Debug (Debug Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x15, Debug Logic, Processor\n\t\tDev Arch is 0x47706a15, ARM Ltd \"Processor debug architecture (v8.0-A)\" rev.0\n\t[L01] ROMTABLE[0x34] = 0x00320003\n\t\tComponent base address 0x80720000\n\t\tPeripheral ID 0x04004bb9a8\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9a8, Cortex-A53 CTI (Cross Trigger)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x14, Debug Control, Trigger Matrix\n\t\tDev Arch is 0x47701a14, ARM Ltd \"Cross Trigger Interface (CTI) architecture\" rev.0\n\t[L01] ROMTABLE[0x38] = 0x00330003\n\t\tComponent base address 0x80730000\n\t\tPeripheral ID 0x04004bb9d3\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x9d3, Cortex-A53 PMU (Performance Monitor Unit)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x16, Performance Monitor, Processor\n\t\tDev Arch is 0x47702a16, ARM Ltd \"Processor Performance Monitor (PMU) architecture\" rev.0\n\t[L01] ROMTABLE[0x3c] = 0x00340003\n\t\tComponent base address 0x80740000\n\t\tPeripheral ID 0x04004bb95d\n\t\tDesigner is 0x23b, ARM Ltd\n\t\tPart is 0x95d, Cortex-A53 ETM (Embedded Trace)\n\t\tComponent class is 0x9, CoreSight component\n\t\tType is 0x13, Trace Source, Processor\n\t\tDev Arch is 0x47704a13, ARM Ltd \"Embedded Trace Macrocell (ETM) architecture\" rev.0\n\t[L01] ROMTABLE[0x40] = 0x00000000\n\t[L01] \tEnd of ROM table\n\tROMTABLE[0x48] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x4c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x50] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x54] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x58] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x5c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x60] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x64] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x68] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x6c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x70] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x74] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x78] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x7c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x80] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x84] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x88] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x8c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x90] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x94] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x98] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x9c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xa0] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xa4] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xa8] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xac] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xb0] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xb4] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xb8] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xbc] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xc0] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xc4] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xc8] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xcc] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xd0] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xd4] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xd8] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xdc] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xe0] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xe4] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xe8] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xec] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xf0] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xf4] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xf8] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0xfc] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x100] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x104] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x108] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x10c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x110] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x114] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x118] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x11c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x120] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x124] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x128] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x12c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x130] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x134] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x138] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x13c] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x140] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x144] = 0x00000010\n\t\tComponent not present\n\tROMTABLE[0x148] = 0x00000000\n\t\tEnd of ROM table\n",
+      "2": "AP # 0x2\n\t\tAP ID register 0x24760010\n\t\tType is JTAG-AP\n",
+      "3": "ERR: AP # 0x3\n\t\tAP ID register 0x00000000\n\t\tNo AP found at this AP#0x3\n"
+    }
+  },
+  "notes": []
+}

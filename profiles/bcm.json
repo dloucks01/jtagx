@@ -1,0 +1,55 @@
+// Raspberry Pi (Broadcom BCM2xxx, ARM Cortex-A, Linux) — Paradigm A. Build #3, 2026-06-11.
+//
+// auto_match:false — a Pi CANNOT be fingerprinted: its only TAP is the generic ARM DAP (0x4ba00477),
+// indistinguishable from any other lone-ARM-Cortex-A board. So select it explicitly:
+//     python3 tools/board-runner.py --profile bcm
+// (A lone ARM DAP otherwise lands in Tier-2 generic-A, which gives the same DRAM-dump path.)
+//
+// What the Pi yields over JTAG: DRAM dump + secrets + Ghidra + a live MMU-bypass patch. What it does
+// NOT yield: a vendor security-posture register set (the VideoCore GPU is the real root of trust and
+// is not on the ARM JTAG), and boot flash (SD / SPI-EEPROM is VideoCore-owned, not ours over the DAP).
+// HW-UNVALIDATED (no Pi on the bench); paths reuse validated primitives.
+{
+  "schema_version": 1,
+  "name": "Raspberry Pi (BCM2xxx)",
+  "soc": "bcm",
+  "paradigm": "A",
+  "status": "partial",
+  "auto_match": false,
+
+  "match": { "family": "arm", "part_ids": ["0xba00"], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/rpi.cfg",
+  "access_check": "openocd/jtag-access-check.tcl",
+
+  // The only ARM-side security-relevant read is the CoreSight debug-auth status (the rest is VideoCore's).
+  "enumerate": { "script": "openocd/pi-enumerate.tcl", "interpret": false },
+
+  "dump": {
+    // Generic mem-AP DRAM dump. Pi DRAM base 0x0; default 1 GB (raise DUMP_SIZE for 2/4/8 GB models).
+    "dram":  { "script": "openocd/dump-os-ddr.tcl", "addr": "0x00000000", "size": "0x40000000",
+               "sparse": true, "out": "dumps/os-live.bin" },
+    // Boot flash (SD / SPI-EEPROM) is owned by the closed VideoCore GPU — not reachable over ARM JTAG.
+    "flash": null
+  },
+
+  // Debug-enable on a Pi is config.txt / OTP, not a live-writable register — no register reopen lever.
+  "reopen": [],
+
+  // Honest reasons these are absent (BY DESIGN, not "not yet") — shown in the plan's gap list.
+  "absent": {
+    "flash":  "boot flash (SD / SPI-EEPROM) is owned by the closed VideoCore GPU — not on the ARM JTAG",
+    "reopen": "debug-enable is config.txt / OTP, not a live-writable register — no register reopen lever"
+  },
+
+  // Cap-2 live patch: generic AXI-AP physical write. Linux kernel -> virt2phys VA->PA (KASLR'd .text).
+  // For a DATA target in the linear map you can instead use pa_math:linear with kva_lo = PAGE_OFFSET.
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "virt2phys", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "bcm2837.cpu0", "PATCH_AXI": "rpi.axi", "PATCH_DAP": "bcm2837.dap" } },
+
+  "analysis": [
+    { "tool": "tools/dram-secrets.py", "on": "dram" }
+  ],
+
+  "ghidra": "auto"
+}

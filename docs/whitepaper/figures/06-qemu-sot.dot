@@ -1,0 +1,30 @@
+// QEMU as authoritative source of truth — Volume 2 §1.2
+
+digraph QEMUSoT {
+    rankdir=TB;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#FFFFFF"];
+    edge [fontname="Helvetica", fontsize=9];
+
+    label = "QEMU as Authoritative Source of Bit Layouts";
+    labelloc = "t";
+    fontsize = 14;
+
+    QEMU [label="/opt/xilinx/qemu/hw/misc/*.c\n(xilinx_zynqmp_crf.c, crl.c,\n csu_core.c, pmu_global.c, ...)\n\nREG32(JTAG_SEC, 0x38)\nFIELD(JTAG_SEC, SSSS_DAP, 0, 3)\nFIELD(JTAG_SEC, SSSS_PLTAP, 3, 3)\nFIELD(JTAG_SEC, SSSS_PMU, 6, 3)",
+           fillcolor="#FFE0B2", color="#E07B00",
+           fontname="Courier"];
+
+    Gen [label="tools/regenerate-qemu-regs.py\n• Parse REG32 / FIELD macros\n• Emit Tcl dict",
+         fillcolor="#E3F2FD", color="#1976D2"];
+
+    Lib [label="openocd/lib/zynqmp-regs-qemu.tcl\n::QEMU_REGS dict\n602 registers indexed by\nabsolute address",
+         fillcolor="#E8F5E9", color="#43A047"];
+
+    Enum [label="openocd/enumerate.tcl\n\ndump_reg_qemu 0xFFCA0038\n→ bit layout pulled\n   from QEMU dict\n(not hand-typed)",
+          fillcolor="#FFFFFF",
+          fontname="Courier"];
+
+    QEMU -> Gen [label="parse"];
+    Gen -> Lib [label="generate"];
+    Lib -> Enum [label="lookup"];
+}

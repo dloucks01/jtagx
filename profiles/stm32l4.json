@@ -1,0 +1,29 @@
+// STMicro STM32L4 (Cortex-M4) — Paradigm B (Cortex-M). Build "more families" 2026-06-11. auto_match:false -> --profile stm32l4.
+// RDP in FLASH_OPTR[7:0] (0xAA=L0/0xCC=L2).  HW-UNVALIDATED; addresses cited in openocd/cortexm-protect.tcl + docs/25.
+{
+  "schema_version": 1,
+  "name": "STMicro STM32L4 (Cortex-M4)",
+  "soc": "stm32l4",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-stm32l4.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/cortexm-flash.bin",
+               "note": "Internal flash + SRAM via the mem-AP. Constants from the cfg.", "env": {} }
+  },
+  "reopen": [],
+  "absent": { "reopen": "no non-destructive reopen — RDP level 1 clears only via a flash-WIPING mass-erase" },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "stm32l4x.cpu", "PATCH_AXI": "stm32l4x.cpu", "PATCH_DAP": "stm32l4x.dap" } },
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/cortexm-flash-patched.bin" },
+               "note": "Reflash internal flash via OpenOCD's driver. DESTRUCTIVE; part must be RDP-0 / APPROTECT-off." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto"
+}

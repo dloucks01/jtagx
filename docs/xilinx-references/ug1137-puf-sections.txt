@@ -1,0 +1,1401 @@
+         ○   PL BBRAM holds AES key with or without DPA protection enable or obfuscated key
+             programming.
+       • In Zynq UltraScale+ MPSoC:
+         ○   PUF registration and Regeneration.
+
+         ○   PS eFUSE holds:
+
+       Programming AES key and can perform CRC verification of AES key
+
+       • Programming/Reading User fuses
+       • Programming/Reading PPK0/PPK1 sha3 hash
+       • Programming/Reading SPKID
+       • Programming/Reading secure control bits
+         ○   PS BBRAM holds the AES key.
+
+         ○   PL eFUSE holds the AES key, 32 bit and 128 bit user key, RSA hash and some of the feature
+             bits.
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                      www.xilinx.com
+                                                                    Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                   440
+                                                                                    Appendix F: XilSkey Library v4.9
+
+
+
+
+          ○   PL BBRAM holds AES key with or without DPA protection enable or obfuscated key
+              programming.
+
+
+       Board Support Package Settings
+       There are few configurable parameters available under bsp settings, which can be configured
+       during compilation of board support package.
+
+       Configurations For Adding New device
+
+       The below configurations helps in adding new device information not supported by default.
+       Currently, MicroBlaze, Zynq UltraScale and Zynq UltraScale+ MPSoC devices are supported.
+
+                          Parameter Name                                            Description
+       device_id                                            Mention the device ID
+       device_irlen                                         Mention IR length of the device. Default is 0
+       device_numslr                                        Mention number of SLRs available. Range of values can be 1
+                                                            to 4. Default is 1. If no slaves are present and only one
+                                                            master SLR is available then only 1 number of SLR is
+                                                            available.
+       device_series                                        Select the device series. Default is FPGA SERIES ZYNQ. The
+                                                            following device series are
+                                                            supported:XSK_FPGA_SERIES_ZYNQ - Select if the device
+                                                            belongs to the Zynq-7000 family. XSK_FPGA_SERIES_ULTRA -
+                                                            Select if the device belongs to the Zynq UltraScale family.
+                                                            XSK_FPGA_SERIES_ULTRA_PLUS - Select if the device belongs
+                                                            to Zynq UltraScale MPSoC family.
+       device_masterslr                                     Mention the master SLR number. Default is 0.
+
+
+       Configurations For Zynq UltraScale+ MPSoC devices
+
+                          Parameter Name                                            Description
+       override_sysmon_cfg                                  Default = TRUE, library configures sysmon before accessing
+                                                            efuse memory. If you are using the Sysmon library and
+                                                            XilSkey library together, XilSkey overwrites the user defined
+                                                            sysmon configuration by default. When
+                                                            override_sysmon_cfg is set to false, XilSkey expects you to
+                                                            configure the sysmon to read the 3 ADC channels - Supply 1
+                                                            (VPINT), Supply 3 (VPAUX) and LPD Temperature. XilSkey
+                                                            validates the user defined sysmon configuration is correct
+                                                            before performing the eFuse operations.
+
+
+       Note: On Ultrascale and Ultrascale plus devices there can be multiple or single SLRs and among which one
+       can be master and the others are slaves, where SLR 0 is not always the master SLR. Based on master and
+       slave SLR order SLRs in this library are referred with config order index. Master SLR is mentioned with
+       CONFIG ORDER 0, then follows the slaves config order, CONFIG ORDER 1,2 and 3 are for slaves in order.
+       Due to the added support for the SSIT devices, it is recommended to use the updated library with updated
+       examples only for the UltraScale and the UltraScale+ devices.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                     www.xilinx.com
+                                                                             Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                  441
+                                                                          Appendix F: XilSkey Library v4.9
+
+
+
+
+       Hardware Setup
+       This section describes the hardware setup required for programming PL BBRAM or PL eFUSE.
+
+       Hardware setup for Zynq PL
+
+       This section describes the hardware setup required for programming BBRAM or eFUSE of Zynq
+       PL devices. PL eFUSE or PL BBRAM is accessed through PS via MIO pins which are used for
+       communication PL eFUSE or PL BBRAM through JTAG signals, these can be changed depending
+       on the hardware setup. A hardware setup which dedicates four MIO pins for JTAG signals should
+       be used and the MIO pins should be mentioned in application header file (xilskey_input.h). There
+       should be a method to download this example and have the MIO pins connected to JTAG before
+       running this application. You can change the listed pins at your discretion.
+
+       MUX Usage Requirements
+
+       To write the PL eFUSE or PL BBRAM using a driver you must:
+
+       • Use four MIO lines (TCK,TMS,TDO,TDI)
+       • Connect the MIO lines to a JTAG port
+
+       If you want to switch between the external JTAG and JTAG operation driven by the MIOs, you
+       must:
+
+       • Include a MUX between the external JTAG and the JTAG operation driven by the MIOs
+       • Assign a MUX selection PIN
+
+       To rephrase, to select JTAG for PL EFUSE or PL BBRAM writing, you must define the following:
+
+       • The MIOs used for JTAG operations (TCK,TMS,TDI,TDO).
+       • The MIO used for the MUX Select Line.
+       • The Value on the MUX Select line, to select JTAG for PL eFUSE or PL BBRAM writing.
+
+       The following graphic illustrates the correct MUX usage:
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                       www.xilinx.com
+                                                                     Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                    442
+                                                                               Appendix F: XilSkey Library v4.9
+
+
+
+
+                                              Figure 80: MUX Usage
+
+
+
+
+       Note: If you use the Vivado Device Programmer tool to burn PL eFUSEs, there is no need for MUX circuitry
+       or MIO pins.
+
+       Hardware setup for UltraScale or UltraScale+
+
+       This section describes the hardware setup required for programming BBRAM or eFUSE of
+       UltraScale devices. Accessing UltraScale MicroBlaze eFuse is done by using block RAM
+       initialization. UltraScale eFUSE programming is done through MASTER JTAG. Crucial
+       Programming sequence will be taken care by Hardware module. It is mandatory to add Hardware
+       module in the design. Use hardware module's vhd code and instructions provided to add
+       Hardware module in the design.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                            www.xilinx.com
+                                                                          Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                         443
+                                                                            Appendix F: XilSkey Library v4.9
+
+
+
+
+       • You need to add the Master JTAG primitive to design, that is, the MASTER_JTAG_inst
+         instantiation has to be performed and AXI GPIO pins have to be connected to TDO, TDI, TMS
+         and TCK signals of the MASTER_JTAG primitive.
+       • For programming eFUSE, along with master JTAG, hardware module(HWM) has to be added
+         in design and it's signals XSK_EFUSEPL_AXI_GPIO_HWM_READY ,
+         XSK_EFUSEPL_AXI_GPIO_HWM_END and XSK_EFUSEPL_AXI_GPIO_HWM_START, needs
+         to be connected to AXI GPIO pins to communicate with HWM. Hardware module is not
+         mandatory for programming BBRAM. If your design has a HWM, it is not harmful for
+         accessing BBRAM.
+       • All inputs (Master JTAG's TDO and HWM's HWM_READY, HWM_END) and all outputs
+         (Master JTAG TDI, TMS, TCK and HWM's HWM_START) can be connected in one channel (or)
+         inputs in one channel and outputs in other channel.
+       • Some of the outputs of GPIO in one channel and some others in different channels are not
+         supported.
+       • The design should contain AXI BRAM control memory mapped (1MB).
+
+       Note: MASTER_JTAG will disable all other JTAGs.
+
+       For providing inputs of MASTER JTAG signals and HWM signals connected to the GPIO pins and
+       GPIO channels, refer GPIO Pins Used for PL Master JTAG Signal and GPIO Channels sections of
+       the UltraScale User-Configurable PL eFUSE Parameters and UltraScale User-Configurable PL
+       BBRAM Parameters. The procedure for programming BBRAM of eFUSE of UltraScale or
+       UltraScale+ can be referred at UltraScale BBRAM Access Procedure and UltraScale eFUSE
+       Access Procedure.
+
+       Source Files
+
+       The following is a list of eFUSE and BBRAM application project files, folders and macros.
+
+       • xilskey_efuse_example.c: This file contains the main application code. The file helps in the
+         PS/PL structure initialization and writes/reads the PS/PL eFUSE based on the user settings
+         provided in the xilskey_input.h file.
+       • xilskey_input.h: This file ontains all the actions that are supported by the eFUSE library. Using
+         the preprocessor directives given in the file, you can read/write the bits in the PS/PL eFUSE.
+         More explanation of each directive is provided in the following sections. Burning or reading
+         the PS/PL eFUSE bits is based on the values set in the xilskey_input.h file. Also contains GPIO
+         pins and channels connected to MASTER JTAG primitive and hardware module to access
+         Ultrascale eFUSE.
+
+          In this file:
+          ○   specify the 256 bit key to be programmed into BBRAM.
+
+          ○   specify the AES(256 bit) key, User (32 bit and 128 bit) keys and RSA key hash(384 bit) key
+              to be programmed into UltraScale eFUSE.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                         www.xilinx.com
+                                                                       Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                      444
+                                                                                   Appendix F: XilSkey Library v4.9
+
+
+
+
+          ○   XSK_EFUSEPS_DRIVER: Define to enable the writing and reading of PS eFUSE.
+
+          ○   XSK_EFUSEPL_DRIVER: Define to enable the writing of PL eFUSE.
+
+       • xilskey_bbram_example.c: This file contains the example to program a key into BBRAM and
+         verify the key.
+          Note: This algorithm only works when programming and verifying key are both executed in the
+          recommended order.
+
+       • xilskey_efuseps_zynqmp_example.c: This file contains the example code to program the PS
+         eFUSE and read back of eFUSE bits from the cache.
+       • xilskey_efuseps_zynqmp_input.h: This file contains all the inputs supported for eFUSE PS of
+         Zynq UltraScale+ MPSoC. eFUSE bits are programmed based on the inputs from the
+         xilskey_efuseps_zynqmp_input.h file.
+       • xilskey_bbramps_zynqmp_example.c: This file contains the example code to program and
+         verify BBRAM key of Zynq UltraScale+ MPSoC. Default is zero. You can modify this key on
+         top of the file.
+       • xilskey_bbram_ultrascale_example.c: This file contains example code to program and verify
+         BBRAM key of UltraScale.
+          Note: Programming and verification of BBRAM key cannot be done separately.
+
+       • xilskey_bbram_ultrascale_input.h: This file contains all the preprocessor directives you need to
+         provide. In this file, specify BBRAM AES key or Obfuscated AES key to be programmed, DPA
+         protection enable and, GPIO pins and channels connected to MASTER JTAG primitive.
+       • xilskey_puf_registration.c: This file contains all the PUF related code. This example illustrates
+         PUF registration and generating black key and programming eFUSE with PUF helper data,
+         CHash and Auxilary data along with the Black key.
+       • xilskey_puf_registration.h: This file contains all the preprocessor directives based on which
+         read/write the eFUSE bits and Syndrome data generation. More explanation of each directive
+         is provided in the following sections.
+
+        CAUTION! Ensure that you enter the correct information before writing or 'burning' eFUSE bits. Once burned,
+        they cannot be changed. The BBRAM key can be programmed any number of times.
+
+       Note: POR reset is required for the eFUSE values to be recognized.
+
+
+
+
+BBRAM PL API
+       This section provides a linked summary and detailed descriptions of the battery-backed RAM
+       (BBRAM) APIs of Zynq PL and UltraScale devices.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                 www.xilinx.com
+                                                                             Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                              445
+                                                                                  Appendix F: XilSkey Library v4.9
+
+
+
+
+       Example Usage
+
+       • Zynq BBRAM PL example usage:
+             ○   The Zynq BBRAM PL example application should contain the xilskey_bbram_example.c and
+                 xilskey_input.h files.
+             ○   You should provide user configurable parameters in the xilskey_input.h file. For more
+                 information, refer Zynq User-Configurable PL BBRAM Parameters.
+       • UltraScale BBRAM example usage:
+             ○   The UltraScale BBRAM example application should contain the
+                 xilskey_bbram_ultrascale_input.h and xilskey_bbram_ultrascale_example.c files.
+             ○   You should provide user configurable parameters in the xilskey_bbram_ultrascale_input.h
+                 file. For more information, refer UltraScale or UltraScale+ User-
+                 Configurable BBRAM PL Parameters.
+
+       Note: It is assumed that you have set up your hardware prior to working on the example application. For
+       more information, refer Hardware Setup.
+
+       Table 288: Quick Function Reference
+
+                 Type                       Name                                   Arguments
+       int                   XilSKey_Bbram_Program
+                                                                  XilSKey_Bbram * InstancePtr
+
+       int                   XilSKey_Bbram_JTAGServerInit
+                                                                  void
+
+
+
+
+       Functions
+       XilSKey_Bbram_Program
+       This function implements the BBRAM algorithm for programming and verifying key.
+
+       The program and verify will only work together in and in that order.
+
+       Note: This function will program BBRAM of Ultrascale and Zynq as well.
+
+       Prototype
+
+       int XilSKey_Bbram_Program(XilSKey_Bbram *InstancePtr);
+
+
+       Parameters
+
+       The following table lists the XilSKey_Bbram_Program function arguments.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                               www.xilinx.com
+                                                                            Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                            446
+                                                                                     Appendix F: XilSkey Library v4.9
+
+
+
+
+       Table 289: XilSKey_Bbram_Program Arguments
+
+               Type                  Name                                          Description
+       XilSKey_Bbram *       InstancePtr                Pointer to XilSKey_Bbram
+
+
+       Returns
+
+       XilSKey_Bbram_JTAGServerInit
+
+       Prototype
+
+       int XilSKey_Bbram_JTAGServerInit(XilSKey_Bbram *InstancePtr);
+
+
+
+
+Zynq UltraScale+ MPSoC BBRAM PS API
+       This section provides a linked summary and detailed descriptions of the battery-backed RAM
+       (BBRAM) APIs for Zynq UltraScale+ MPSoC devices.
+
+       Example Usage
+
+       • The Zynq UltraScale+ MPSoc example application should contain the
+         xilskey_bbramps_zynqmp_example.c file.
+       • User configurable key can be modified in the same file (xilskey_bbramps_zynqmp_example.c),
+         at the XSK_ZYNQMP_BBRAMPS_AES_KEY macro.
+
+       Table 290: Quick Function Reference
+
+             Type                      Name                                           Arguments
+       u32               XilSKey_ZynqMp_Bbram_Program
+                                                                    u32 * AesKey
+
+       u32               XilSKey_ZynqMp_Bbram_Zeroise
+                                                                    None.
+
+
+
+
+       Functions
+       XilSKey_ZynqMp_Bbram_Program
+       This function implements the BBRAM programming and verifying the key written.
+
+       Program and verification of AES will work only together. CRC of the provided key will be
+       calculated internally and verified after programming.
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                  www.xilinx.com
+                                                                              Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                               447
+                                                                                Appendix F: XilSkey Library v4.9
+
+
+
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_Bbram_Program(u32 *AesKey);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_Bbram_Program function arguments.
+
+       Table 291: XilSKey_ZynqMp_Bbram_Program Arguments
+
+                Type                      Name                               Description
+       u32 *                     AesKey             Pointer to the key which has to be programmed.
+
+
+       Returns
+
+       • Error code from XskZynqMp_Ps_Bbram_ErrorCodes enum if it fails
+       • XST_SUCCESS if programming is done.
+
+       XilSKey_ZynqMp_Bbram_Zeroise
+       This function zeroize's Bbram Key.
+
+       Note: BBRAM key will be zeroized.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_Bbram_Zeroise(void);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_Bbram_Zeroise function arguments.
+
+       Table 292: XilSKey_ZynqMp_Bbram_Zeroise Arguments
+
+                Type                      Name                               Description
+       Commented parameter       None.
+       None. does not exist in
+       function
+       XilSKey_ZynqMp_Bbram_
+       Zeroise.
+
+
+       Returns
+
+       None.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                   www.xilinx.com
+                                                                          Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                448
+                                                                                     Appendix F: XilSkey Library v4.9
+
+
+
+
+Zynq eFUSE PS API
+       This chapter provides a linked summary and detailed descriptions of the Zynq eFUSE PS APIs.
+
+       Example Usage
+
+       • The Zynq eFUSE PS example application should contain the xilskey_efuse_example.c and the
+         xilskey_input.h files.
+       • There is no need of any hardware setup. By default, both the eFUSE PS and PL are enabled in
+         the application. You can comment 'XSK_EFUSEPL_DRIVER' to execute only the PS. For more
+         details, refer Zynq User-Configurable PS eFUSE Parameters.
+
+       Table 293: Quick Function Reference
+
+              Type                        Name                                       Arguments
+       u32                 XilSKey_EfusePs_Write
+                                                                  InstancePtr
+
+       u32                 XilSKey_EfusePs_Read
+                                                                  InstancePtr
+
+       u32                 XilSKey_EfusePs_ReadStatus
+                                                                  XilSKey_EPs * InstancePtr
+                                                                  u32 * StatusBits
+
+
+
+
+       Functions
+       XilSKey_EfusePs_Write
+       PS eFUSE interface functions.
+
+       PS eFUSE interface functions.
+
+       Note: When called, this Initializes the timer, XADC subsystems. Unlocks the PS eFUSE
+       controller.Configures the PS eFUSE controller. Writes the hash and control bits if requested. Programs the
+       PS eFUSE to enable the RSA authentication if requested. Locks the PS eFUSE controller. Returns an error,
+       if the reference clock frequency is not in between 20 and 60 MHz or if the system not in a position to
+       write the requested PS eFUSE bits (because the bits are already written or not allowed to write) or if the
+       temperature and voltage are not within range
+
+       Prototype
+
+       u32 XilSKey_EfusePs_Write(XilSKey_EPs *PsInstancePtr);
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                  www.xilinx.com
+                                                                            Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                               449
+                                                                                   Appendix F: XilSkey Library v4.9
+
+
+
+
+       Parameters
+
+       The following table lists the XilSKey_EfusePs_Write function arguments.
+
+       Table 294: XilSKey_EfusePs_Write Arguments
+
+                Type                    Name                                   Description
+       Commented parameter      InstancePtr           Pointer to the PsEfuseHandle which describes which PS eFUSE bit
+       InstancePtr does not                           should be burned.
+       exist in function
+       XilSKey_EfusePs_Write.
+
+
+       Returns
+
+       • XST_SUCCESS.
+       • In case of error, value is as defined in xilskey_utils.h Error value is a combination of Upper 8 bit
+         value and Lower 8 bit value. For example, 0x8A03 should be checked in error.h as 0x8A00 and
+         0x03. Upper 8 bit value signifies the major error and lower 8 bit values tells more precisely.
+
+       XilSKey_EfusePs_Read
+       This function is used to read the PS eFUSE.
+
+       Note: When called: This API initializes the timer, XADC subsystems. Unlocks the PS eFUSE Controller.
+       Configures the PS eFUSE Controller and enables read-only mode. Reads the PS eFUSE (Hash Value), and
+       enables read-only mode. Locks the PS eFUSE Controller. Returns an error, if the reference clock frequency
+       is not in between 20 and 60MHz. or if unable to unlock PS eFUSE controller or requested address
+       corresponds to restricted bits. or if the temperature and voltage are not within range
+
+       Prototype
+
+       u32 XilSKey_EfusePs_Read(XilSKey_EPs *PsInstancePtr);
+
+
+       Parameters
+
+       The following table lists the XilSKey_EfusePs_Read function arguments.
+
+       Table 295: XilSKey_EfusePs_Read Arguments
+
+                Type                    Name                                   Description
+       Commented parameter      InstancePtr           Pointer to the PsEfuseHandle which describes which PS eFUSE
+       InstancePtr does not                           should be burned.
+       exist in function
+       XilSKey_EfusePs_Read.
+
+
+       Returns
+
+       • XST_SUCCESS no errors occurred.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                   www.xilinx.com
+                                                                             Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                450
+                                                                                      Appendix F: XilSkey Library v4.9
+
+
+
+
+       • In case of error, value is as defined in xilskey_utils.h. Error value is a combination of Upper 8
+         bit value and Lower 8 bit value. For example, 0x8A03 should be checked in error.h as 0x8A00
+         and 0x03. Upper 8 bit value signifies the major error and lower 8 bit values tells more
+         precisely.
+
+       XilSKey_EfusePs_ReadStatus
+       This function is used to read the PS efuse status register.
+
+       Note: This API unlocks the controller and reads the Zynq PS eFUSE status register.
+
+       Prototype
+
+       u32 XilSKey_EfusePs_ReadStatus(XilSKey_EPs *InstancePtr, u32 *StatusBits);
+
+
+       Parameters
+
+       The following table lists the XilSKey_EfusePs_ReadStatus function arguments.
+
+       Table 296: XilSKey_EfusePs_ReadStatus Arguments
+
+                Type                    Name                                      Description
+       XilSKey_EPs *           InstancePtr             Pointer to the PS eFUSE instance.
+       u32 *                   StatusBits              Buffer to store the status register read.
+
+
+       Returns
+
+       • XST_SUCCESS.
+       • XST_FAILURE
+
+
+
+
+Zynq UltraScale+ MPSoC eFUSE PS API
+       This chapter provides a linked summary and detailed descriptions of the Zynq MPSoC UltraScale
+       + eFUSE PS APIs.
+
+       Example Usage
+
+       • For programming eFUSEs other than the PUF, the Zynq UltraScale+ MPSoC example
+         application should contain the xilskey_efuseps_zynqmp_example.c and the
+         xilskey_efuseps_zynqmp_input.h files.
+       • For PUF registration, programming PUF helper data, AUX, chash, and black key, the Zynq
+         UltraScale+ MPSoC example application should contain the xilskey_puf_registration.c and the
+         xilskey_puf_registration.h files.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                   www.xilinx.com
+                                                                                Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                451
+                                                                                Appendix F: XilSkey Library v4.9
+
+
+
+
+       • For more details on the user configurable parameters, refer Zynq UltraScale+ MPSoC
+         User-Configurable PS eFUSE Parameters and Zynq UltraScale+ MPSoC
+         User-Configurable PS PUF Parameters.
+
+       Table 297: Quick Function Reference
+
+              Type                    Name                                        Arguments
+       u32              XilSKey_ZynqMp_EfusePs_CheckAesKey
+                        Crc                                    u32 CrcValue
+
+       u32              XilSKey_ZynqMp_EfusePs_ReadUserFuse
+                                                               u32 * UseFusePtr
+                                                               u8 UserFuse_Num
+                                                               u8 ReadOption
+
+       u32              XilSKey_ZynqMp_EfusePs_ReadPpk0Has
+                        h                                      u32 * Ppk0Hash
+                                                               u8 ReadOption
+
+       u32              XilSKey_ZynqMp_EfusePs_ReadPpk1Has
+                        h                                      u32 * Ppk1Hash
+                                                               u8 ReadOption
+
+       u32              XilSKey_ZynqMp_EfusePs_ReadSpkId
+                                                               u32 * SpkId
+                                                               u8 ReadOption
+
+       void             XilSKey_ZynqMp_EfusePs_ReadDna
+                                                               u32 * DnaRead
+
+       u32              XilSKey_ZynqMp_EfusePs_ReadSecCtrlBi
+                        ts                                     XilSKey_SecCtrlBits * ReadBackSecCtrlBits
+                                                               u8 ReadOption
+
+       u32              XilSKey_ZynqMp_EfusePs_CacheLoad
+                                                               void
+
+       u32              XilSKey_ZynqMp_EfusePs_Write
+                                                               XilSKey_ZynqMpEPs * InstancePtr
+
+       u32              XilSkey_ZynqMpEfuseAccess
+                                                               void
+
+       u32              XilSKey_ZynqMp_EfusePs_WritePufHelpr
+                        Data                                   XilSKey_Puf * InstancePtr
+
+       u32              XilSKey_ZynqMp_EfusePs_ReadPufHelpr
+                        Data                                   u32 * Address
+
+       u32              XilSKey_ZynqMp_EfusePs_WritePufChas
+                        h                                      XilSKey_Puf * InstancePtr
+
+       u32              XilSKey_ZynqMp_EfusePs_ReadPufChas
+                        h                                      u32 * Address
+                                                               u8 ReadOption
+
+       u32              XilSKey_ZynqMp_EfusePs_WritePufAux
+                                                               XilSKey_Puf * InstancePtr
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                www.xilinx.com
+                                                                         Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                             452
+                                                                                      Appendix F: XilSkey Library v4.9
+
+
+
+
+       Table 297: Quick Function Reference (cont'd)
+
+             Type                         Name                                         Arguments
+       u32               XilSKey_ZynqMp_EfusePs_ReadPufAux
+                                                                    u32 * Address
+                                                                    u8 ReadOption
+
+       u32               XilSKey_Write_Puf_EfusePs_SecureBits
+                                                                    XilSKey_Puf_Secure * WriteSecureBits
+
+       u32               XilSKey_Read_Puf_EfusePs_SecureBits
+                                                                    SecureBits
+                                                                    u8 ReadOption
+
+       u32               XilSKey_Puf_Registration
+                                                                    XilSKey_Puf * InstancePtr
+
+       u32               XilSKey_Puf_Regeneration
+                                                                    XilSKey_Puf * InstancePtr
+
+
+
+
+       Functions
+       XilSKey_ZynqMp_EfusePs_CheckAesKeyCrc
+       This function performs the CRC check of AES key.
+
+       Note: For Calculating the CRC of the AES key use the XilSKey_CrcCalculation() function or
+       XilSkey_CrcCalculation_AesKey() function
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_CheckAesKeyCrc(u32 CrcValue);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_CheckAesKeyCrc function
+       arguments.
+
+       Table 298: XilSKey_ZynqMp_EfusePs_CheckAesKeyCrc Arguments
+
+               Type                      Name                                     Description
+       u32                    CrcValue                  A 32 bit CRC value of an expected AES key.
+
+
+       Returns
+
+       • XST_SUCCESS on successful CRC check.
+       • ErrorCode on failure
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                    www.xilinx.com
+                                                                                 Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                 453
+                                                                                    Appendix F: XilSkey Library v4.9
+
+
+
+
+       XilSKey_ZynqMp_EfusePs_ReadUserFuse
+       This function is used to read a user fuse from the eFUSE or cache.
+
+       Note: It is highly recommended to read from eFuse cache. Because reading from efuse may reduce the life
+       of the efuse. And Cache reload is required for obtaining updated values for ReadOption 0.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadUserFuse(u32 *UseFusePtr, u8 UserFuse_Num,
+       u8 ReadOption);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadUserFuse function
+       arguments.
+
+       Table 299: XilSKey_ZynqMp_EfusePs_ReadUserFuse Arguments
+
+                Type                   Name                                     Description
+       u32 *                   UseFusePtr             Pointer to an array which holds the readback user fuse.
+       u8                      UserFuse_Num           A variable which holds the user fuse number. Range is (User fuses:
+                                                      0 to 7)
+       u8                      ReadOption             Indicates whether or not to read from the actual eFUSE array or
+                                                      from the eFUSE cache.
+
+                                                      •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from eFUSE cache
+
+                                                      •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+       Returns
+
+       • XST_SUCCESS on successful read
+       • ErrorCode on failure
+
+       XilSKey_ZynqMp_EfusePs_ReadPpk0Hash
+       This function is used to read the PPK0 hash from an eFUSE or eFUSE cache.
+
+       Note: It is highly recommended to read from eFuse cache. Because reading from efuse may reduce the life
+       of the efuse. And Cache reload is required for obtaining updated values for ReadOption 0.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadPpk0Hash(u32 *Ppk0Hash, u8 ReadOption);
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                    www.xilinx.com
+                                                                             Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                 454
+                                                                                   Appendix F: XilSkey Library v4.9
+
+
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadPpk0Hash function
+       arguments.
+
+       Table 300: XilSKey_ZynqMp_EfusePs_ReadPpk0Hash Arguments
+
+                Type                  Name                                      Description
+       u32 *                   Ppk0Hash               A pointer to an array which holds the readback PPK0 hash.
+       u8                      ReadOption             Indicates whether or not to read from the actual eFUSE array or
+                                                      from the eFUSE cache.
+
+                                                      •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from eFUSE cache
+
+                                                      •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+       Returns
+
+       • XST_SUCCESS on successful read
+       • ErrorCode on failure
+
+       XilSKey_ZynqMp_EfusePs_ReadPpk1Hash
+       This function is used to read the PPK1 hash from eFUSE or cache.
+
+       Note: It is highly recommended to read from eFuse cache. Because reading from efuse may reduce the life
+       of the efuse. And Cache reload is required for obtaining updated values for ReadOption 0.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadPpk1Hash(u32 *Ppk1Hash, u8 ReadOption);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadPpk1Hash function
+       arguments.
+
+       Table 301: XilSKey_ZynqMp_EfusePs_ReadPpk1Hash Arguments
+
+                Type                  Name                                      Description
+       u32 *                   Ppk1Hash               Pointer to an array which holds the readback PPK1 hash.
+       u8                      ReadOption             Indicates whether or not to read from the actual eFUSE array or
+                                                      from the eFUSE cache.
+
+                                                      •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from eFUSE cache
+
+                                                      •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                    www.xilinx.com
+                                                                             Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                 455
+                                                                                     Appendix F: XilSkey Library v4.9
+
+
+
+
+       Returns
+
+       • XST_SUCCESS on successful read
+       • ErrorCode on failure
+
+       XilSKey_ZynqMp_EfusePs_ReadSpkId
+       This function is used to read SPKID from eFUSE or cache based on user's read option.
+
+       Note: It is highly recommended to read from eFuse cache. Because reading from efuse may reduce the life
+       of the efuse. And Cache reload is required for obtaining updated values for ReadOption 0.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadSpkId(u32 *SpkId, u8 ReadOption);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadSpkId function arguments.
+
+       Table 302: XilSKey_ZynqMp_EfusePs_ReadSpkId Arguments
+
+                Type                   Name                                      Description
+       u32 *                   SpkId                  Pointer to a 32 bit variable which holds SPK ID.
+       u8                      ReadOption             Indicates whether or not to read from the actual eFUSE array or
+                                                      from the eFUSE cache.
+
+                                                      •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from eFUSE cache
+
+                                                      •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+       Returns
+
+       • XST_SUCCESS on successful read
+       • ErrorCode on failure
+
+       XilSKey_ZynqMp_EfusePs_ReadDna
+       This function is used to read DNA from eFUSE.
+
+       Prototype
+
+       void XilSKey_ZynqMp_EfusePs_ReadDna(u32 *DnaRead);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadDna function arguments.
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                       www.xilinx.com
+                                                                              Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                    456
+                                                                                    Appendix F: XilSkey Library v4.9
+
+
+
+
+       Table 303: XilSKey_ZynqMp_EfusePs_ReadDna Arguments
+
+                 Type                    Name                                   Description
+       u32 *                   DnaRead                Pointer to an array of 3 x u32 words which holds the readback
+                                                      DNA.
+
+
+       Returns
+
+       None.
+
+       XilSKey_ZynqMp_EfusePs_ReadSecCtrlBits
+       This function is used to read the PS eFUSE secure control bits from cache or eFUSE based on
+       user input provided.
+
+       Note: It is highly recommended to read from eFuse cache. Because reading from efuse may reduce the life
+       of the efuse. And Cache reload is required for obtaining updated values for ReadOption 0.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadSecCtrlBits(XilSKey_SecCtrlBits
+       *ReadBackSecCtrlBits, u8 ReadOption);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadSecCtrlBits function
+       arguments.
+
+       Table 304: XilSKey_ZynqMp_EfusePs_ReadSecCtrlBits Arguments
+
+                 Type                    Name                                   Description
+       XilSKey_SecCtrlBits *   ReadBackSecCtrlBits    Pointer to the XilSKey_SecCtrlBits which holds the read secure
+                                                      control bits.
+       u8                      ReadOption             Indicates whether or not to read from the actual eFUSE array or
+                                                      from the eFUSE cache.
+
+                                                      •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from eFUSE cache
+
+                                                      •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+       Returns
+
+       • XST_SUCCESS if reads successfully
+       • XST_FAILURE if reading is failed
+
+       XilSKey_ZynqMp_EfusePs_CacheLoad
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                     www.xilinx.com
+                                                                              Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                  457
+                                                                                 Appendix F: XilSkey Library v4.9
+
+
+
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_CacheLoad(void);
+
+
+       XilSKey_ZynqMp_EfusePs_Write
+       This function is used to program the PS eFUSE of ZynqMP, based on user inputs.
+
+       Note: After eFUSE programming is complete, the cache is automatically reloaded so all programmed eFUSE
+       bits can be directly read from cache.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_Write(XilSKey_ZynqMpEPs *InstancePtr);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_Write function arguments.
+
+       Table 305: XilSKey_ZynqMp_EfusePs_Write Arguments
+
+               Type                   Name                                    Description
+       XilSKey_ZynqMpEPs *    InstancePtr            Pointer to the XilSKey_ZynqMpEPs.
+
+
+       Returns
+
+       • XST_SUCCESS if programs successfully.
+       • Errorcode on failure
+
+       XilSkey_ZynqMpEfuseAccess
+
+       Prototype
+
+       u32 XilSkey_ZynqMpEfuseAccess(const u32 AddrHigh, const u32 AddrLow);
+
+
+       XilSKey_ZynqMp_EfusePs_WritePufHelprData
+       This function programs the PS eFUSEs with the PUF helper data.
+
+       Note: To generate PufSyndromeData please use XilSKey_Puf_Registration API
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_WritePufHelprData(XilSKey_Puf *InstancePtr);
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                              www.xilinx.com
+                                                                           Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                           458
+                                                                                    Appendix F: XilSkey Library v4.9
+
+
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_WritePufHelprData function
+       arguments.
+
+       Table 306: XilSKey_ZynqMp_EfusePs_WritePufHelprData Arguments
+
+                Type                     Name                                    Description
+       XilSKey_Puf *           InstancePtr            Pointer to the XilSKey_Puf instance.
+
+
+       Returns
+
+       • XST_SUCCESS if programs successfully.
+       • Errorcode on failure
+
+       XilSKey_ZynqMp_EfusePs_ReadPufHelprData
+       This function reads the PUF helper data from eFUSE.
+
+       Note: This function only reads from eFUSE non-volatile memory. There is no option to read from Cache.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadPufHelprData(u32 *Address);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadPufHelprData function
+       arguments.
+
+       Table 307: XilSKey_ZynqMp_EfusePs_ReadPufHelprData Arguments
+
+                Type                     Name                                    Description
+       u32 *                   Address                Pointer to data array which holds the PUF helper data read from
+                                                      eFUSEs.
+
+
+       Returns
+
+       • XST_SUCCESS if reads successfully.
+       • Errorcode on failure.
+
+       XilSKey_ZynqMp_EfusePs_WritePufChash
+       This function programs eFUSE with CHash value.
+
+       Note: To generate the CHash value, please use XilSKey_Puf_Registration function.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                   www.xilinx.com
+                                                                              Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                459
+                                                                                     Appendix F: XilSkey Library v4.9
+
+
+
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_WritePufChash(XilSKey_Puf *InstancePtr);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_WritePufChash function
+       arguments.
+
+       Table 308: XilSKey_ZynqMp_EfusePs_WritePufChash Arguments
+
+                Type                     Name                                     Description
+       XilSKey_Puf *           InstancePtr             Pointer to the XilSKey_Puf instance.
+
+
+       Returns
+
+       • XST_SUCCESS if chash is programmed successfully.
+       • An Error code on failure
+
+       XilSKey_ZynqMp_EfusePs_ReadPufChash
+       This function reads eFUSE PUF CHash data from the eFUSE array or cache based on the user
+       read option.
+
+       Note: Cache reload is required for obtaining updated values for reading from cache..
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadPufChash(u32 *Address, u8 ReadOption);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadPufChash function
+       arguments.
+
+       Table 309: XilSKey_ZynqMp_EfusePs_ReadPufChash Arguments
+
+                Type                     Name                                     Description
+       u32 *                   Address                 Pointer which holds the read back value of the chash.
+       u8                      ReadOption              Indicates whether or not to read from the actual eFUSE array or
+                                                       from the eFUSE cache.
+
+                                                       •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from cache
+
+                                                       •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                     www.xilinx.com
+                                                                               Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                  460
+                                                                                     Appendix F: XilSkey Library v4.9
+
+
+
+
+       Returns
+
+       • XST_SUCCESS if programs successfully.
+       • Errorcode on failure
+
+       XilSKey_ZynqMp_EfusePs_WritePufAux
+       This function programs eFUSE PUF auxiliary data.
+
+       Note: To generate auxiliary data, please use XilSKey_Puf_Registration function.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_WritePufAux(XilSKey_Puf *InstancePtr);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_WritePufAux function arguments.
+
+       Table 310: XilSKey_ZynqMp_EfusePs_WritePufAux Arguments
+
+                Type                   Name                                       Description
+       XilSKey_Puf *           InstancePtr             Pointer to the XilSKey_Puf instance.
+
+
+       Returns
+
+       • XST_SUCCESS if the eFUSE is programmed successfully.
+       • Errorcode on failure
+
+       XilSKey_ZynqMp_EfusePs_ReadPufAux
+       This function reads eFUSE PUF auxiliary data from eFUSE array or cache based on user read
+       option.
+
+       Note: Cache reload is required for obtaining updated values for reading from cache.
+
+       Prototype
+
+       u32 XilSKey_ZynqMp_EfusePs_ReadPufAux(u32 *Address, u8 ReadOption);
+
+
+       Parameters
+
+       The following table lists the XilSKey_ZynqMp_EfusePs_ReadPufAux function arguments.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                  www.xilinx.com
+                                                                               Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                               461
+                                                                                  Appendix F: XilSkey Library v4.9
+
+
+
+
+       Table 311: XilSKey_ZynqMp_EfusePs_ReadPufAux Arguments
+
+                Type                    Name                                  Description
+       u32 *                  Address               Pointer which holds the read back value of PUF's auxiliary data.
+       u8                     ReadOption            Indicates whether or not to read from the actual eFUSE array or
+                                                    from the eFUSE cache.
+
+                                                    •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from cache
+
+                                                    •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+       Returns
+
+       • XST_SUCCESS if PUF auxiliary data is read successfully.
+       • Errorcode on failure
+
+       XilSKey_Write_Puf_EfusePs_SecureBits
+       This function programs the eFUSE PUF secure bits.
+
+       Prototype
+
+       u32 XilSKey_Write_Puf_EfusePs_SecureBits(XilSKey_Puf_Secure
+       *WriteSecureBits);
+
+
+       Parameters
+
+       The following table lists the XilSKey_Write_Puf_EfusePs_SecureBits function
+       arguments.
+
+       Table 312: XilSKey_Write_Puf_EfusePs_SecureBits Arguments
+
+                Type                    Name                                  Description
+       XilSKey_Puf_Secure *   WriteSecureBits       Pointer to the XilSKey_Puf_Secure structure
+
+
+       Returns
+
+       • XST_SUCCESS if eFUSE PUF secure bits are programmed successfully.
+       • Errorcode on failure.
+
+       XilSKey_Read_Puf_EfusePs_SecureBits
+       This function is used to read the PS eFUSE PUF secure bits from cache or from eFUSE array.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                   www.xilinx.com
+                                                                            Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                462
+                                                                                    Appendix F: XilSkey Library v4.9
+
+
+
+
+       Prototype
+
+       u32 XilSKey_Read_Puf_EfusePs_SecureBits(XilSKey_Puf_Secure *SecureBitsRead,
+       u8 ReadOption);
+
+
+       Parameters
+
+       The following table lists the XilSKey_Read_Puf_EfusePs_SecureBits function
+       arguments.
+
+       Table 313: XilSKey_Read_Puf_EfusePs_SecureBits Arguments
+
+                Type                       Name                                  Description
+       Commented parameter         SecureBits         Pointer to the XilSKey_Puf_Secure structure which holds the read
+       SecureBits does not exist                      eFUSE secure bits from the PUF.
+       in function
+       XilSKey_Read_Puf_EfuseP
+       s_SecureBits.
+       u8                          ReadOption         Indicates whether or not to read from the actual eFUSE array or
+                                                      from the eFUSE cache.
+
+                                                      •   0(XSK_EFUSEPS_READ_FROM_CACHE) Reads from cache
+
+                                                      •   1(XSK_EFUSEPS_READ_FROM_EFUSE) Reads from eFUSE array
+
+
+
+       Returns
+
+       • XST_SUCCESS if reads successfully.
+       • Errorcode on failure.
+
+       XilSKey_Puf_Registration
+       This function performs registration of PUF which generates a new KEK and associated CHash,
+       Auxiliary and PUF-syndrome data which are unique for each silicon.
+
+       Note: With the help of generated PUF syndrome data, it will be possible to re-generate same PUF KEK.
+
+       Prototype
+
+       u32 XilSKey_Puf_Registration(XilSKey_Puf *InstancePtr);
+
+
+       Parameters
+
+       The following table lists the XilSKey_Puf_Registration function arguments.
+
+       Table 314: XilSKey_Puf_Registration Arguments
+
+                Type                       Name                                  Description
+       XilSKey_Puf *               InstancePtr        Pointer to the XilSKey_Puf instance.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                    www.xilinx.com
+                                                                              Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                                 463
+                                                                                   Appendix F: XilSkey Library v4.9
+
+
+
+
+       Returns
+
+       • XST_SUCCESS if registration/re-registration was successful.
+       • ERROR if registration was unsuccessful
+
+       XilSKey_Puf_Regeneration
+       This function regenerates the PUF data so that the PUF's output can be used as the key source
+       to the AES-GCM hardware cryptographic engine.
+
+       Prototype
+
+       u32 XilSKey_Puf_Regeneration(XilSKey_Puf *InstancePtr);
+
+
+       Parameters
+
+       The following table lists the XilSKey_Puf_Regeneration function arguments.
+
+       Table 315: XilSKey_Puf_Regeneration Arguments
+
+                Type                Name                                       Description
+       XilSKey_Puf *        InstancePtr             is a pointer to the XilSKey_Puf instance.
+
+
+       Returns
+
+       • XST_SUCCESS if regeneration was successful.
+       • ERROR if regeneration was unsuccessful
+
+
+
+
+eFUSE PL API
+       This chapter provides a linked summary and detailed descriptions of the eFUSE APIs of Zynq
+       eFUSE PL and UltraScale eFUSE.
+
+       Example Usage
+
+       • The Zynq eFUSE PL and UltraScale example application should contain the
+         xilskey_efuse_example.c and the xilskey_input.h files.
+       • By default, both the eFUSE PS and PL are enabled in the application. You can comment
+         'XSK_EFUSEPL_DRIVER' to execute only the PS.
+       • For UltraScale, it is mandatory to comment `XSK_EFUSEPS_DRIVER else the example will
+         generate an error.
+
+
+
+
+UG1137 ( 2020.1) September 4, 2020                                                                www.xilinx.com
+                                                                             Send Feedback
+Zynq UltraScale+ MPSoC: Software Developers Guide                                                             464
+                                                                                        Appendix F: XilSkey Library v4.9
+
+
+

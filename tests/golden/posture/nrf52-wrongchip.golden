@@ -1,0 +1,6 @@
+
+================================================================
+ CORTEX-M SECURITY POSTURE  (family: nrf-approtect)
+================================================================
+ (1) IDENTITY (FICR)
+ SANITY ABORT: FICR.INFO.PART=0x12345678 is not nRF52/53 (expected 0x52xxx/0x53xxx). Wrong board/base.

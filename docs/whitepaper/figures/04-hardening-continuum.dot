@@ -1,0 +1,31 @@
+// Hardening continuum — Volume 1 §2.3
+// Shows the position of a device on the dev → production hardening line
+
+digraph Continuum {
+    rankdir=LR;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled"];
+    edge [fontname="Helvetica", fontsize=9];
+
+    label = "Device Hardening Continuum";
+    labelloc = "t";
+    fontsize = 14;
+
+    Factory [label="Factory\nfresh\n\nNo fuses blown\nFull JTAG access\nEvery gate open",
+             fillcolor="#FFCDD2", color="#C62828"];
+
+    DevKit [label="Dev kit\ndefault\n\nMaybe some fuses blown\nBut SEC_LOCK = 0\n(All fuses still mutable)",
+            fillcolor="#FFF9C4", color="#F9A825"];
+
+    Partial [label="Partial\nhardening\n\nRSA_EN set,\nSEC_LOCK still open\n(some images checked)",
+             fillcolor="#FFE0B2", color="#E65100"];
+
+    Hardened [label="Production\nhardened\n\nRSA_EN + SEC_LOCK\n+ JTAG_DIS\nIdeal production",
+              fillcolor="#C8E6C9", color="#2E7D32"];
+
+    ZCU102 [label="ZCU102\n(this paper's reference)",
+            shape=note, fillcolor="#FFFFFF"];
+
+    Factory -> DevKit -> Partial -> Hardened [color="#666666"];
+    DevKit -> ZCU102 [style=dashed, dir=none, color="#888888"];
+}

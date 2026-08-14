@@ -1,0 +1,52 @@
+// JTAG chain composition — Volume 1 §3.4
+// Renders: PS-TAP + ARM DAP-M and the Access Ports under the DAP
+
+digraph JTAGChain {
+    rankdir=LR;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled"];
+    edge [fontname="Helvetica", fontsize=9];
+
+    label = "ZynqMP JTAG Chain Composition";
+    labelloc = "t";
+    fontsize = 14;
+
+    TDI [label="TDI →", shape=plaintext, fillcolor=none];
+    TDO [label="→ TDO", shape=plaintext, fillcolor=none];
+
+    PS_TAP [label="PS-TAP (Xilinx)\nIRLen 12\nIDCODE 0x24738093\n(XCZU9 example)",
+            fillcolor="#FFE0B2", color="#E07B00"];
+
+    ARM_DAP [label="ARM CoreSight\nDAP-M\nIRLen 4\nIDCODE 0x5BA00477",
+             fillcolor="#E3F2FD", color="#1976D2"];
+
+    // === Access Ports under the DAP ===
+    subgraph cluster_aps {
+        label = "Access Ports (visible via dap apreg)";
+        labeljust = "l";
+        style = "rounded,filled";
+        fillcolor = "#F5F5F5";
+        color = "#9E9E9E";
+        fontcolor = "#424242";
+
+        AP0 [label="AP 0: MEM-AP / APB2\n→ CoreSight debug regs",
+             fillcolor="#FFFFFF"];
+        AP1 [label="AP 1: MEM-AP / APB2\n→ CoreSight debug regs",
+             fillcolor="#FFFFFF"];
+        AP2 [label="AP 2: MEM-AP / AXI3/AXI4\n→ DDR, OCM, peripherals",
+             fillcolor="#FFFFFF"];
+    }
+
+    PS_TAP_PRIV [label="PS-TAP private ops\n• BSCAN\n• JTAG_CTRL\n• eFUSE access\n  (gated)",
+                 fillcolor="#FFFFFF",
+                 shape=note];
+
+    TDI -> PS_TAP;
+    PS_TAP -> ARM_DAP;
+    ARM_DAP -> TDO;
+
+    PS_TAP -> PS_TAP_PRIV [style=dotted];
+    ARM_DAP -> AP0 [style=dotted];
+    ARM_DAP -> AP1 [style=dotted];
+    ARM_DAP -> AP2 [style=dotted];
+}

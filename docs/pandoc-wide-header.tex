@@ -1,0 +1,10 @@
+% Wrap long code/verbatim lines (the hexdump rows) instead of overflowing the page.
+\usepackage{fvextra}
+\RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere,fontsize=\scriptsize}
+% Smaller font inside the wide attribute tables so they fit.
+\usepackage{etoolbox}
+\AtBeginEnvironment{longtable}{\footnotesize}
+% DejaVu Serif lacks U+2605 (★); render it (and a few symbols) from DejaVu Sans.
+\usepackage{newunicodechar}
+\newfontfamily{\symbolfont}{DejaVu Sans}
+\newunicodechar{★}{{\symbolfont ★}}

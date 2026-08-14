@@ -1,0 +1,42 @@
+// Generic RISC-V — Paradigm E. Build #3, 2026-06-12. --profile riscv. Memory read via the hart
+// (no ADIv5 mem-AP). DRAM dump + analysis; patch is ADIv5-specific so omitted. HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "Generic RISC-V (SiFive/Linux)",
+  "soc": "riscv",
+  "paradigm": "E",
+  "status": "partial",
+  "auto_match": false,
+  "match": {
+    "family": "riscv",
+    "part_ids": [],
+    "min_taps": 1
+  },
+  "openocd_cfg": "openocd/riscv.cfg",
+  "access_check": null,
+  "enumerate": null,
+  "dump": {
+    "dram": {
+      "script": "openocd/dump-os-ddr.tcl",
+      "addr": "0x80000000",
+      "size": "0x10000000",
+      "sparse": true,
+      "out": "dumps/os-live.bin"
+    },
+    "flash": null
+  },
+  "reopen": [],
+  "absent": {
+    "enumerate": "RISC-V debug-auth is the dmcontrol/authdata path \u2014 not characterized here",
+    "flash": "boot media is board-specific (SD/SPI); not wired \u2014 DRAM is the JTAG value",
+    "reopen": "no register reopen lever characterized for RISC-V"
+  },
+  "patch": null,
+  "analysis": [
+    {
+      "tool": "tools/dram-secrets.py",
+      "on": "dram"
+    }
+  ],
+  "ghidra": "auto"
+}

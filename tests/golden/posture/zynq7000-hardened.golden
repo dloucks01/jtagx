@@ -1,0 +1,42 @@
+
+================================================================
+ ZYNQ-7000 SECURITY POSTURE   (UG585 v1.12.2 Appendix B)
+ mem-AP: uscale.axi
+================================================================
+ devcfg: CTRL=0x0c007e87 LOCK=0x0000000f STATUS=0x4000082c MCTRL=0x3c000000
+----------------------------------------------------------------
+ (1) IDENTITY
+   PSS_IDCODE               Zynq-7000  device=7z020 (code 0x07)  IDCODE rev=1
+   Silicon version (PS_VERSION) 3.1 (code 3)
+ (2) BOOT
+   Boot device (BOOT_MODE)  Quad-SPI (0x1); PLL enabled; JTAG chain cascade
+   Last reset cause         POR
+   BootROM error code       0x0005  <- NON-ZERO (boot fault / lockdown)
+ (3) SECURE BOOT & eFUSE
+   Booted securely (SEC_EN) YES — this boot was authenticated/encrypted
+   eFuse SECURE_EN          BLOWN — secure boot is ENFORCED in hardware (HARDENED)
+   eFuse JTAG_DIS           not blown — JTAG/DAP allowed
+   eFuse SW_RESERVE         BLOWN — BBRAM AES key disabled (eFuse key forced)
+   Secure lockdown          clear
+   DEVCI illegal-access     clear
+ (4) DEBUG / DAP
+   ARM DAP (DAP_EN)         ENABLED (111)
+   Invasive (DBGEN)         disabled
+   Non-invasive (NIDEN)     disabled
+   Secure-inv (SPIDEN)      disabled
+   Secure-non-inv (SPNIDEN) disabled
+   JTAG scan chain          enabled
+   Debug lock (LOCK.DBG)    LOCKED — CTRL(debug) frozen until POR (no register reopen)
+ (5) CRYPTO
+   PL AES engine (AES_EN)   ON (111)
+   AES key source (FUSE)    eFuse key
+   SEU lockdown (SEU_EN)    off
+ (6) CONFIG LOCK & TRUSTZONE
+   SLCR write-protect       LOCKED
+   APU CFGSDISABLE          SET — sys-ctrl + GIC writes locked (POR-clear)
+   APU CP15SDISABLE         SET — CP15 writes locked per-core (POR-clear)
+   DMAC TrustZone (TZ_DMA_NS) NON-SECURE
+   DMAC peripheral TZ       TZ_DMA_PERIPH_NS = 0x0 (per-channel NS bits)
+----------------------------------------------------------------
+ VERDICT: HARDENING PRESENT — see the ON/BLOWN/LOCKED lines + the reopen lever
+================================================================

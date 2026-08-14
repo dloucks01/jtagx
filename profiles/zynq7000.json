@@ -1,0 +1,56 @@
+// Zynq-7000 (XC7Z) — Paradigm A: dual Cortex-A9 (32-bit ARMv7-A) + FPGA. Built 2026-06-11 (build #2).
+// status:"partial" — recognized at Tier 1 with a full capability set: pinned cfg, generic DRAM dump,
+// QSPI flash dump (LQSPI linear window), a REAL devcfg/SLCR security-posture checklist, a devcfg.CTRL
+// reopen lever, and Cap-2 live patch (A9 target names + virt2phys). All bit semantics transcribed from
+// UG585 v1.12.2 (references/pdf/ug585-zynq7000-trm.pdf). REMAINING before "complete": (a) HW VALIDATION
+// on a real Zynq-7000 (nothing here has touched Zynq-7000 silicon); (b) >32MB / IO-mode flash. Kept
+// "partial" until (a). Paths reuse validated primitives; confirm on first contact.
+{
+  "schema_version": 1,
+  "name": "Zynq-7000 (XC7Z)",
+  "soc": "zynq7000",
+  "paradigm": "A",
+  "status": "partial",
+
+  "match": {
+    "family": "zynq7",
+    "part_ids": ["0x3722", "0x3727", "0x372c", "0x372f", "0x3733", "0x3736"],
+    "min_taps": 2
+  },
+
+  "openocd_cfg": "openocd/zynq7000.cfg",
+  "access_check": "openocd/jtag-access-check.tcl",
+
+  // Security-posture checklist (devcfg.CTRL/LOCK + slcr.BOOT_MODE, decoded per UG585) — own output, no interpret.py.
+  "enumerate": { "script": "openocd/zynq7000-enumerate.tcl", "interpret": false },
+
+  "dump": {
+    // Generic mem-AP DRAM dump; Zynq-7000 DDR base 0x00000000, 1 GB max on most parts.
+    "dram":  { "script": "openocd/dump-os-ddr.tcl", "addr": "0x00000000", "size": "0x40000000",
+               "sparse": true, "out": "dumps/os-live.bin" },
+    // Flash via the LQSPI linear window @0xFC000000 (reuses dump_memory). 32 MB linear-window limit.
+    "flash": { "script": "openocd/zynq7000-flash.tcl", "out": "dumps/zynq7000-flash.bin",
+               "note": "QSPI via the LQSPI linear window @0xFC000000 (32 MB max; needs LQSPI configured / QSPI boot).",
+               "env": { "FLASH_SIZE": "0x2000000", "FLASH_OUT": "dumps/zynq7000-flash.bin" } }
+  },
+
+  // Reopen lever: write devcfg.CTRL |= 0x7F (DAP_EN=111 + DBGEN/NIDEN/SPIDEN/SPNIDEN) — works unless
+  // devcfg.LOCK[0] (DBG lock) froze them (POR-only). Read-back diagnoses software-reopen vs locked.
+  "reopen": ["openocd/zynq7000-reopen-debug.tcl"],
+
+  // Cap-2 live patch: generic AXI-AP physical write. A9 target names + virt2phys VA->PA (ARMv7, no fixed linear map).
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "virt2phys", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "zynq.cpu0", "PATCH_AXI": "zynq.axi", "PATCH_DAP": "zynq.dap" } },
+
+  "reflash": { "repack": true,
+               "note": "Patch+repack the dumped boot image (repack-bootimage.py — same bootgen format as ZynqMP), then write it to the SD card's BOOT partition or via U-Boot 'sf write'. (The LQSPI window is read-only; JTAG-direct QSPI write isn't implemented.)" },
+
+  // parse-bootimage.py is deliberately NOT here: it decodes the ZynqMP bootgen PHT + runs zynqmp_rules;
+  // Zynq-7000 shares the BH magic (0xAA995566/XLNX) so it would parse but MISINTERPRET the different
+  // partition layout. dram-secrets + the auto ghidra-loadspec step are format-agnostic and apply.
+  "analysis": [
+    { "tool": "tools/dram-secrets.py", "on": "dram"  }
+  ],
+
+  "ghidra": "auto"
+}

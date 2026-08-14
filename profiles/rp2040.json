@@ -1,0 +1,34 @@
+// Raspberry Pi RP2040 (dual Cortex-M0+) — Paradigm B. Build #5, 2026-06-11.
+// auto_match:false — select with --profile rp2040. No on-chip readout protection: flash is EXTERNAL
+// QSPI, memory-mapped at XIP 0x10000000, readable if not disabled. The chip's bootrom is open.
+// HW-UNVALIDATED (no board on the bench).
+{
+  "schema_version": 1,
+  "name": "Raspberry Pi RP2040 (Cortex-M0+)",
+  "soc": "rp2040",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-rp2040.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/cortexm-flash.bin",
+               "note": "External QSPI flash via the XIP window (0x10000000) + SRAM. Constants from the cfg.", "env": {} }
+  },
+
+  "reopen": [],
+  "absent": { "reopen": "n/a — no on-chip readout protection; the EXTERNAL QSPI flash (XIP) is the only gate" },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "rp2040.core0", "PATCH_AXI": "rp2040.core0", "PATCH_DAP": "rp2040.dap0" } },
+
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/cortexm-flash-patched.bin" },
+               "note": "Reflash internal flash via OpenOCD's driver. DESTRUCTIVE; part must be RDP-0 / APPROTECT-off." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto"
+}

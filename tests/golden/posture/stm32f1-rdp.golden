@@ -1,0 +1,13 @@
+
+================================================================
+ CORTEX-M SECURITY POSTURE  (family: stm32f1)
+================================================================
+ (1) IDENTITY
+   DBGMCU_IDCODE          DEV_ID=0x414 (STM32high-density)  REV_ID=0x2003
+   Unique device ID       00000000-00000000-00000000
+   Flash size             512 KB
+ (2) READOUT PROTECTION
+   RDPRT (FLASH_OBR bit 1) 1 -> READ-PROTECTED (unlock = mass-erase WIPE)
+================================================================
+ NOTE: reading any of the above proves the AHB-AP is OPEN -> internal flash is dumpable now.
+================================================================

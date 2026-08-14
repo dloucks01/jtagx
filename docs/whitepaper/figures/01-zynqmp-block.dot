@@ -1,0 +1,69 @@
+// ZynqMP block diagram — Volume 1 §3.1
+// Vertical layout with LPD/FPD/PL as horizontal bands
+
+digraph ZynqMP {
+    rankdir=TB;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled"];
+    edge [fontname="Helvetica", fontsize=9, color="#666666"];
+    compound=true;
+    splines=line;
+
+    label = "Zynq UltraScale+ MPSoC — Subsystem Overview";
+    labelloc = "t";
+    fontsize = 14;
+
+    // === LPD (Low-Power Domain) ===
+    subgraph cluster_lpd {
+        label = "LPD — Low-Power Domain (always on)";
+        labeljust = "l";
+        style = "rounded,filled";
+        fillcolor = "#E8F4FD";
+        color = "#3A8DDE";
+        fontcolor = "#1B5BA8";
+
+        RPU  [label="RPU\nDual ARM Cortex-R5\nTCM 0/1", fillcolor="white"];
+        PMU  [label="PMU\nMicroBlaze (3× redundant)\nPower/reset, IPI mailboxes", fillcolor="white"];
+        CSU  [label="CSU\nBootROM, AES/RSA/SHA-3 HW,\neFUSE controller, BBRAM",
+              fillcolor="#FFE0B2", color="#E07B00", style="rounded,filled,bold"];
+        OCM  [label="OCM\n4 × 64 KB SRAM\n@ 0xFFFC0000", fillcolor="white"];
+        LPD_PERIPH [label="LPD peripherals\nUART, I2C, SPI, QSPI,\nSDIO, USB, GEM, CAN, GPIO", fillcolor="white"];
+        {rank=same; RPU; PMU; CSU;}
+        {rank=same; OCM; LPD_PERIPH;}
+    }
+
+    // === FPD (Full-Power Domain) ===
+    subgraph cluster_fpd {
+        label = "FPD — Full-Power Domain (gateable)";
+        labeljust = "l";
+        style = "rounded,filled";
+        fillcolor = "#FFF4E6";
+        color = "#E69500";
+        fontcolor = "#A86600";
+
+        APU  [label="APU\nARM Cortex-A53 × 4 (AArch64)\nL1/L2 caches, GIC v2",
+              fillcolor="white", style="rounded,filled,bold"];
+        DDR  [label="DDR Controller", fillcolor="white"];
+        GPU  [label="GPU\nMali-400 MP2", fillcolor="white"];
+        VCU  [label="VCU\nH.264/H.265\n(EV variants only)",
+              fillcolor="#F0F0F0", style="rounded,filled,dashed"];
+        {rank=same; APU; DDR; GPU; VCU;}
+    }
+
+    // === PL ===
+    subgraph cluster_pl {
+        label = "PL — Programmable Logic";
+        labeljust = "l";
+        style = "rounded,filled";
+        fillcolor = "#E8F5E9";
+        color = "#43A047";
+        fontcolor = "#2E7D32";
+
+        PL [label="FPGA fabric (user bitstream)\nOptional transceivers: PCIe / SATA / USB3 / DisplayPort\nOptional: RF data converters (RFSoC DR parts)",
+            fillcolor="white"];
+    }
+
+    // === Inter-cluster edges (just the conceptual flow) ===
+    CSU -> APU [ltail=cluster_lpd, lhead=cluster_fpd, label="boot + secure config"];
+    APU -> PL [ltail=cluster_fpd, lhead=cluster_pl, label="AXI bus", dir=both];
+}

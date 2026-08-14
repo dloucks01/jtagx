@@ -1,0 +1,47 @@
+// Boot flow — Volume 1 §3.3
+// Renders the boot path with the JTAG-idle / non-JTAG branches
+
+digraph BootFlow {
+    rankdir=TB;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#FFFFFF"];
+    edge [fontname="Helvetica", fontsize=9];
+
+    label = "ZynqMP Boot Flow";
+    labelloc = "t";
+    fontsize = 14;
+
+    POR  [label="PS_POR_B released", shape=ellipse, fillcolor="#FFE0B2", color="#E07B00"];
+
+    BootROM [label="CSU BootROM (always runs)\n• Reads SW6 boot-mode pins\n• Initializes PMU\n• Loads FSBL if non-JTAG boot",
+             fillcolor="#FFE0B2", color="#E07B00"];
+
+    Branch [label="Boot mode?", shape=diamond, fillcolor="#FFF9C4"];
+
+    JTAGidle [label="JTAG idle\n• APU cores held in reset\n• No FSBL loaded\n• Cleanest research baseline",
+              fillcolor="#E8F5E9", color="#43A047"];
+
+    FSBLload [label="FSBL loaded from boot media\n(typically OCM @ 0xFFFC0000)\nRuns on A53 core 0",
+              fillcolor="#E3F2FD", color="#1976D2"];
+
+    PMUfw [label="FSBL loads PMU firmware,\ninitializes DDR",
+           fillcolor="#E3F2FD"];
+
+    ATFload [label="ATF (BL31) loads\nUsually @ 0xFFFEA000 in OCM",
+             fillcolor="#E3F2FD"];
+
+    Uboot [label="U-Boot loads\n@ 0x08000000 in DDR",
+           fillcolor="#E3F2FD"];
+
+    Linux [label="Linux kernel +\ninitramfs/rootfs\n@ 0x00200000 / 0x04000000",
+           fillcolor="#E3F2FD"];
+
+    POR -> BootROM;
+    BootROM -> Branch;
+    Branch -> JTAGidle [label="JTAG"];
+    Branch -> FSBLload [label="QSPI / SD / eMMC / USB"];
+    FSBLload -> PMUfw;
+    PMUfw -> ATFload;
+    ATFload -> Uboot;
+    Uboot -> Linux;
+}

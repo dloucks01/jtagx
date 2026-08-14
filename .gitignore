@@ -1,0 +1,19 @@
+# Local tooling / agent artifacts — never commit
+.claude/
+CLAUDE.md
+
+# Copyright-sensitive vendor material — do not redistribute on a public repo
+# references/pdf: AMD/Xilinx copyrighted PDFs (UG1085, UG1283, …)
+# dumps: silicon dumps incl. vendor BootROM/PMU firmware
+references/pdf/
+dumps/
+
+# Heavy / regenerable — kept out of the repo
+# _archive: superseded scripts, old captures, retracted PSIRT package
+# dist: generated engagement kit (rebuild via make-standalone-package.sh)
+_archive/
+dist/
+
+# OS / editor cruft
+.DS_Store
+*.swp

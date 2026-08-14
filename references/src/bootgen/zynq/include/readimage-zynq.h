@@ -1,0 +1,78 @@
+/******************************************************************************
+* Copyright 2015-2022 Xilinx, Inc.
+* Copyright 2022-2023 Advanced Micro Devices, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+******************************************************************************/
+
+#pragma once
+
+#ifndef _READIMAGE_ZYNQ_H_
+#define _READIMAGE_ZYNQ_H_
+
+
+/*
+-------------------------------------------------------------------------------
+***********************************************   H E A D E R   F I L E S   ***
+-------------------------------------------------------------------------------
+*/
+
+#include "readimage.h"
+#include "bootheader-zynq.h"
+#include "imageheadertable-zynq.h"
+#include "partitionheadertable-zynq.h"
+#include "authentication-zynq.h"
+
+/*
+-------------------------------------------------------------------------------
+*********************************************************   C L A S S E S   ***
+-------------------------------------------------------------------------------
+*/
+/******************************************************************************/
+class ZynqReadImage : public ReadImage
+{
+public:
+    ZynqReadImage(std::string filename) : ReadImage(filename)
+    {
+        bH = NULL;
+        iHT = NULL;
+        iH = NULL;
+        pHT = NULL;
+        iHs.clear();
+        pHTs.clear();
+    }
+    ~ZynqReadImage();
+
+    void ReadBinaryFile(DumpOption::Type dump = DumpOption::NONE, std::string path = "");
+    void ReadHeaderTableDetails();
+    void ReadPartitions();
+    void DisplayBootHeader(void);
+    void DisplayImageHeaderTable(void);
+    void DisplayImageHeaders(void);
+    void DisplayPartitionHeaderTable(void);
+    void DisplayAuthenicationCertificates(void);
+    void DisplayACFields(uint8_t* rsa_ac, Authentication::Type auth_type);
+    void DisplayBhAttributes(uint32_t value);
+    void DisplayPhtAttributes(uint32_t value);
+    void DisplayBootVectors(void);
+    void DumpPartitions(uint8_t* buffer, uint32_t length, std::string name);
+
+protected:
+    std::unique_ptr<ZynqBootHeaderStructure> bH;
+    std::unique_ptr<ZynqImageHeaderTableStructure> iHT;
+    std::unique_ptr<ZynqImageHeaderStructure> iH;
+    std::unique_ptr<ZynqPartitionHeaderTableStructure> pHT;
+    std::list<std::unique_ptr<ZynqImageHeaderStructure>> iHs;
+    std::list<std::unique_ptr<ZynqPartitionHeaderTableStructure>> pHTs;
+};
+#endif

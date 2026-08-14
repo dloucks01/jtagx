@@ -1,0 +1,42 @@
+// Espressif ESP32 (Xtensa) — Paradigm C. Build #3, 2026-06-12. --profile esp32. Stock OpenOCD has the
+// xtensa target; JTAG gives RAM + debug. Flash + eFuse posture = esptool.py / espefuse.py (Espressif). HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "Espressif ESP32 (Xtensa LX6)",
+  "soc": "esp32",
+  "paradigm": "C",
+  "status": "partial",
+  "auto_match": false,
+  "match": {
+    "family": "xtensa",
+    "part_ids": [],
+    "min_taps": 1
+  },
+  "openocd_cfg": "openocd/esp32.cfg",
+  "access_check": null,
+  "enumerate": null,
+  "dump": {
+    "dram": {
+      "script": "openocd/dump-os-ddr.tcl",
+      "addr": "0x3FFB0000",
+      "size": "0x50000",
+      "sparse": false,
+      "out": "dumps/esp32-ram.bin"
+    },
+    "flash": null
+  },
+  "reopen": [],
+  "absent": {
+    "enumerate": "secure-boot / flash-encryption posture is in eFuses \u2014 read with espefuse.py 'summary' (Espressif tool)",
+    "flash": "external SPI flash \u2014 dump with esptool.py 'read_flash 0 0x400000 flash.bin' (Espressif tool); the JTAG path gives RAM + debug",
+    "reopen": "JTAG-disable / secure-boot are eFuses \u2014 no live reopen"
+  },
+  "patch": null,
+  "analysis": [
+    {
+      "tool": "tools/dram-secrets.py",
+      "on": "dram"
+    }
+  ],
+  "ghidra": "auto"
+}

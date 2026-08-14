@@ -1,0 +1,43 @@
+// Zynq UltraScale+ (ZynqMP) — the reference Tier-1 profile (the rig's home platform).
+// Paradigm A: ARM Cortex-A + MMU + external DRAM. Everything is implemented and HW-validated.
+{
+  "schema_version": 1,
+  "name": "Zynq UltraScale+ (ZynqMP)",
+  "soc": "zynqmp",
+  "paradigm": "A",
+  "status": "complete",
+
+  "match": {
+    "family": "zynqmp",
+    "part_ids": [],
+    "min_taps": 2
+  },
+
+  "openocd_cfg": "openocd/zcu102.cfg",
+  "access_check": "openocd/jtag-access-check.tcl",
+  "enumerate": "openocd/enumerate.tcl",
+
+  "dump": {
+    "dram":  { "script": "openocd/dump-os-ddr.tcl", "addr": "0x00000000", "size": "0x80000000",
+               "sparse": true, "out": "dumps/os-live.bin" },
+    "flash": { "script": "openocd/qspi-jtag.tcl", "out": "dumps/boot.bin",
+               "note": "Fast GQSPI DMA dumper; byte-exact.",
+               "env": { "QSPI_OP": "dmadump", "QSPI_SIZE": "0xC00000", "QSPI_OUT": "dumps/boot.bin" } }
+  },
+
+  "reopen": ["openocd/reopen-debug.tcl"],
+
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x80000000" },
+
+  // Capability 3 — persistence: patch+repack the dumped boot image, then write it back.
+  "reflash": { "repack": true,
+               "note": "Patch+repack the dumped boot image (repack-bootimage.py), then reflash it: write to the SD card's BOOT partition with a card writer, or over a live U-Boot ('sf probe 0; sf update <addr> 0 <len>'). JTAG-direct QSPI write is experimental/destructive — prefer SD or U-Boot." },
+
+  "analysis": [
+    { "tool": "tools/parse-bootimage.py", "on": "flash" },
+    { "tool": "tools/dram-secrets.py",    "on": "dram"  },
+    { "tool": "tools/vxworks-symtab.py",  "on": "flash" }
+  ],
+
+  "ghidra": "auto"
+}
