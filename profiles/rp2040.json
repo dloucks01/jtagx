@@ -30,5 +30,13 @@
                "env": { "CMF_FILE": "dumps/cortexm-flash-patched.bin" },
                "note": "Reflash internal flash via OpenOCD's driver. DESTRUCTIVE; part must be RDP-0 / APPROTECT-off." },
   "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. RP2040 is SWD-ONLY (no JTAG); tier e (no on-chip readout protection). ---
+  "adapters": [
+    { "id": "pi-debug-probe", "name": "Raspberry Pi Debug Probe", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd"], "usb_ids": ["2e8a:000c"], "tier": "e", "vendor_sw": false, "note": "The reference RP2040 probe (RP2040-based CMSIS-DAP)." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd"], "usb_ids": [],            "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe over SWD." },
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd"], "usb_ids": ["1366:0101"], "tier": "e", "vendor_sw": false, "note": "SWD run-control." },
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent", "backend": "openocd", "driver": "ftdi",      "transports": ["swd"], "usb_ids": ["0403:6010"], "tier": "e", "vendor_sw": false, "note": "SWD via OpenOCD." }
+  ]
 }

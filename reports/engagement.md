@@ -1,6 +1,6 @@
-# JTAG Engagement Report — ZCU102 (XCZU9EG, S/N 210308BD8D4D)
+# JTAG Engagement Report — ZCU102
 
-- target: **ZCU102 (XCZU9EG, S/N 210308BD8D4D)**   chip: **zynqmp** — Zynq UltraScale+ (ZynqMP) (Paradigm A)
+- target: **ZCU102**   chip: **zynqmp** — Zynq UltraScale+ (ZynqMP) (Paradigm A)
 - posture (enumerated): {'jtag_open': True, 'secure_boot': False}
 
 ## 1. Capabilities on this target
@@ -17,10 +17,11 @@
 | `boot-image-dma.bin` | 1,164,672 | `4cb3de072871cc66dad1fec8e83a75cc` |
 | `boot-image-full.bin` | 11,534,336 | `03cb706239bfa9da3615f62ec0ac582d` |
 | `boot-image.bin` | 11,534,336 | `03cb706239bfa9da3615f62ec0ac582d` |
+| `boot.bin` | 12,582,912 | `655c18ceb4a2e9a2cbd4a4ef775ae45c` |
 | `bootrom-via-pmu-r5-bootrom-2026-06-08-113330.bin` | 16,384 | `9fa5a7dc10d2971568ff7936b2093c7e` |
 | `fuzz-base-min.bin` | 149,768 | `f98977a20b0c5aa6b2896c4b50fe0cb0` |
 | `ocm-0xFFFC0000-128k-freshboot-2026-06-08-125258.bin` | 131,072 | `9e6962d129a7702ab6921e07bad8244c` |
-| `os-live.bin` | 33,554,432 | `06072cf75e583ae85d956e5a0d6656a0` |
+| `os-live.bin` | 16,777,216 | `f3d5f90b7a732e25bbfcc81d44a98139` |
 | `qspi-dma-auto.bin` | 4,096 | `fc91bf804878215ef94b8d468c98741d` |
 | `qspi-dma-fix.bin` | 4,096 | `fc91bf804878215ef94b8d468c98741d` |
 | `qspi-dma-lower.bin` | 4,096 | `a164a87255070edb107aae57fa7a504e` |
@@ -64,6 +65,19 @@ Heuristic — verify each before acting. CRIT/HIGH first.
 - **[CRIT]** `0x0097e8c0`  VxWorks boot line: `gem(0,0)host:vxWorks h=192.168.1.20 e=192.168.1.10:ffffff00 u=ultraNP pw=ultraNP f=0x0`
 - **[CRIT]** `0x0097e8fc`  boot user/password: `u=ultraNP  pw=ultraNP`
 ```
+### boot.bin
+```
+## first-look verdict
+```
+secrets:
+```
+**59 findings** — 4 CRIT, 55 MED
+Heuristic — verify each before acting. CRIT/HIGH first.
+- **[CRIT]** `0x00841221`  VxWorks boot line: `gem(0,0)host:vxWorks h=192.168.1.2 e=192.168.1.6:ffffff00 g=192.168.1.1 u=target pw=vxTarget`
+- **[CRIT]** `0x00841269`  boot user/password: `u=target  pw=vxTarget`
+- **[CRIT]** `0x0097e8c0`  VxWorks boot line: `gem(0,0)host:vxWorks h=192.168.1.20 e=192.168.1.10:ffffff00 u=ultraNP pw=ultraNP f=0x0`
+- **[CRIT]** `0x0097e8fc`  boot user/password: `u=ultraNP  pw=ultraNP`
+```
 ### bootrom-via-pmu-r5-bootrom-2026-06-08-113330.bin
 ```
 ## first-look verdict
@@ -73,14 +87,6 @@ secrets:
 Heuristic — verify each before acting. CRIT/HIGH first.
 ```
 ### fuzz-base-min.bin
-```
-## first-look verdict
-```
-secrets:
-```
-Heuristic — verify each before acting. CRIT/HIGH first.
-```
-### ocm-0xFFFC0000-128k-freshboot-2026-06-08-125258.bin
 ```
 ## first-look verdict
 ```

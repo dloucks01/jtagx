@@ -51,5 +51,12 @@
       "on": "dram"
     }
   ],
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. Cortex-A5 DAP over JTAG; tier e. ---
+  "adapters": [
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent",  "backend": "openocd", "driver": "ftdi",      "transports": ["jtag"], "usb_ids": ["0403:6010", "0403:6014"], "tier": "e", "vendor_sw": false, "note": "Default open path over the SAMA5 JTAG header." },
+    { "id": "jlink",     "name": "SEGGER J-Link / SAM-ICE",  "backend": "openocd", "driver": "jlink",     "transports": ["jtag"], "usb_ids": ["1366:0101"],              "tier": "e", "vendor_sw": false, "note": "SAM-ICE is a rebadged J-Link (Microchip's SAM probe)." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / Atmel-ICE", "backend": "openocd", "driver": "cmsis-dap", "transports": ["jtag"], "usb_ids": ["03eb:2141"],              "tier": "e", "vendor_sw": false, "note": "Atmel-ICE is a CMSIS-DAP probe." }
+  ]
 }

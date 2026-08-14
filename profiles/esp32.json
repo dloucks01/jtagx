@@ -38,5 +38,11 @@
       "on": "dram"
     }
   ],
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. Paradigm C (Xtensa): JTAG gives RAM + run-control (tier e); external SPI flash = esptool. ---
+  "adapters": [
+    { "id": "ftdi",             "name": "Generic FTDI / ESP-Prog",          "backend": "openocd", "driver": "ftdi",         "transports": ["jtag"], "usb_ids": ["0403:6010"], "tier": "e", "vendor_sw": false, "note": "4-wire JTAG to the ESP32; ESP-Prog is Espressif's FT2232 board. RAM dump + run-control; external SPI flash via esptool.py." },
+    { "id": "builtin-usb-jtag", "name": "ESP built-in USB-JTAG (S3/C3/C6)", "backend": "openocd", "driver": "esp_usb_jtag", "transports": ["jtag"], "usb_ids": ["303a:1001"], "tier": "e", "vendor_sw": false, "note": "Built into ESP32-S3/C3/C6 — NOT the classic LX6 ESP32; listed for the family." }
+  ]
 }

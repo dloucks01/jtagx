@@ -25,5 +25,13 @@
                "env": { "CMF_FILE": "dumps/cortexm-flash-patched.bin" },
                "note": "Reflash internal flash via OpenOCD's driver. DESTRUCTIVE; part must be RDP-0 / APPROTECT-off." },
   "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. Cortex-M: SWD (+JTAG); tier e if RDP not set. ---
+  "adapters": [
+    { "id": "stlink",    "name": "ST-Link v2/v3",           "backend": "openocd", "driver": "stlink",    "transports": ["swd"],         "usb_ids": ["0483:3748", "0483:374b", "0483:374e"], "tier": "e", "vendor_sw": false, "note": "Primary for STM32 (often onboard on Nucleo/Disco); SWD." },
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd", "jtag"], "usb_ids": ["1366:0101"],                            "tier": "e", "vendor_sw": false, "note": "Full mem-AP + run-control." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd", "jtag"], "usb_ids": [],                                       "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe." },
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent", "backend": "openocd", "driver": "ftdi",      "transports": ["jtag", "swd"], "usb_ids": ["0403:6010", "0403:6014"],               "tier": "e", "vendor_sw": false, "note": "MPSSE JTAG; SWD via OpenOCD's SWD-over-MPSSE." }
+  ]
 }

@@ -96,6 +96,35 @@ python3 tools/board-runner.py --validate
 }
 ```
 
+## Per-board adapter allowlist (`adapters`)
+
+Optional list describing **which adapters can reach this chip and how far**. Board-independent
+adapter facts (backend, driver, transports) live in `docs/transport/adapter-catalog.md`; this
+per-board list records the subset valid for this silicon **plus the access tier each reaches on it**.
+Be comprehensive — list all plausible adapters, not just what the current milestone needs. Discovery
+tools (JTAGulator) are board-independent and precede adapter selection, so they are NOT listed here.
+
+```jsonc
+"adapters": [
+  { "id": "jlink",               // required; short slug, unique within the list
+    "name": "SEGGER J-Link",     // human label
+    "backend": "openocd",        // required: openocd | hw_server | libero | bmp | vendor | discovery
+    "driver": "jlink",           // OpenOCD driver name when backend=="openocd", else null
+    "transports": ["swd","jtag"],// subset of: jtag | swd | cjtag | spi | boundary-scan
+    "usb_ids": ["1366:0101"],    // "vid:pid" strings for auto-detect ([] if unknown/many)
+    "tier": "e",                 // required: reachable tier a..e ON THIS silicon (ladder below)
+    "vendor_sw": false,          // true if it needs vendor software (hw_server / Libero / …)
+    "note": "…" }
+]
+```
+
+**Access-tier ladder** (what "talk out" reaches): `a` IDCODE/chain → `b` boundary-scan →
+`c` mem-AP (memory/regs) → `d` run-control (halt/resume/breakpoints) → `e` exploitation
+(dump/patch/keys). The tier is a property of *(backend, silicon)* — e.g. a J-Link reaches `e` on a
+Cortex-M/-A SoC but a FlashPro reaches only `b` (+program) on a Microsemi FPGA programming TAP.
+The validator (`--validate`) checks each entry has `id`/`backend`/`tier`, backend is in the vocab,
+and tier is `a`–`e`.
+
 ## Paradigm-D profiles (FPGA / no CPU)
 
 A Paradigm-D profile (IGLOO2, Lattice, bare FPGA) has **no** `dump`/`patch`/`reopen` — there is no

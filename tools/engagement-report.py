@@ -22,7 +22,8 @@ def _imp(name, fn):
     s = importlib.util.spec_from_file_location(name, os.path.join(HERE, fn))
     m = importlib.util.module_from_spec(s); s.loader.exec_module(m); return m
 
-cm = _imp("cve_match", "cve-match.py")   # reuse the CVE DB + matcher
+cm = _imp("cve_match", "cve-match.py")       # reuse the CVE DB + matcher
+ue = _imp("unlock_engine", "unlock-engine.py")  # reuse the Phase-2b unlock engine
 
 
 def load_profile(soc):
@@ -59,14 +60,23 @@ def main():
     ap.add_argument("--dumps", default="dumps", help="directory of captured dumps")
     ap.add_argument("--deep", action="store_true", help="run dram-secrets + dump-triage on each dump and embed a summary")
     # posture flags (same vocabulary as cve-match)
-    ap.add_argument("--jtag-open", action="store_true"); ap.add_argument("--efuse-jtag-dis", action="store_true")
+    ap.add_argument("--from-capture", metavar="RAW_JSON",
+                    help="auto-derive posture from an enumeration capture (reports/raw-*.json); flags override")
+    ap.add_argument("--jtag-open", action="store_true"); ap.add_argument("--jtag-locked", action="store_true")
+    ap.add_argument("--efuse-jtag-dis", action="store_true")
     ap.add_argument("--secure-boot", choices=["on", "off", "encrypt-only"]); ap.add_argument("--aes-encrypt", action="store_true")
     ap.add_argument("--rdp", type=int); ap.add_argument("--approtect-open", action="store_true")
     ap.add_argument("-o", "--out")
     a = ap.parse_args()
 
     P = {}
-    if a.jtag_open: P["jtag_open"] = True
+    if a.from_capture and ue.Capture is not None:
+        try:
+            P.update(ue.derive_posture(ue.Capture(json.load(open(a.from_capture)))))
+        except Exception as e:
+            print(f"warning: could not derive posture from {a.from_capture}: {e}", file=sys.stderr)
+    if a.jtag_open: P["jtag_open"] = True; P.pop("jtag_locked", None)
+    if a.jtag_locked: P["jtag_open"] = False; P["jtag_locked"] = True
     if a.efuse_jtag_dis: P["efuse_jtag_dis"] = True
     if a.secure_boot == "on": P["secure_boot"] = True
     elif a.secure_boot == "off": P["secure_boot"] = False
@@ -145,8 +155,28 @@ def main():
         L.append(f"- **[posture]** {sev} — {msg}")
     L.append("")
 
-    # --- 5. Recommended next steps ---
-    L.append("## 5. Recommended next steps")
+    # --- 5. Unlock plan (Phase-2b) — how to defeat the locks that are engaged ---
+    L.append("## 5. Unlock plan — defeating the locks (Phase-2b)")
+    locks = ue.build_plan(a.soc, P)
+    engaged = [x for x in locks if x["state"] in ("LOCKED", "ENABLED")]
+    if not engaged:
+        L.append("  Board is OPEN (or no lock facts supplied) — nothing to unlock; proceed straight to "
+                 "extraction (§1 capabilities). On a real target this section is the main effort.")
+    else:
+        auto = sum(1 for x in engaged for s in x["strategies"] if s["kind"] in ("software-lever", "misconfig"))
+        L.append(f"  **{len(engaged)} lock(s) engaged; {auto} auto-tryable software lever(s) — try those first.** "
+                 "Ranked cheapest/safest first (software-lever → misconfig → alternate-path → physical → "
+                 "firmware → fault-injection → side-channel).")
+        for x in engaged:
+            L.append(f"\n**{x['name']} — {x['state']}**  ·  enforcement: *{x['enforcement']}*")
+            for s in x["strategies"]:
+                d = "  ⚠DESTRUCTIVE" if s["destructive"] else ""
+                pq = f"  · prereq: {s['prereq']}" if s["prereq"] else ""
+                L.append(f"  - **[{ue.KIND_TAG.get(s['kind'], '?')}]** ({s['confidence']}){d} {s['title']} — {s['how']}{pq}")
+    L.append("")
+
+    # --- 6. Recommended next steps ---
+    L.append("## 6. Recommended next steps")
     L.append("- Run `tools/board-runner.py --profile " + a.soc + "` for the full step-by-step plan.")
     if prof and prof.get("patch"):
         L.append("- Defeat an auth/license check: `patch-recipe.py` → `probe-phys-patch.tcl` (Cap-2).")

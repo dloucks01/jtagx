@@ -1,0 +1,40 @@
+-- Minimal synthetic BSDL for unit-testing tools/bsdl-scan.py.
+-- Not a real device; exercises the parser's attribute extraction (IR length,
+-- opcodes, IDCODE, boundary length, boundary-register cells of each function type).
+entity FAKE1149 is
+  generic (PHYSICAL_PIN_MAP : string := "TQFP");
+  port (
+    GPIO0   : inout bit;
+    GPIO1   : in    bit;
+    RESETN  : in    bit;
+    BOOTMODE: in    bit;
+    TCK, TMS, TDI : in bit;
+    TDO     : out   bit
+  );
+  use STD_1149_1_2001.all;
+  attribute COMPONENT_CONFORMANCE of FAKE1149 : entity is "STD_1149_1_2001";
+
+  attribute INSTRUCTION_LENGTH of FAKE1149 : entity is 4;
+  attribute INSTRUCTION_OPCODE of FAKE1149 : entity is
+    "BYPASS  (1111)," &
+    "EXTEST  (0000)," &
+    "SAMPLE  (0001)," &
+    "PRELOAD (0001)," &
+    "IDCODE  (0010)";
+  attribute INSTRUCTION_CAPTURE of FAKE1149 : entity is "0001";
+
+  attribute IDCODE_REGISTER of FAKE1149 : entity is
+    "0001" &                 -- version
+    "0000000000000010" &     -- part number
+    "00000001001" &          -- manufacturer (JEDEC)
+    "1";                     -- required LSB
+
+  attribute BOUNDARY_LENGTH of FAKE1149 : entity is 6;
+  attribute BOUNDARY_REGISTER of FAKE1149 : entity is
+    "5 (BC_1, GPIO0,    input,   X)," &
+    "4 (BC_1, GPIO0,    output3, X, 2, 1, Z)," &
+    "3 (BC_1, GPIO1,    input,   X)," &
+    "2 (BC_1, *,        control, 1)," &
+    "1 (BC_1, RESETN,   input,   X)," &
+    "0 (BC_1, BOOTMODE, input,   X)";
+end FAKE1149;

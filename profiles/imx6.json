@@ -51,5 +51,12 @@
       "on": "dram"
     }
   ],
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. Cortex-A9 DAP over JTAG; tier e. ---
+  "adapters": [
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent", "backend": "openocd", "driver": "ftdi",      "transports": ["jtag"], "usb_ids": ["0403:6010", "0403:6014"], "tier": "e", "vendor_sw": false, "note": "Default open path over the i.MX6 JTAG header." },
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["jtag"], "usb_ids": ["1366:0101"],              "tier": "e", "vendor_sw": false, "note": "ARM DAP run-control + mem-AP DRAM dump." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink",  "backend": "openocd", "driver": "cmsis-dap", "transports": ["jtag"], "usb_ids": [],                         "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe over JTAG." }
+  ]
 }

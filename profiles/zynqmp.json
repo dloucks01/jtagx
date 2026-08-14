@@ -39,5 +39,16 @@
     { "tool": "tools/vxworks-symtab.py",  "on": "flash" }
   ],
 
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist (see docs/transport/adapter-catalog.md). tier = reachable access
+  //     tier a..e ON THIS silicon (a=IDCODE b=bscan c=mem-AP d=run-control e=exploitation); backend =
+  //     the host software that drives it. Comprehensive — not pruned to the current milestone. ---
+  "adapters": [
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent (HS2/HS3/SMT2, FT2232H) / onboard FT2232", "backend": "openocd", "driver": "ftdi",      "transports": ["jtag"],          "usb_ids": ["0403:6010", "0403:6014"], "tier": "e", "vendor_sw": false, "note": "Default open path; the ZCU102's onboard debug is an FT2232. Full mem-AP + run-control on this dev board (DAP open)." },
+    { "id": "jlink",     "name": "SEGGER J-Link",              "backend": "openocd", "driver": "jlink",     "transports": ["jtag", "cjtag"], "usb_ids": ["1366:0101"],              "tier": "e", "vendor_sw": false, "note": "Drives the ZynqMP APU/RPU via the ARM DAP. VID 0x1366, PID varies." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink",    "backend": "openocd", "driver": "cmsis-dap", "transports": ["jtag"],          "usb_ids": [],                         "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe over JTAG." },
+    { "id": "smartlynq2", "name": "AMD SmartLynq2 / SmartLynq", "backend": "hw_server", "driver": null,      "transports": ["jtag"],          "usb_ids": [],                         "tier": "e", "vendor_sw": true,  "note": "No native OpenOCD driver -> hw_server+xsdb, OR bridge hw_server's XVC server to OpenOCD's `xvc` driver (preferred: keeps existing Tcl). THIS is the adapter that failed the engagement." },
+    { "id": "platform-cable-usb2", "name": "AMD Platform Cable USB II", "backend": "hw_server", "driver": null, "transports": ["jtag"],       "usb_ids": [],                         "tier": "e", "vendor_sw": true,  "note": "Legacy Xilinx cable (VID 0x03fd). Same hw_server / XVC path as SmartLynq2." }
+  ]
 }

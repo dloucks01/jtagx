@@ -1,0 +1,64 @@
+// Microchip SmartFusion2 (M2S) — Paradigm B: Cortex-M3 MSS + FPGA fabric + eNVM. New 2026-08-14. HW-UNVALIDATED (stub).
+// auto_match:false — presents a Microsemi IDCODE (no confirmed decoder); select explicitly: --profile smartfusion2.
+//
+// KEY DIFFERENCE from plain IGLOO2: SmartFusion2 HAS a Cortex-M3 with a CoreSight DAP -> reachable over SWD/JTAG with a
+// STANDARD adapter (J-Link / CMSIS-DAP) via OpenOCD's cortex_m -> full halt + eNVM/eSRAM memory dump, with NO FlashPro,
+// IF debug is not security-locked (SF2 can disable M3 debug via its security policy set at programming time). FlashPro is
+// only needed for fabric bitstream / secure-eNVM programming + pass-key ops. Goal here = extraction/exploitation
+// (dump eNVM / eSRAM). This is the real "IGLOO2 with M3" engagement target.
+{
+  "schema_version": 1,
+  "name": "Microchip SmartFusion2 (M2S) — Cortex-M3 MSS",
+  "soc": "smartfusion2",
+  "paradigm": "B",
+  "status": "stub",
+  "auto_match": false,
+
+  "match": { "family": "microsemi", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm.cfg",
+  "access_check": null,
+  "enumerate": null,
+
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/sf2-mem.bin",
+               "note": "eNVM + eSRAM via the Cortex-M3 mem-AP (needs debug UNLOCKED). Fabric bitstream + secure eNVM still require FlashPro.",
+               "env": {} }
+  },
+
+  "reopen": [],
+  "absent": { "reopen": "SF2 debug-lock is a security-policy bit set at programming time -> no non-destructive reopen; needs re-programming via FlashPro." },
+
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "sf2.cpu", "PATCH_AXI": "sf2.cpu", "PATCH_DAP": "sf2.dap" } },
+
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/sf2-mem-patched.bin" },
+               "note": "Reflash eNVM via OpenOCD's Cortex-M flash driver. DESTRUCTIVE; needs debug unlocked. Fabric/secure ops = FlashPro only." },
+
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+
+  "ghidra": "auto",
+
+  // The FPGA-fabric / secure-eNVM side the Cortex-M mem-AP can't reach — FlashPro/Libero only (Paradigm-D-style handoff).
+  "vendor": {
+    "tool": "Microchip FlashPro Express (or Libero SoC)",
+    "cmd": "# FlashPro Express -> Inspect Device (IDCODE + security status); Libero for program/verify",
+    "note": "The M3 mem-AP (dump.flash above) covers eNVM/eSRAM when debug is open. FlashPro is needed only for fabric bitstream, secure-eNVM, and pass-key/security operations.",
+    "steps": [
+      "Cortex-M3 path (preferred for extraction): J-Link/CMSIS-DAP over SWD/JTAG -> OpenOCD cortex_m -> dump eNVM/eSRAM (dump.flash).",
+      "If M3 debug is security-LOCKED: FlashPro Express -> Inspect Device for status; readback gated by FlashLock/pass-key/AES.",
+      "Fabric bitstream / secure-eNVM readback: FlashPro/Libero only, and only if security is not provisioned."
+    ]
+  },
+
+  // --- per-board adapter allowlist. Cortex-M3 DAP reachable by standard probes (tier e); FlashPro = program-only (tier b). ---
+  "adapters": [
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd", "jtag"], "usb_ids": ["1366:0101"], "tier": "e", "vendor_sw": false, "note": "PREFERRED for extraction: reaches the Cortex-M3 DAP -> full halt + eNVM/eSRAM dump, no FlashPro. Only if debug not security-locked." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd", "jtag"], "usb_ids": [],            "tier": "e", "vendor_sw": false, "note": "Same M3-DAP path as J-Link." },
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent", "backend": "openocd", "driver": "ftdi",      "transports": ["jtag"],        "usb_ids": ["0403:6010"], "tier": "e", "vendor_sw": false, "note": "Reaches the M3 DAP over JTAG (SWD on FTDI needs MPSSE-SWD support)." },
+    { "id": "flashpro4", "name": "Microchip FlashPro4",     "backend": "libero", "driver": null,        "transports": ["jtag"],        "usb_ids": [],            "tier": "b", "vendor_sw": true,  "note": "Programmer, NOT a debug probe — no M3 run-control. Fabric/eNVM program/verify + secure readback (if unlocked). VID 0x1514." },
+    { "id": "flashpro5-6", "name": "Microchip FlashPro5 / FlashPro6", "backend": "libero", "driver": null, "transports": ["jtag"],      "usb_ids": [],            "tier": "b", "vendor_sw": true,  "note": "Same Libero / FlashPro Express path for fabric/eNVM." }
+  ]
+}

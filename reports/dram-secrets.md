@@ -1,6 +1,6 @@
-# DRAM secrets scan — 33554432 bytes (base 0x00100000)
+# DRAM secrets scan — 16777216 bytes (base 0x00100000)
 
-**66 findings** — 5 CRIT, 61 MED
+**77 findings** — 5 CRIT, 72 MED
 
 Heuristic — verify each before acting. CRIT/HIGH first.
 
@@ -19,7 +19,7 @@ Heuristic — verify each before acting. CRIT/HIGH first.
 - **[MED]** `0x00a51dc8`  keyword: `ftp password (pw)`
 - **[MED]** `0x00ba6688`  keyword: `ftp password (pw)`
 
-## key-candidate  (56)
+## key-candidate  (67)
 - **[MED]** `0x0014ef30`  isolated high-entropy region 32B (H=4.75): `299d2f918a0000102b6968384a090b8b40011fd6280680521e000014e8071c32`
 - **[MED]** `0x00806a10`  isolated high-entropy region 32B (H=4.85): `4a4236b8fe788012e47e24e25589004067229bbacf649fca3834fddfd8fefe3f`
 - **[MED]** `0x00807170`  isolated high-entropy region 32B (H=5.00): `641ad1fc9cd76ca11432eadb2efdfe3f7f6abc74931804560e2db29def430240`
@@ -60,4 +60,4 @@ Heuristic — verify each before acting. CRIT/HIGH first.
 - **[MED]** `0x009f5f80`  isolated high-entropy region 32B (H=4.73): `109e029d0493069408950a960c970e981099129a149b169c1805481c18000000`
 - **[MED]** `0x009f61e0`  isolated high-entropy region 32B (H=4.73): `ff600c1d109e029d0493069408950a960c970e981099129a149b169c18000000`
 - **[MED]** `0x009f6480`  isolated high-entropy region 112B (H=4.73): `109e029d0493069408950a960c970e981099129a149b169c1805481c18000000…`
-  …and 16 more (heuristic noise — top 40 by rank shown)
+  …and 27 more (heuristic noise — top 40 by rank shown)

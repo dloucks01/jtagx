@@ -52,5 +52,15 @@
     { "tool": "tools/dram-secrets.py", "on": "dram"  }
   ],
 
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist (see docs/transport/adapter-catalog.md). tier a..e reachable on
+  //     THIS silicon. Same ARM-DAP set as ZynqMP (dual Cortex-A9 CoreSight DAP). ---
+  "adapters": [
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent (HS2/HS3/SMT2, FT2232H)", "backend": "openocd", "driver": "ftdi",      "transports": ["jtag"],          "usb_ids": ["0403:6010", "0403:6014"], "tier": "e", "vendor_sw": false, "note": "Default open path (many Zynq-7000 boards carry an onboard FT2232). Full mem-AP + run-control if DAP open." },
+    { "id": "jlink",     "name": "SEGGER J-Link",              "backend": "openocd", "driver": "jlink",     "transports": ["jtag", "cjtag"], "usb_ids": ["1366:0101"],              "tier": "e", "vendor_sw": false, "note": "Drives the A9s via the ARM DAP." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink",    "backend": "openocd", "driver": "cmsis-dap", "transports": ["jtag"],          "usb_ids": [],                         "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe over JTAG." },
+    { "id": "smartlynq2", "name": "AMD SmartLynq2 / SmartLynq", "backend": "hw_server", "driver": null,      "transports": ["jtag"],          "usb_ids": [],                         "tier": "e", "vendor_sw": true,  "note": "No native OpenOCD driver -> hw_server+xsdb, OR XVC bridge to OpenOCD `xvc`." },
+    { "id": "platform-cable-usb2", "name": "AMD Platform Cable USB II", "backend": "hw_server", "driver": null, "transports": ["jtag"],       "usb_ids": [],                         "tier": "e", "vendor_sw": true,  "note": "Legacy Xilinx cable (VID 0x03fd). Same hw_server / XVC path." }
+  ]
 }

@@ -214,4 +214,11 @@ if ! bash tools/posture-golden-test.sh; then
     exit 1
 fi
 
+echo ""
+echo "Running unlock-engine checks (Phase-2b enforcement classify + strategies)..."
+if ! bash tools/unlock-engine-smoketest.sh; then
+    echo "FAIL: unlock-engine smoketest"
+    exit 1
+fi
+
 exit 0

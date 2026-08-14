@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=JTAGx
+GenericName=JTAG Engagement Toolkit
+Comment=JTAG platform-characterization, extraction and locked-board unlock toolkit
+Exec=AppRun
+Icon=jtagx
+Categories=Development;Security;Utility;
+Terminal=false

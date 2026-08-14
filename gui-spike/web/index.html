@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>JTAGx</title>
+<style>
+  :root{
+    --bg:#0d1017; --bg2:#0f131b; --s1:#141922; --s2:#1a212c; --s3:#212a37;
+    --line:#232c39; --hair:#1c242f; --line2:#2c3644;
+    --ink:#e7ecf3; --ink2:#98a6b8; --ink3:#5e6b7c;
+    --acc:#5b8cff; --acc2:#33d6c4; --accglow:rgba(91,140,255,.35);
+    --good:#3ecf8e; --warn:#e7b04b; --crit:#f2685f; --info:#5bb6f0; --violet:#b58bff;
+    --mono:"DejaVu Sans Mono","Cascadia Mono",Consolas,monospace;
+    --ui:"Inter","Segoe UI","Noto Sans",system-ui,sans-serif;
+    --sh:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#05070a;color:var(--ink);font-family:var(--ui);font-size:13px;-webkit-font-smoothing:antialiased;overflow:hidden}
+  svg{display:block}
+  .icon{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .icon.sm{width:15px;height:15px}
+  .app{height:100vh;display:flex;flex-direction:column;overflow:hidden;background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(91,140,255,.06), transparent 60%),
+    radial-gradient(900px 500px at -5% 110%, rgba(51,214,196,.05), transparent 55%),var(--bg)}
+  .titlebar{display:flex;align-items:center;height:38px;padding:0 12px;gap:12px;flex:none;background:linear-gradient(180deg,#141a24,#0f141c);border-bottom:1px solid var(--hair)}
+  .brand{display:flex;align-items:center;gap:9px}
+  .logo{width:22px;height:22px;border-radius:6px;background:conic-gradient(from 200deg,#5b8cff,#33d6c4,#b58bff,#5b8cff);box-shadow:0 0 0 1px #0006,0 0 14px -2px var(--accglow);position:relative}
+  .logo:after{content:"";position:absolute;inset:5px;border-radius:3px;background:#0d1017}
+  .brand b{font-weight:700;letter-spacing:.3px}.brand span{color:var(--ink3);font-weight:500}
+  .crumb{display:flex;align-items:center;gap:8px;margin-left:6px;padding:4px 11px;border-radius:8px;background:var(--s1);border:1px solid var(--line);color:var(--ink2);font-size:12px}
+  .crumb b{color:var(--ink);font-weight:600}.crumb .sn{color:var(--ink3);font-family:var(--mono);font-size:11px}
+  .tbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .gbtn{display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:8px;color:var(--ink2);background:var(--s1);border:1px solid var(--line);font-size:12px;cursor:pointer;transition:.15s}
+  .gbtn:hover{color:var(--ink);border-color:var(--line2)}
+  .gbtn.accent{background:linear-gradient(180deg,#4d82ff,#3b6ff0);color:#fff;border-color:#3b6ff0;box-shadow:0 0 0 1px #3b6ff0,0 6px 16px -8px var(--accglow)}
+  .gbtn.accent:hover{filter:brightness(1.08)}
+  .live{display:flex;align-items:center;gap:7px;padding:0 10px;height:28px;border-radius:8px;background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.25);color:var(--good);font-size:12px;font-weight:600}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--good);animation:p 2s infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(62,207,142,.45)}70%{box-shadow:0 0 0 6px rgba(62,207,142,0)}100%{box-shadow:0 0 0 0 rgba(62,207,142,0)}}
+  .shell{flex:1;display:flex;min-height:0}
+  .rail{width:60px;flex:none;background:linear-gradient(180deg,#0f141c,#0c1016);border-right:1px solid var(--hair);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px}
+  .rnav{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--ink3);cursor:pointer;position:relative;transition:.15s}
+  .rnav:hover{color:var(--ink2);background:var(--s1)}
+  .rnav.on{color:#fff;background:linear-gradient(180deg,#1e2735,#171e29);box-shadow:inset 0 0 0 1px var(--line2)}
+  .rnav.on:before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:3px;background:linear-gradient(var(--acc),var(--acc2));box-shadow:0 0 10px var(--accglow)}
+  .rail .gap{flex:1}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+  .hero{display:flex;align-items:stretch;gap:14px;padding:14px 16px;flex:none}
+  .idcard{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px 16px;border-radius:14px;min-width:260px;background:linear-gradient(135deg,#18202c,#131a24);border:1px solid var(--line);box-shadow:var(--sh);position:relative;overflow:hidden}
+  .idcard:after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(closest-side,var(--accglow),transparent);opacity:.5}
+  .idcard .l{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink3)}
+  .idcard .board{font-size:19px;font-weight:700}.idcard .chip{font-family:var(--mono);color:var(--acc2);font-size:12px}
+  .vbadge{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;margin-top:4px;padding:4px 10px;border-radius:20px;background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.3);color:var(--good);font-weight:600;font-size:11.5px}
+  .tiles{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .tile{padding:13px 14px;border-radius:14px;background:linear-gradient(180deg,var(--s2),var(--s1));border:1px solid var(--line);box-shadow:var(--sh);display:flex;flex-direction:column;gap:6px}
+  .tile .th{display:flex;align-items:center;gap:8px;color:var(--ink3);font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase}
+  .tile .tn{font-size:24px;font-weight:700;font-family:var(--mono)}.tile .ts{font-size:11px;color:var(--ink2)}
+  .tile .ic-wrap{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--s3);color:var(--acc)}
+  .tile.crit .ic-wrap{color:var(--crit);background:rgba(242,104,95,.12)}.tile.good .ic-wrap{color:var(--good);background:rgba(62,207,142,.12)}
+  .tn.crit{color:var(--crit)}.tn.good{color:var(--good)}
+  .content{flex:1;display:grid;grid-template-columns:250px 1fr 250px;gap:14px;padding:0 16px 14px;min-height:0}
+  .panel{background:linear-gradient(180deg,var(--s1),var(--bg2));border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden;box-shadow:var(--sh)}
+  .phdr{display:flex;align-items:center;gap:9px;height:40px;padding:0 14px;flex:none;border-bottom:1px solid var(--hair);font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink2)}
+  .phdr .tag{margin-left:auto;font-size:10px;text-transform:none;color:var(--ink3);padding:2px 8px;border-radius:20px;background:var(--s2);border:1px solid var(--line)}
+  .pbody{overflow:auto;min-height:0}
+  .knv{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;font-size:12px}
+  .knv .k{color:var(--ink3)}.knv .v{font-family:var(--mono);font-size:11.5px}.knv .v.acc{color:var(--acc2)}
+  .divider{height:1px;background:var(--hair);margin:4px 0}
+  .subh{padding:10px 14px 6px;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink3)}
+  .node{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;border-radius:8px;margin:1px 8px;transition:.12s}
+  .node:hover{background:var(--s2)}
+  .node.sel{background:linear-gradient(90deg,rgba(91,140,255,.16),rgba(91,140,255,.04));box-shadow:inset 0 0 0 1px rgba(91,140,255,.25)}
+  .tapdot{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--acc);background:rgba(91,140,255,.12);flex:none}
+  .coredot{width:9px;height:9px;border-radius:3px;background:var(--good);flex:none;margin-left:6px}
+  .coredot.run{background:var(--acc2)}.coredot.off{background:#3a4453}
+  .node .nl{font-size:12.5px}.node .nm{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .st{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto}
+  .st.halt{background:rgba(231,176,75,.14);color:var(--warn)}.st.run{background:rgba(51,214,196,.14);color:var(--acc2)}.st.off{background:#232c39;color:var(--ink3)}
+  .tabs{display:flex;gap:4px;height:44px;padding:6px 8px 0;flex:none;border-bottom:1px solid var(--hair)}
+  .tab{display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:9px 9px 0 0;font-size:12.5px;color:var(--ink2);cursor:pointer}
+  .tab:hover{color:var(--ink)}.tab.on{color:#fff;background:var(--s2)}
+  .tab .cc{font-size:10px;font-family:var(--mono);background:var(--s3);color:var(--ink2);border-radius:20px;padding:1px 7px}
+  .tab.on .cc{background:rgba(91,140,255,.2);color:#bcd0ff}
+  .summary{padding:14px 16px;display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--hair)}
+  .meter{flex:1}.meter .lab{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);margin-bottom:8px}.meter .lab b{color:var(--ink)}
+  .bar{height:12px;border-radius:7px;overflow:hidden;display:flex;background:#0b0f15;box-shadow:inset 0 0 0 1px var(--line)}
+  .bar i{height:100%;display:block}.seg-open{background:linear-gradient(90deg,#f2685f,#e07a52);width:86%}.seg-na{background:#33404f;width:7%}
+  .legend{display:flex;gap:16px;margin-top:9px;font-size:11px;color:var(--ink2)}.legend span{display:inline-flex;align-items:center;gap:6px}.lgd{width:9px;height:9px;border-radius:3px}
+  .ring{width:74px;height:74px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--crit) 0 86%,#33404f 86% 93%,var(--good) 93% 100%);box-shadow:0 0 0 1px var(--line)}
+  .ring .hole{width:56px;height:56px;border-radius:50%;background:var(--s2);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .hn{font-size:18px;font-weight:800;line-height:1;color:var(--crit)}.ring .hs{font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink3)}
+  table.p{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.p thead th{position:sticky;top:0;background:#10151d;color:var(--ink3);text-align:left;font-weight:600;font-size:10px;letter-spacing:.8px;text-transform:uppercase;padding:9px 16px;border-bottom:1px solid var(--line)}
+  table.p td{padding:10px 16px;border-bottom:1px solid var(--hair)}
+  table.p tr:hover td{background:rgba(91,140,255,.04)}
+  .impl{font-weight:500}.loc{font-family:var(--mono);color:var(--ink3);font-size:11px}.pval{font-family:var(--mono);color:var(--ink2);font-size:11.5px}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+  .pl-open{background:rgba(242,104,95,.1);color:#f79087;box-shadow:inset 0 0 0 1px rgba(242,104,95,.25)}
+  .pl-na{background:#232c39;color:var(--ink2);box-shadow:inset 0 0 0 1px var(--line2)}
+  .cap{margin:8px;padding:11px 12px;border-radius:11px;background:var(--s1);border:1px solid var(--line);display:flex;gap:11px;cursor:pointer;transition:.15s}
+  .cap:hover{border-color:var(--line2);background:var(--s2)}
+  .capic{width:30px;height:30px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center}
+  .cap.ok .capic{background:rgba(62,207,142,.12);color:var(--good)}.cap.warn .capic{background:rgba(231,176,75,.12);color:var(--warn)}.cap.off .capic{background:#1a212c;color:var(--ink3)}
+  .cap .ct{font-size:12.5px;font-weight:600}.cap.off .ct{color:var(--ink3)}.cap .cs{font-size:10.5px;color:var(--ink3);margin-top:3px}
+  .console{margin:0 16px 14px;flex:none;height:150px;display:flex;flex-direction:column;background:linear-gradient(180deg,#0b0e14,#080b10);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--sh)}
+  .chdr{display:flex;align-items:center;gap:9px;height:36px;padding:0 14px;flex:none;border-bottom:1px solid var(--hair);font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:var(--ink2)}
+  .chdr .ports{margin-left:auto;display:flex;gap:8px}.chdr .ports span{font-family:var(--mono);font-size:10px;text-transform:none;color:var(--ink3);padding:2px 7px;border-radius:6px;background:var(--s1);border:1px solid var(--line)}
+  .cbody{flex:1;overflow:auto;font-family:var(--mono);font-size:11.5px;line-height:1.55;padding:8px 14px;color:#aeb9c7}
+  .cbody .t{color:#4d6b7f}.cbody .g{color:#3ecf8e}.cbody .w{color:#e7b04b}.cbody .i{color:#5bb6f0}.cbody .d{color:#566270}.cbody .p{color:#33d6c4}.cbody .c{color:#e7ecf3}
+  .statusbar{display:flex;align-items:center;gap:16px;height:26px;flex:none;padding:0 16px;background:linear-gradient(180deg,#0f141c,#0b0f15);border-top:1px solid var(--hair);font-size:11px;color:var(--ink2)}
+  .statusbar .m{font-family:var(--mono);color:var(--ink3);font-size:10.5px}.statusbar .right{margin-left:auto;display:flex;gap:18px}
+  svg.def{position:absolute;width:0;height:0}
+</style></head><body>
+<svg class="def"><defs>
+  <g id="i-grid"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></g>
+  <g id="i-chain"><path d="M9 15l6-6"/><path d="M7 12l-2 2a3.5 3.5 0 005 5l2-2"/><path d="M17 12l2-2a3.5 3.5 0 00-5-5l-2 2"/></g>
+  <g id="i-shield"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></g>
+  <g id="i-cpu"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></g>
+  <g id="i-mem"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7v10M12 7v10M17 7v10"/></g>
+  <g id="i-doc"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></g>
+  <g id="i-gear"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2 2M16.4 16.4l2 2M18.4 5.6l-2 2M7.6 16.4l-2 2"/></g>
+  <g id="i-bolt"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></g>
+  <g id="i-down"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></g>
+  <g id="i-target"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></g>
+  <g id="i-play"><path d="M7 4l12 8-12 8z"/></g>
+  <g id="i-tap"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9z"/></g>
+  <g id="i-x"><path d="M6 6l12 12M18 6L6 18"/></g>
+  <g id="i-alert"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></g>
+</defs></svg>
+
+<div class="app">
+  <div class="titlebar">
+    <div class="brand"><div class="logo"></div><b>JTAGx</b><span>engagement</span></div>
+    <div class="crumb"><svg class="icon sm"><use href="#i-target"/></svg><b>ZCU102</b> · XCZU9EG <span class="sn">210308BD8D4D</span></div>
+    <div class="tbar-right">
+      <div class="gbtn accent" id="enumerate"><svg class="icon sm"><use href="#i-shield"/></svg>Enumerate</div>
+      <div class="gbtn"><svg class="icon sm"><use href="#i-down"/></svg>Dump</div>
+      <div class="live"><span class="pulse"></span>DAP OPEN</div>
+    </div>
+  </div>
+  <div class="shell">
+    <div class="rail">
+      <div class="rnav on"><svg class="icon"><use href="#i-grid"/></svg></div>
+      <div class="rnav"><svg class="icon"><use href="#i-chain"/></svg></div>
+      <div class="rnav"><svg class="icon"><use href="#i-shield"/></svg></div>
+      <div class="rnav"><svg class="icon"><use href="#i-mem"/></svg></div>
+      <div class="rnav"><svg class="icon"><use href="#i-bolt"/></svg></div>
+      <div class="rnav"><svg class="icon"><use href="#i-doc"/></svg></div>
+      <div class="gap"></div><div class="rnav"><svg class="icon"><use href="#i-gear"/></svg></div>
+    </div>
+    <div class="main">
+      <div class="hero">
+        <div class="idcard">
+          <div class="l">Target</div><div class="board">Zynq UltraScale+</div>
+          <div class="chip">XCZU9EG · MPSoC</div>
+          <div class="vbadge"><svg class="icon sm" style="width:13px;height:13px"><use href="#i-shield"/></svg>Access: OPEN · unprovisioned</div>
+        </div>
+        <div class="tiles">
+          <div class="tile"><div class="th"><span class="ic-wrap"><svg class="icon sm"><use href="#i-tap"/></svg></span>Chain</div><div class="tn">2</div><div class="ts">TAPs · 6 cores</div></div>
+          <div class="tile crit"><div class="th"><span class="ic-wrap"><svg class="icon sm"><use href="#i-alert"/></svg></span>Posture</div><div class="tn crit">13</div><div class="ts">open / dev of 14</div></div>
+          <div class="tile good"><div class="th"><span class="ic-wrap"><svg class="icon sm"><use href="#i-bolt"/></svg></span>Capabilities</div><div class="tn good">4</div><div class="ts">available now</div></div>
+          <div class="tile"><div class="th"><span class="ic-wrap"><svg class="icon sm"><use href="#i-down"/></svg></span>Artifacts</div><div class="tn">7</div><div class="ts">dumps captured</div></div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="panel">
+          <div class="phdr"><svg class="icon sm"><use href="#i-chain"/></svg>Chain &amp; Transport</div>
+          <div class="pbody">
+            <div class="knv"><span class="k">Adapter</span><span class="v">FT2232H</span></div>
+            <div class="knv"><span class="k">Backend</span><span class="v acc">openocd 0.12</span></div>
+            <div class="knv"><span class="k">Transport</span><span class="v">JTAG · 10 MHz</span></div>
+            <div class="divider"></div>
+            <div class="subh">TAP0 · ARM DAP · 0x5BA00477</div>
+            <div class="node sel"><span class="tapdot"><svg class="icon sm"><use href="#i-cpu"/></svg></span><span class="nl">A53 #0</span><span class="st halt">HALT</span></div>
+            <div class="node"><span class="coredot run"></span><span class="nl">A53 #1</span><span class="st run">RUN</span></div>
+            <div class="node"><span class="coredot run"></span><span class="nl">A53 #2</span><span class="st run">RUN</span></div>
+            <div class="node"><span class="coredot run"></span><span class="nl">A53 #3</span><span class="st run">RUN</span></div>
+            <div class="node"><span class="coredot off"></span><span class="nl">R5 #0 · #1</span><span class="st off">OFF</span></div>
+            <div class="subh">TAP1 · PS TAP · 0x14738093</div>
+            <div class="node"><span class="tapdot" style="color:var(--violet);background:rgba(181,139,255,.12)"><svg class="icon sm"><use href="#i-cpu"/></svg></span><span class="nl">PMU MicroBlaze</span><span class="st off">BSCAN</span></div>
+            <div class="node"><span class="coredot off"></span><span class="nl">CSU</span><span class="nm">0xFFCA0000</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="tabs">
+            <div class="tab on"><svg class="icon sm"><use href="#i-shield"/></svg>Posture <span class="cc">14</span></div>
+            <div class="tab"><svg class="icon sm"><use href="#i-grid"/></svg>Registers <span class="cc">656</span></div>
+            <div class="tab"><svg class="icon sm"><use href="#i-mem"/></svg>Memory</div>
+            <div class="tab"><svg class="icon sm"><use href="#i-doc"/></svg>Report</div>
+          </div>
+          <div class="summary">
+            <div class="ring"><div class="hole"><div class="hn">13</div><div class="hs">open</div></div></div>
+            <div class="meter">
+              <div class="lab"><span>Security posture — <b>all-open dev baseline</b></span><span><b>0</b> hardened</span></div>
+              <div class="bar"><i class="seg-open"></i><i class="seg-na"></i></div>
+              <div class="legend"><span><i class="lgd" style="background:var(--crit)"></i>13 open / dev</span><span><i class="lgd" style="background:#33404f"></i>1 n/a</span><span><i class="lgd" style="background:var(--good)"></i>0 hardened</span></div>
+            </div>
+          </div>
+          <div class="pbody">
+            <table class="p"><thead><tr><th style="width:36%">Implementation</th><th style="width:20%">Location</th><th>Value</th><th style="width:120px">State</th></tr></thead>
+              <tbody id="posture"></tbody></table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr"><svg class="icon sm"><use href="#i-bolt"/></svg>Capabilities<span class="tag">access-gated</span></div>
+          <div class="pbody" id="caps"></div>
+        </div>
+      </div>
+      <div class="console">
+        <div class="chdr"><svg class="icon sm" style="color:var(--acc2)"><use href="#i-chain"/></svg>OpenOCD I/O · streaming
+          <div class="ports"><span>tcl:6666</span><span>gdb:3333</span><span id="lc">0 lines</span></div></div>
+        <div class="cbody" id="cbody"><div><span class="p">›</span> <span class="c">ready — click Enumerate to stream OpenOCD I/O</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <div style="display:flex;align-items:center;gap:7px"><span class="pulse" style="width:7px;height:7px"></span>Connected</div>
+    <div class="m">FT2232H · JTAG · 10 MHz</div><div class="m">chain 2 TAPs</div><div class="m">A53#0 halted @0xFFFF0000</div>
+    <div class="right"><div class="m">raw-20260814-140233.json</div></div>
+  </div>
+</div>
+
+<script>
+  // ---- populate the data-driven bits (posture table + capabilities) ----
+  const POSTURE = [
+    ["Secure Boot policy","CSU_MULTI_BOOT","JTAG · unsigned","open"],
+    ["JTAG DAP gate","JTAG_SEC","0x00000000","open"],
+    ["DAP secure access","JTAG_DAP_CFG","NS permitted","open"],
+    ["AES boot key","BBRAM / eFuse","zeroed","open"],
+    ["PUF enrollment","EFUSE_PUF","not enrolled","open"],
+    ["eFuse write locks","EFUSE_SEC_CTRL","0x00000000","open"],
+    ["PPK0/1 hash","EFUSE_PPK","unprogrammed","open"],
+    ["Anti-tamper","CSU_TAMPER","disabled","open"],
+    ["SoC debug auth","CoreSight AUTH","DBGEN·NIDEN·SPIDEN","open"],
+    ["TrustZone (XMPU/XPPU)","XMPU","0 regions","open"],
+    ["PMU firmware auth","PMU_GLOBAL","no FW","na"],
+  ];
+  const CAPS = [
+    ["ok","i-shield","Enumerate posture","§1–16 sweep → raw JSON"],
+    ["ok","i-mem","Dump DDR / OCM","AXI mem-AP · live regions"],
+    ["ok","i-target","Break & capture","HW bp → regs + deref args"],
+    ["ok","i-bolt","Live-patch VA→PA","kernel string / function"],
+    ["warn","i-down","Dump BootROM","AXI read-filter · R5/CSUDMA only"],
+    ["warn","i-cpu","Dump PMU ROM","needs 3-TAP BSCAN unlock"],
+    ["off","i-x","Core code-exec","wedges DAP → use reflash"],
+  ];
+  const pbody = document.getElementById('posture');
+  POSTURE.forEach(([impl,loc,val,st])=>{
+    const pill = st==='na'
+      ? '<span class="pill pl-na">n/a</span>'
+      : '<span class="pill pl-open"><svg class="icon" style="width:12px;height:12px"><use href="#i-alert"/></svg>open</span>';
+    pbody.insertAdjacentHTML('beforeend',
+      `<tr><td class="impl">${impl}</td><td class="loc">${loc}</td><td class="pval">${val}</td><td>${pill}</td></tr>`);
+  });
+  const caps = document.getElementById('caps');
+  CAPS.forEach(([kind,ic,title,sub])=>{
+    caps.insertAdjacentHTML('beforeend',
+      `<div class="cap ${kind}"><span class="capic"><svg class="icon sm"><use href="#${ic}"/></svg></span>
+       <div><div class="ct">${title}</div><div class="cs">${sub}</div></div></div>`);
+  });
+
+  // ---- streaming console fed from Python over the pywebview bridge ----
+  let lineCount = 0;
+  function appendLog(kind, text){
+    const c = document.getElementById('cbody');
+    const d = document.createElement('div');
+    d.innerHTML = `<span class="${kind}">${text}</span>`;
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
+    document.getElementById('lc').textContent = (++lineCount) + ' lines';
+  }
+  function clearLog(){ document.getElementById('cbody').innerHTML=''; lineCount=0; }
+  window.appendLog = appendLog;   // so Python's evaluate_js can reach it
+
+  document.getElementById('enumerate').addEventListener('click', ()=>{
+    clearLog();
+    if (window.pywebview && window.pywebview.api){
+      window.pywebview.api.run_enumerate();          // Python streams back via appendLog()
+    } else {
+      appendLog('w','(no Python bridge — open with web_spike.py to see real streaming)');
+    }
+  });
+</script>
+</body></html>

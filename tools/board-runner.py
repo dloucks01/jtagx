@@ -102,6 +102,25 @@ def validate_profile(prof, path):
         _check(prof["patch"].get("script"))
     for a in prof.get("analysis", []) or []:
         _check(a.get("tool"))
+    # adapters allowlist (optional): validate shape if present
+    adapters = prof.get("adapters")
+    if adapters is not None:
+        ADAPTER_BACKENDS = {"openocd", "hw_server", "libero", "bmp", "vendor", "discovery"}
+        ADAPTER_TIERS = {"a", "b", "c", "d", "e"}
+        if not isinstance(adapters, list):
+            errs.append("adapters must be a list")
+        else:
+            for i, ad in enumerate(adapters):
+                if not isinstance(ad, dict):
+                    errs.append(f"adapters[{i}] must be an object")
+                    continue
+                for req in ("id", "backend", "tier"):
+                    if req not in ad:
+                        errs.append(f"adapters[{i}] missing required '{req}'")
+                if ad.get("backend") not in ADAPTER_BACKENDS:
+                    errs.append(f"adapters[{i}].backend {ad.get('backend')!r} not in {sorted(ADAPTER_BACKENDS)}")
+                if ad.get("tier") not in ADAPTER_TIERS:
+                    errs.append(f"adapters[{i}].tier {ad.get('tier')!r} must be one of a/b/c/d/e")
     return errs, warns
 
 
@@ -273,6 +292,19 @@ def plan_paradigm_a(prof):
                 'python3 tools/interpret.py "$(ls -t reports/raw-*.json | head -1)" -O')
     else:
         gap("enumerate", "security-posture enumeration (no register KB for this SoC yet)")
+
+    # Phase-2b unlock plan: if the verdict was not OPEN, classify the locks + rank ways to defeat them.
+    # Placed after enumerate so the capture exists for --from-capture; it drives the reopen step above.
+    soc = prof.get("soc", "")
+    if soc in ("zynqmp", "zynq7000"):
+        uecmd = (f'python3 tools/unlock-engine.py --soc {soc} '
+                 '--from-capture "$(ls -t reports/raw-*.json | head -1)"')
+    else:
+        uecmd = f'python3 tools/unlock-engine.py --soc {soc or "<soc>"} --jtag-locked   # + posture flags from enumerate'
+    add("OFFLINE", "Unlock plan (only if the verdict was not OPEN) — classify locks + rank defeat strategies",
+        uecmd,
+        "Phase-2b: enforcement-classifies each lock (software-reversible vs eFuse-sealed) and ranks "
+        "strategies software-lever -> alternate-path -> physical. Drives the reopen step above.")
 
     dump = prof.get("dump") or {}
     dram = dump.get("dram")

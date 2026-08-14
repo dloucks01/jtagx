@@ -51,5 +51,13 @@
     { "tool": "tools/dram-secrets.py", "on": "dram" }
   ],
 
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. Pi ARM DAP over the JTAG alt-function GPIOs; tier e (ARM side only). ---
+  "adapters": [
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent",    "backend": "openocd", "driver": "ftdi",        "transports": ["jtag"], "usb_ids": ["0403:6010", "0403:6014"], "tier": "e", "vendor_sw": false, "note": "Over the Pi's JTAG alt-function GPIO pins (enable via config.txt)." },
+    { "id": "jlink",     "name": "SEGGER J-Link",              "backend": "openocd", "driver": "jlink",       "transports": ["jtag"], "usb_ids": ["1366:0101"],              "tier": "e", "vendor_sw": false, "note": "ARM DAP run-control + DRAM dump." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink",    "backend": "openocd", "driver": "cmsis-dap",   "transports": ["jtag"], "usb_ids": [],                         "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe over JTAG." },
+    { "id": "rpi-gpio",  "name": "Raspberry Pi GPIO bit-bang", "backend": "openocd", "driver": "bcm2835gpio", "transports": ["jtag"], "usb_ids": [],                         "tier": "e", "vendor_sw": false, "note": "Drive the target's JTAG from another Pi's GPIO — no dedicated HW (also linuxgpiod)." }
+  ]
 }

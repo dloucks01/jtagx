@@ -38,5 +38,12 @@
       "on": "dram"
     }
   ],
-  "ghidra": "auto"
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. Paradigm E: RISC-V debug (DMI) over JTAG; tier e. ---
+  "adapters": [
+    { "id": "ftdi",         "name": "Generic FTDI / Digilent",                          "backend": "openocd", "driver": "ftdi",      "transports": ["jtag"], "usb_ids": ["0403:6010", "0403:6014"], "tier": "e", "vendor_sw": false, "note": "Standard RISC-V JTAG (DMI); most SiFive/dev boards." },
+    { "id": "jlink",        "name": "SEGGER J-Link",                                    "backend": "openocd", "driver": "jlink",     "transports": ["jtag"], "usb_ids": ["1366:0101"],              "tier": "e", "vendor_sw": false, "note": "J-Link RISC-V mode." },
+    { "id": "riscv-vendor", "name": "Vendor RISC-V probes (WCH-Link / Olimex / HiFive)", "backend": "openocd", "driver": "cmsis-dap", "transports": ["jtag"], "usb_ids": ["1a86:8010"],              "tier": "e", "vendor_sw": false, "note": "WCH-Link (CH32) needs WCH's OpenOCD fork; others via ftdi/cmsis-dap." }
+  ]
 }

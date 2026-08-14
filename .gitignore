@@ -14,6 +14,11 @@ dumps/
 _archive/
 dist/
 
+# Python / generated artifacts
+__pycache__/
+*.pyc
+vxworks_symbols_ghidra.py
+
 # OS / editor cruft
 .DS_Store
 *.swp

@@ -1,0 +1,9 @@
+#!/bin/bash
+# AppRun — launches the JTAGx GUI from inside the AppImage.
+# Host-python variant: uses the target's python3 + PySide6 (needs python3-pyside6.qtwidgets on Kali/
+# Debian). The app code, jtagx core, tools, profiles and openocd configs are bundled read-only under
+# opt/jtagx. Per-engagement outputs (reports/, dumps/) come from the working dir, not the read-only image.
+HERE="$(dirname "$(readlink -f "$0")")"
+export JTAGX_HOME="$HERE/opt/jtagx"
+export PYTHONPATH="$JTAGX_HOME:$JTAGX_HOME/tools:${PYTHONPATH:-}"
+exec python3 "$JTAGX_HOME/gui-spike/jtagx_app.py" "$@"

@@ -35,5 +35,12 @@
       "If FlashLock / user pass-key / AES is NOT provisioned: eNVM + fabric bitstream readback may be possible.",
       "If security IS provisioned: readback is disabled by design -> identify + posture only, no dump."
     ]
-  }
+  },
+
+  // --- per-board adapter allowlist. Programming TAP, NO CPU -> tier ceiling is 'b' (+program). ---
+  "adapters": [
+    { "id": "flashpro4",  "name": "Microchip FlashPro4 (also FlashPro3)", "backend": "libero",  "driver": null,  "transports": ["jtag"],                  "usb_ids": [],            "tier": "b", "vendor_sw": true,  "note": "VID 0x1514 (Actel). Programming TAP only — no CPU/mem bus. IDCODE + boundary-scan + program/verify + eNVM/fabric readback IF FlashLock/pass-key/AES NOT provisioned; if provisioned, readback disabled by design." },
+    { "id": "flashpro5-6", "name": "Microchip FlashPro5 / FlashPro6",     "backend": "libero",  "driver": null,  "transports": ["jtag"],                  "usb_ids": [],            "tier": "b", "vendor_sw": true,  "note": "Same Libero / FlashPro Express path. FlashPro5 is FTDI(FT4232H)-based -> a raw-FTDI OpenOCD route MIGHT exist (unverified)." },
+    { "id": "ftdi-svf",   "name": "Generic FTDI (SVF/STAPL + BSDL)",      "backend": "openocd", "driver": "ftdi", "transports": ["jtag", "boundary-scan"], "usb_ids": ["0403:6010"], "tier": "b", "vendor_sw": false, "note": "OpenOCD-native slice: play Microsemi SVF/STAPL to program, BSDL for boundary-scan (EXTEST/SAMPLE). No memory bus — plain IGLOO2 has no CPU. (SmartFusion2 sibling DOES: see profiles/smartfusion2.json.)" }
+  ]
 }
