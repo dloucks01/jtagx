@@ -32,6 +32,10 @@ for soc, key in (("imx6","SDP"),("sama5","SAM-BA"),("esp32","esptool"),("rp2040"
     if not rl: bad(f"{soc}: no ROM-loader extraction path")
     if rl[0]["needs_debug"]: bad(f"{soc}: ROM loader must NOT need the debug port")
     if key.lower() not in (rl[0]["method"]+rl[0]["how"]).lower(): bad(f"{soc}: ROM loader should mention {key}")
+    if not rl[0].get("cmd"): bad(f"{soc}: ROM loader should carry a runnable command")
+# the runnable command is a real vendor-tool invocation (esptool / picotool / sam-ba / uuu)
+if "read_flash" not in [m["cmd"] for m in extraction_plan("esp32",{},prof("esp32")) if m["access"]=="rom-loader"][0]:
+    bad("esp32 ROM-loader command should be an esptool read_flash")
 
 # best_cable: when debug is CLOSED, a ROM-loader board still has a cable path (SDP); zynqmp (no loader) doesn't
 if best_cable(extraction_plan("imx6",{},prof("imx6")), debug_open=False) is None:

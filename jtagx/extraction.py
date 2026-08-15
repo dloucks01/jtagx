@@ -15,33 +15,41 @@ side-channel stay in jtagx.unlock as ranked strategies and are deferred.
 """
 
 # per-family vendor BootROM loader — a documented extraction/inject path independent of the debug DAP.
-# (name, how, prereq, non_destructive)
+# (name, how, prereq, non_destructive, cmd) — cmd is a representative RUNNABLE command (operator edits
+# the device path / size / applet for the exact part).
 ROM_LOADER = {
     "imx6":   ("i.MX Serial Download Protocol (SDP)",
-               "hold BOOT_MODE=serial → the BootROM enumerates as USB HID; imx_usb/uuu load a small DDR "
-               "payload that dumps eMMC/NAND/QSPI back over USB. Reads/writes DRAM directly.",
-               "BOOT_MODE straps to serial-download; USB", True),
+               "hold BOOT_MODE=serial → the BootROM enumerates as USB HID; imx_usb/uuu load a small U-Boot "
+               "over USB, then dump eMMC/NAND/QSPI from the U-Boot prompt. Reads/writes DRAM directly.",
+               "BOOT_MODE straps to serial-download; USB", True,
+               "uuu -b spl u-boot.imx   # then at the U-Boot prompt: sf probe; sf read 0x82000000 0 0x400000; "
+               "then dump DDR via SDP  (or: imx_usb u-boot.imx)"),
     "am335x": ("TI ROM peripheral boot (UART/USB RBL)",
                "strap to UART/USB boot → the ROM Boot Loader accepts an SPL over xmodem/RNDIS; load a "
                "dumper SPL to read eMMC/NAND/SPI.",
-               "sysboot straps to peripheral boot", True),
+               "sysboot straps to peripheral boot", True,
+               "# strap UART boot; sx <dumper-spl.bin> over /dev/ttyUSB0 (xmodem), or usb-rndis + tftp"),
     "sama5":  ("Microchip SAM-BA monitor",
-               "the on-chip ROM SAM-BA monitor (USB/UART) reads and writes any memory directly — "
-               "sam-ba / BOSSA `read`/`write`; dump SRAM/DDR and drive the external NAND/QSPI.",
-               "SAM-BA monitor enabled (no valid boot / erase the boot flash)", True),
+               "the on-chip ROM SAM-BA monitor (USB/UART) reads and writes any memory directly; dump "
+               "SRAM/DDR and drive the external NAND/QSPI.",
+               "SAM-BA monitor enabled (no valid boot / erase the boot flash)", True,
+               "sam-ba -p serial -d sama5d2 -a serialflash -c read:flash.bin:0:0x100000"),
     "esp32":  ("Espressif UART download mode (esptool)",
-               "hold GPIO0 low → download mode; `esptool.py read_flash 0 <size> flash.bin` dumps SPI "
-               "flash. If flash-encryption is OFF this is plaintext; if ON, DL mode reads ciphertext "
-               "(and re-encrypts/decrypts with the device key unless Secure-Download-Mode is fused).",
-               "download-mode strap; Secure-Download-Mode NOT fused for plaintext", True),
+               "hold GPIO0 low → download mode; esptool read_flash dumps SPI flash. Plaintext if "
+               "flash-encryption is OFF; if ON, DL mode reads ciphertext (device re-encrypts/decrypts with "
+               "its key unless Secure-Download-Mode is fused).",
+               "download-mode strap; Secure-Download-Mode NOT fused for plaintext", True,
+               "esptool.py -p /dev/ttyUSB0 -b 460800 read_flash 0 0x400000 flash.bin"),
     "rp2040": ("RP2040 BOOTROM (BOOTSEL / PICOBOOT)",
-               "hold BOOTSEL → USB mass-storage/PICOBOOT; `picotool save -a firmware.bin` dumps the "
-               "external QSPI flash. No on-die readout protection to defeat.",
-               "BOOTSEL strap; USB", True),
+               "hold BOOTSEL → USB mass-storage/PICOBOOT; picotool dumps the external QSPI flash. No "
+               "on-die readout protection to defeat.",
+               "BOOTSEL strap; USB", True,
+               "picotool save -a flash.bin"),
     "bcm":    ("Broadcom bootloader / SD image",
                "Pi-class parts boot from SD/eMMC — pull the card or dump eMMC directly; the VPU boot "
                "chain has no readout gate on the application flash.",
-               "physical access to SD/eMMC", True),
+               "physical access to SD/eMMC", True,
+               "dd if=/dev/mmcblk0 of=sd.img bs=4M   # (card in a reader), or usbboot for eMMC"),
 }
 
 
@@ -49,10 +57,10 @@ def _cfg(profile):
     return (profile or {}).get("openocd_cfg") or "openocd/<cfg>.cfg"
 
 
-def _m(method, how, needs, access, needs_debug, non_destructive=True):
+def _m(method, how, needs, access, needs_debug, non_destructive=True, cmd=""):
     # access: jtag (cable) | rom-loader (cable+strap) | readback (vendor TAP) | chip-off (physical)
     return dict(method=method, how=how, needs=needs, access=access,
-                needs_debug=needs_debug, non_destructive=non_destructive)
+                needs_debug=needs_debug, non_destructive=non_destructive, cmd=cmd)
 
 
 def extraction_plan(soc, P=None, profile=None):
@@ -79,12 +87,14 @@ def extraction_plan(soc, P=None, profile=None):
         d = dump.get(which)
         if d and d.get("script"):
             m.append(_m(f"{which} dump ({d.get('script')})", d.get("note", "profile dump script"),
-                        "debug OPEN", "jtag", True))
+                        "debug OPEN", "jtag", True,
+                        cmd=f"openocd -f {profile.get('openocd_cfg','<cfg>')} -c \"init; source "
+                            f"{d.get('script')}; shutdown\""))
 
     # 3. vendor BootROM loader — extracts WITHOUT the debug DAP (the second avenue).
     if soc in ROM_LOADER:
-        name, how, prereq, nd = ROM_LOADER[soc]
-        m.append(_m(name, how, prereq, "rom-loader", False, nd))
+        name, how, prereq, nd, cmd = ROM_LOADER[soc]
+        m.append(_m(name, how, prereq, "rom-loader", False, nd, cmd=cmd))
 
     # 4. fabric/CPU-less readback (Microsemi) — SVF/DirectC or FlashPro.
     if soc in ("igloo2", "smartfusion2"):
@@ -92,7 +102,8 @@ def extraction_plan(soc, P=None, profile=None):
                     "unprovisioned: SVF/DirectC over a plain FTDI (openocd/microsemi-readback.tcl); "
                     "provisioned: FlashPro/Libero readback or DPA pass-key first.",
                     "security not provisioned (else DPA/FlashPro)", "readback",
-                    needs_debug=True))   # gated on the access being open (unprovisioned), like debug
+                    needs_debug=True,   # gated on the access being open (unprovisioned), like debug
+                    cmd='openocd -f openocd/microsemi-fpga.cfg -c "init; source openocd/microsemi-readback.tcl; shutdown"'))
 
     # 5. external boot-flash off-board — always available with physical access, bypasses everything.
     m.append(_m("external boot-flash off-board",
@@ -128,4 +139,6 @@ def render_md(soc, plan):
         L.append(f"{d['rank']}. **{d['method']}**  ({', '.join(tags)})")
         L.append(f"   - {d['how']}")
         L.append(f"   - needs: {d['needs']}")
+        if d.get("cmd"):
+            L.append(f"   - run: `{d['cmd']}`")
     return "\n".join(L)
