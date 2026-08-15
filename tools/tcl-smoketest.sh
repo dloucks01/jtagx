@@ -209,6 +209,13 @@ if ! python3 tests/first-contact.py; then
 fi
 
 echo ""
+echo "Running HTML report generator test (operator-first stylized report)..."
+if ! bash tools/report-html-smoketest.sh; then
+    echo "FAIL: report-html smoketest"
+    exit 1
+fi
+
+echo ""
 echo "Running boot-image parser + PHT-walk test..."
 if ! bash tests/test-bootimage.sh; then
     echo "FAIL: boot-image test"
