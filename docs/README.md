@@ -31,7 +31,7 @@ Volume 3 What Enumeration Reveals, and the lab-setup companion).
 
 | Doc | Covers |
 |-----|--------|
-| **[05-enumeration-tool.md](05-enumeration-tool.md)** | The `enumerate.tcl` + `interpret.py` capture/interpret pipeline, the security-posture reads, and how to read the report |
+| **[05-enumeration-tool.md](05-enumeration-tool.md)** | The `enumerate.tcl` + `interpret.py` capture/interpret pipeline, the security-posture reads, and how to read the report. The stylized operator-first HTML view is `tools/report-html.py`. |
 | **[11-enumerated-attributes.md](11-enumerated-attributes.md)** | **Catalog of every enumerated attribute** — location, dev value, hardened meaning, why we care. The data dictionary behind the Security Posture Summary. |
 | **[12-secureboot-internals.md](12-secureboot-internals.md)** | Cited reference on ZynqMP secure-boot internals: BootROM (not dumpable — it's internal to the CSU; 0xFFFC0000 is OCM/FSBL), key hierarchy, PUF, bootgen. |
 | **[13-attack-research-plan.md](13-attack-research-plan.md)** | Offensive research plan: vectors to dump the CSU BootROM + extract the family/gray key, by feasibility tier; the Tier-1 `probe-csu-surface.tcl`. |
@@ -46,6 +46,10 @@ Volume 3 What Enumeration Reveals, and the lab-setup companion).
 | **[20-bootrom-fuzzing.md](20-bootrom-fuzzing.md)** | **BootROM boot-header fuzzing harness** (the checkm8-model ROM-dump path) — black-box fuzz the CSU BootROM's BH/IHT/PHT parser via malformed boot images, observe the reaction over JTAG, triage for memory-corruption signatures. `bootrom-fuzz-gen.py` + `bootrom-fuzz-observe.tcl` + `bootrom-fuzz-triage.py`. |
 | **[21-engagement-walkthrough.md](21-engagement-walkthrough.md)** | **The end-to-end engagement runbook** — Phase 0–3 (connect → enumerate → reopen → profile) then Cap-1 (extract/analyze), Cap-2 (live memory R/W), **Cap-2.5 (dynamic analysis: args/backtrace/watchpoints)**, **Cap-3 (persist: reflash the boot image over JTAG)**. The day-to-day driver. |
 | **[22](22-multiboard-capability-matrix.md)–[26](26-unknown-board-walkthrough.md)** | Multi-board engine: capability matrix, engagement runbook, per-chip attribute catalogs (Zynq-7000, Cortex-M/Pi), unknown-board walkthrough. |
+| **[28](28-g3-hwserver-bench-checklist.md)–[29](29-sf2-m3-bench-checklist.md)** | Bench-validation checklists (hw_server bring-up, SmartFusion2 M3). |
+| **[30-authenticated-debug.md](30-authenticated-debug.md)** | The authenticated-debug posture class (ARM SDC-600 / RISC-V debug-auth). Modeled cross-arch by `jtagx/debugauth.py` (OPEN/GATED/AUTHENTICATED/LOCKED). |
+| **[31-deepening-plan.md](31-deepening-plan.md)** | **The spec/board/adapter deepening plan (Phases 1–5, all ✅)** — ZynqMP posture depth, cross-arch CoreSight + debug-auth, adapters/transport, board-family unlock/extraction, breadth. Research-backed with cited addresses. |
+| **[32-first-contact-troubleshooting.md](32-first-contact-troubleshooting.md)** | **First-contact decision tree** — symptom→cause→fix for every way an adapter / no-chain dead-ends first contact (the FlashPro engagement blocker codified). Generated from `jtagx/firstcontact.py`; run `tools/first-contact.py "<symptom>"`. |
 | **[27-roadmap.md](27-roadmap.md)** | **Capability roadmap** — what's done / next / blocked across the find→understand→observe→modify→persist→report pipeline; phase status; structural limits; board-handling lessons. Start here for "where is the project." |
 | **[guides/operator-quick-reference.md](guides/operator-quick-reference.md)** | One-page operator cheat-sheet |
 | **[guides/gui-quick-reference.md](guides/gui-quick-reference.md)** | One-page GUI operator reference (pages, console, cross-links, shortcuts) |

@@ -5,7 +5,7 @@
 #
 # Requires the DM to be reachable AND authenticated (DMSTATUS.authenticated=1). If the
 # part implements RISC-V External Debug Security and no key is provisioned, SBA is
-# behind the authdata challenge — this dump will fail cleanly (see docs/24 / debugauth).
+# behind the authdata challenge — this dump will fail cleanly (see docs/30 / jtagx.debugauth).
 #
 # Parameters via environment:
 #   SBA_ADDR   start address            (default 0x80000000 — typical RAM base)
@@ -54,7 +54,7 @@ if {![catch { $tgt riscv dmi_read 0x11 } dmstatus]} {
     if {$authed == 0} {
         puts "riscv-sba-dump: WARNING DM reports authenticated=0 — SBA is behind the debug-auth"
         puts "                challenge (RISC-V External Debug Security). The dump will likely fail;"
-        puts "                a key/cert is needed, not a lever. See jtagx.debugauth / docs/24."
+        puts "                a key/cert is needed, not a lever. See jtagx.debugauth / docs/30."
     }
 }
 

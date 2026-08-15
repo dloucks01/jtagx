@@ -122,10 +122,10 @@ def preflight(prof, present):
            for a in present):
         checks.append((INFO, "host: ftdi_sio",
                        "FTDI adapter present — if OpenOCD reports it busy, unbind ftdi_sio "
-                       "(it may have claimed the channel as /dev/ttyUSB*). See docs/24."))
+                       "(it may have claimed the channel as /dev/ttyUSB*). See docs/32."))
     checks.append((INFO, "troubleshooting",
                    "stuck at first contact? `python3 tools/first-contact.py \"<symptom>\"` "
-                   "or docs/24-first-contact-troubleshooting.md."))
+                   "or docs/32-first-contact-troubleshooting.md."))
     return GO, checks
 
 

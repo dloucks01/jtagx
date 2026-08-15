@@ -42,6 +42,6 @@ routes to the `libero` backend / this note instead of failing silently.
   expect it to work — it never will with stock OpenOCD. That is the exact dead-end
   this note exists to break.
 
-See also: `docs/24-first-contact-troubleshooting.md` (the full decision tree),
+See also: `docs/32-first-contact-troubleshooting.md` (the full decision tree),
 `jtagx/transport/matrix.py` (backend routing: FlashPro → `libero`, "program/verify
 engine, not a debugger"), and `jtagx/firstcontact.py` blocker `proprietary-adapter`.

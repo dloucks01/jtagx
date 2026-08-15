@@ -6,7 +6,7 @@ first-contact.py — CLI for the first-contact troubleshooting decision tree
     python3 tools/first-contact.py                       # full stage-ordered tree
     python3 tools/first-contact.py --stage adapter       # one stage
     python3 tools/first-contact.py "flashpro won't work" # diagnose a symptom
-    python3 tools/first-contact.py --md -o docs/24-...md  # render markdown
+    python3 tools/first-contact.py --md -o docs/32-first-contact-troubleshooting.md  # render markdown
 
 Offline. Knowledge base only — emits no USB traffic.
 """

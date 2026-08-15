@@ -3,6 +3,13 @@
 Reference for the **next trust boundary above an on/off debug gate**, and how the posture layer
 represents it. Written 2026-08-14 as part of the non-physical SOTA gap-close (plan Phase 2).
 
+> **Implementation (2026-08-15, docs/31 Phase 2):** this class is now modeled cross-arch by
+> **`jtagx/debugauth.py`** — `classify(arch, signals)` returns `OPEN / GATED / AUTHENTICATED / LOCKED /
+> NONE` from Armv8-A `DBGAUTHSTATUS_EL1`+`EDPRSR`, Cortex-M lock + SDC-600 `DAUTHSTATUS`, or RISC-V
+> `DMSTATUS.authenticated`. The AUTHENTICATED verdict is this frontier. It feeds interpret.py, the HTML
+> report (`tools/report-html.py`), engagement-report §1d, and the GUI. The nRF54L ADAC/lifecycle case is
+> the `nrf54-adac-lifecycle` weakness hypothesis.
+
 ## Why this matters
 
 Our founding thesis is "on an unprovisioned board the OPEN DAP *is* the trust boundary" — the CSU

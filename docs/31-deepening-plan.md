@@ -1,4 +1,4 @@
-# docs/23 — Deepening Plan: Spec / Board / Adapter Coverage
+# docs/31 — Deepening Plan: Spec / Board / Adapter Coverage
 
 **Status:** proposed (2026-08-15). Research-backed; not yet implemented.
 **Scope order (per operator):** ① Zynq + Cortex/CoreSight depth → ② adapters/transport
@@ -114,7 +114,7 @@ that catches every first-contact blocker *before* the operator is stuck.
    - target held in reset / needs `connect_under_reset` (locked parts, boot-mode straps)
    - DAP powered down (CDBGPWRUPREQ/ack), unexpected multi-TAP IR lengths, eFuse-disabled JTAG
    - host: udev/libusb perms, VMware USB passthrough (Kali-in-VM), `ftdi_sio` conflict
-3.4 **First-contact decision tree** (`docs/24-first-contact-troubleshooting.md` + a
+3.4 **First-contact decision tree** (`docs/32-first-contact-troubleshooting.md` + a
    `tools/first-contact.py` that walks it): symptom → likely cause → concrete fix, so an
    engagement never dead-ends on "adapter didn't work."
 3.5 **Reset/transport levers in the cfgs:** template `reset_config` options + a documented
@@ -122,7 +122,7 @@ that catches every first-contact blocker *before* the operator is stuck.
    ZynqMP "core code-exec wedges the DAP" note we already have).
 
 **Files:** `jtagx/transport/matrix.py`, `jtagx/preflight.py`, `tools/preflight.py`,
-`tools/first-contact.py` (new), `openocd/adapters/*`, `docs/24-*.md`, GUI Chain preflight panel.
+`tools/first-contact.py` (new), `openocd/adapters/*`, `docs/32-*.md`, GUI Chain preflight panel.
 **Verify:** `preflight` smoketest gains FlashPro-detected + Vref-missing + wrong-connector
 scenarios (all offline, mocked USB tables); capability-matrix smoketest asserts the
 OpenOCD-drivable ✗ rows route to the right backend.
