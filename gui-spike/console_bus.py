@@ -19,6 +19,9 @@ class ConsoleBus(QObject):
     line = Signal(str, str)      # (kind, text) — one output line; kind ∈ i/g/w/d/t
     command = Signal(str, str)   # (source_tag, command) — echoed as "<tag> $ <command>"
     mark = Signal(str)           # a divider line (tab switch / section boundary)
+    run_done = Signal(int)       # a console-run command finished (exit code) — any page can react
+                                  # (e.g. Dashboard refreshing the ARTIFACTS tile / a new-dumps banner)
+                                  # without owning a reference to the console's runner.
 
 
 BUS = ConsoleBus()

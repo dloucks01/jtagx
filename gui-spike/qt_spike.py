@@ -522,6 +522,11 @@ class ConsolePanel(QFrame):
             BUS.line.connect(self.append)
             BUS.command.connect(self.echo_cmd)
             BUS.mark.connect(self.mark)
+            # every tab drops its commands here and the OPERATOR presses Run — so this is the one
+            # place that observes "a command actually finished," regardless of which tab sent it.
+            # Broadcasting it lets Dashboard react (ARTIFACTS tile, new-dumps banner) without needing
+            # a direct reference to this runner.
+            self.runner.done.connect(BUS.run_done.emit)
         except Exception:
             pass
 
@@ -873,12 +878,22 @@ class Dashboard(QWidget):
         self._tiles = {}            # label -> the QLabel showing its number (for live updates)
         self._last_cap = None       # title of the last capability run (for the post-run prompt)
         self.backend = "auto"       # transport backend for capability commands (auto/openocd/hw_server)
+        self._chain_pinned = None   # side-panel visibility: None=auto (follows the active tab), else an
+        self._caps_pinned = None    # explicit True/False the operator set via the corner toggle buttons
         self.runner = ProcRunner(self)          # runs real OpenOCD/tools, streams stdout live
         self.runner.line.connect(self._proc_line)
         self.runner.done.connect(self._on_done)
         v = QVBoxLayout(self); v.setContentsMargins(16, 14, 16, 14); v.setSpacing(14)
         v.addLayout(self._hero())
+        v.addLayout(self._stepper())
         v.addLayout(self._content(), 1)
+        # any tab can drop a command in the console; this is the one place that hears when it FINISHES
+        # (regardless of which tab sent it) — closes the extraction→result loop and keeps ARTIFACTS live.
+        try:
+            from console_bus import BUS
+            BUS.run_done.connect(self._on_run_done)
+        except Exception:
+            pass
 
     def set_enum_button(self, b):
         self._enum_btn = b
@@ -959,16 +974,125 @@ class Dashboard(QWidget):
             if label in self._tiles:
                 n, s = self._tiles[label]
                 n.setText(num); s.setText(sub); n.setStyleSheet(f"color:{color};")
+        self.refresh_stepper()
+
+    # ------------------------------------------------------------------ guided-path stepper
+    # The engagement's actual shape, made explicit: Enumerate -> Posture -> Extract -> Analyze.
+    # A first-time operator has no other cue for "what do I do first" — the stepper answers that,
+    # and stays answering it after every action (each click navigates; the highlight tracks real state,
+    # not a wizard's notion of progress, so it's honest if you jump around out of order).
+    _STEP_LABELS = ["① Enumerate", "② Posture", "③ Extract", "④ Analyze"]
+
+    def _stepper_state(self):
+        """[(label, done), ...] + the index of the first not-done step (== len if all done)."""
+        captured = getattr(self, "_posture_is_real", False) or (load_real_posture(ROOT) is not None)
+        ndumps = count_dumps()
+        try:
+            nreports = len(glob.glob(os.path.join(ROOT, "reports", "*.md")))
+        except Exception:
+            nreports = 0
+        steps = [captured, captured, ndumps > 0, nreports > 0]
+        current = next((i for i, d in enumerate(steps) if not d), len(steps))
+        return list(zip(self._STEP_LABELS, steps)), current
+
+    def _stepper(self):
+        h = QHBoxLayout(); h.setSpacing(6)
+        actions = [self.start_enumerate,
+                  lambda: self._center_tabs.setCurrentIndex(0),
+                  lambda: self._center_tabs.setCurrentIndex(4),
+                  lambda: self.navigate.emit(4)]
+        self._step_btns = []
+        for i, (lbl, act) in enumerate(zip(self._STEP_LABELS, actions)):
+            b = QPushButton(lbl); b.setCursor(Qt.PointingHandCursor); b.setFlat(True)
+            b.setProperty("cls", "stepBtn")
+            b.clicked.connect(act)
+            self._step_btns.append(b)
+            h.addWidget(b)
+            if i < len(self._STEP_LABELS) - 1:
+                arrow = QLabel("→"); arrow.setStyleSheet("color:#3a4553; font-size:12px;")
+                h.addWidget(arrow)
+        h.addStretch(1)
+        self.refresh_stepper()
+        return h
+
+    def refresh_stepper(self):
+        if not hasattr(self, "_step_btns"):
+            return
+        steps, current = self._stepper_state()
+        for i, b in enumerate(self._step_btns):
+            if steps[i][1]:
+                b.setStyleSheet("QPushButton{color:#3ecf8e; font-weight:700; font-size:11px; "
+                               "border:none; background:transparent; padding:2px 0;}")
+                b.setToolTip("done — click to revisit")
+            elif i == current:
+                b.setStyleSheet("QPushButton{color:#37cbd8; font-weight:800; font-size:11px; "
+                               "border:none; background:transparent; padding:2px 0; "
+                               "text-decoration:underline;}")
+                b.setToolTip("you are here")
+            else:
+                b.setStyleSheet("QPushButton{color:#5e6b7c; font-weight:500; font-size:11px; "
+                               "border:none; background:transparent; padding:2px 0;}")
+                b.setToolTip("not yet — earlier steps come first")
+
+    def _on_run_done(self, code):
+        """Any tab's console-run command finished (BUS.run_done) — refresh live counters and, if new
+        dump artifacts appeared, surface the Kill-Chain-tab banner that closes extraction -> Memory."""
+        self.refresh_hero()
+        n = count_dumps()
+        if hasattr(self, "_kc_dump_baseline") and n > self._kc_dump_baseline and hasattr(self, "_kc_dump_banner"):
+            delta = n - self._kc_dump_baseline
+            self._kc_dump_msg.setText(f"✓ {delta} new dump{'s' if delta != 1 else ''} captured — "
+                                      f"{n} total")
+            self._kc_dump_banner.show()
+            self._kc_dump_baseline = n
+
+    # Tabs where the task deserves the full width — the ladder/probe/planner surfaces, not the
+    # browse-and-reference ones (Posture/Registers) where the chain tree and capability list are
+    # actually useful company. Center-tab index -> collapse the side panels.
+    _FOCUSED_TABS = {4, 5, 6}   # Kill Chain, Attack Surface, Shell
 
     def _content(self):
-        h = QHBoxLayout(); h.setSpacing(14)
+        h = QHBoxLayout(); h.setSpacing(6)
+        self._chain_toggle = self._side_toggle("⛓", "Show/hide the Chain & Transport panel",
+                                               self._toggle_chain_panel)
+        h.addWidget(self._chain_toggle)
         h.addWidget(self._chain_panel(), 0)
         h.addWidget(self._center_panel(), 1)
         h.addWidget(self._caps_panel(), 0)
+        self._caps_toggle = self._side_toggle("⚡", "Show/hide the Capabilities panel",
+                                              self._toggle_caps_panel)
+        h.addWidget(self._caps_toggle)
         return h
+
+    def _on_center_tab_changed(self, idx):
+        """Auto-collapse the side panels on task-focused tabs to give them the full width; auto-expand
+        on the browse/reference tabs — UNLESS the operator has explicitly pinned a panel open/closed
+        via its corner toggle this session, in which case their choice wins."""
+        focused = idx in self._FOCUSED_TABS
+        if self._chain_pinned is None and hasattr(self, "_chain_frame"):
+            vis = not focused
+            self._chain_frame.setVisible(vis)
+            if hasattr(self, "_chain_toggle"):
+                self._chain_toggle.setChecked(vis)
+        if self._caps_pinned is None and hasattr(self, "_caps_frame"):
+            vis = not focused
+            self._caps_frame.setVisible(vis)
+            if hasattr(self, "_caps_toggle"):
+                self._caps_toggle.setChecked(vis)
+
+    def _toggle_chain_panel(self):
+        vis = self._chain_toggle.isChecked()
+        self._chain_frame.setVisible(vis)
+        self._chain_pinned = vis     # an explicit choice — auto-collapse no longer overrides it
+
+    def _toggle_caps_panel(self):
+        vis = self._caps_toggle.isChecked()
+        self._caps_frame.setVisible(vis)
+        self._caps_pinned = vis
 
     def _chain_panel(self):
         p = QFrame(); p.setProperty("cls", "panel"); p.setFixedWidth(230)
+        self._chain_frame = p
         self._chain_v = QVBoxLayout(p); self._chain_v.setContentsMargins(0, 0, 0, 8); self._chain_v.setSpacing(0)
         self._fill_chain_panel(getattr(self, "_board_soc", "zynqmp"))
         return p
@@ -1046,19 +1170,34 @@ class Dashboard(QWidget):
         regs = load_registers(ROOT)
         tabs = QTabWidget()
         self._center_tabs = tabs
-        tabs.addTab(self._posture_tab(), "⛨  Posture")
-        tabs.addTab(self._registers_tab(regs), f"▦  Registers ({len(regs)})" if regs else "▦  Registers")
+        tabs.addTab(self._posture_tab(), "⛨ Posture")
+        tabs.addTab(self._registers_tab(regs), f"▦ Registers ({len(regs)})" if regs else "▦ Registers")
         tabs.addTab(self._launcher("▤  Memory / Hex viewer",
                     "Browse a DDR/OCM/flash dump byte-for-byte in the virtualized hex view.",
-                    "Open Memory page →", 3), "▤  Memory")
+                    "Open Memory page →", 3), "▤ Memory")
         tabs.addTab(self._launcher("🗎  Engagement reports",
                     "Rendered Markdown deliverables (engagement, VxWorks, DRAM secrets, captures).",
-                    "Open Reports page →", 4), "🗎  Report")
-        tabs.addTab(self._killchain_tab(), "⛓  Kill Chain")            # jtagx.attackgraph planner
-        tabs.addTab(self._attack_surface_tab(), "⚗  Attack Surface")   # jtagx.weakness misuse layer
-        tabs.addTab(self._shell_tab(), "→]  Shell")                    # jtagx.jtagtoshell planner
+                    "Open Reports page →", 4), "🗎 Report")
+        tabs.addTab(self._killchain_tab(), "⛓ Kill Chain")             # jtagx.attackgraph planner
+        tabs.addTab(self._attack_surface_tab(), "⚗ Attack Surface")    # jtagx.weakness misuse layer
+        tabs.addTab(self._shell_tab(), "→] Shell")                     # jtagx.jtagtoshell planner
+        tabs.currentChanged.connect(self._on_center_tab_changed)
         v.addWidget(tabs)
         return p
+
+    def _side_toggle(self, glyph, tooltip, slot):
+        """A slim, ALWAYS-visible rail button for showing/hiding a side panel — lives OUTSIDE the panel
+        it controls (not as a tab-bar corner widget, which competes with tab labels for width and pushed
+        the last tabs into scroll-arrow overflow), so collapsing a panel never hides its own way back."""
+        b = QPushButton(glyph); b.setCheckable(True); b.setChecked(True)
+        b.setFixedWidth(14); b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        b.setCursor(Qt.PointingHandCursor); b.setToolTip(tooltip)
+        b.setStyleSheet("QPushButton{background:#12171f; color:#5e6b7c; border:1px solid #232c39; "
+                        "border-radius:6px; font-size:11px;} "
+                        "QPushButton:checked{color:#98a6b8; background:#161c26;} "
+                        "QPushButton:hover{color:#e7ecf3;}")
+        b.clicked.connect(slot)
+        return b
 
     _CLS_CLR = {"design-primitive": "#5aa9e6", "trust-assumption": "#e7b04b", "alternate-master": "#b07de7",
                 "asymmetric-protection": "#e7b04b", "volatile-secret": "#e07b53", "thesis": "#3ecf8e"}
@@ -1270,6 +1409,21 @@ class Dashboard(QWidget):
         self._kc_reach = QLabel(""); self._kc_reach.setWordWrap(True)
         self._kc_reach.setStyleSheet("color:#cdd6e2; font-size:12px;")
         v.addWidget(self._kc_reach)
+        # closes the extraction -> result loop: a node/avenue's ▶ run drops a command in the console;
+        # this banner appears the moment that command actually finishes AND grew dumps/, with a direct
+        # link to go look at what landed — so "I ran an extraction" and "here's the file" aren't two
+        # unconnected facts the operator has to notice on their own.
+        self._kc_dump_banner = QFrame(); self._kc_dump_banner.setProperty("cls", "cap")
+        self._kc_dump_banner.setStyleSheet("QFrame{border-color:#2f6b4f; background:#0f1d16;}")
+        self._kc_dump_banner.hide()
+        bv = QHBoxLayout(self._kc_dump_banner); bv.setContentsMargins(11, 8, 11, 8)
+        self._kc_dump_msg = QLabel(""); self._kc_dump_msg.setStyleSheet("color:#3ecf8e; font-size:12px; font-weight:700;")
+        bv.addWidget(self._kc_dump_msg); bv.addStretch(1)
+        openbtn = QPushButton("Open in Memory →"); openbtn.setProperty("cls", "cbtn")
+        openbtn.setCursor(Qt.PointingHandCursor)
+        openbtn.clicked.connect(lambda: self.navigate.emit(3))
+        bv.addWidget(openbtn)
+        v.addWidget(self._kc_dump_banner)
         self._kc_scroll = QScrollArea(); self._kc_scroll.setWidgetResizable(True)
         self._kc_scroll.setFrameShape(QFrame.NoFrame)
         self._kc_host = QWidget(); self._kc_v = QVBoxLayout(self._kc_host)
@@ -1285,6 +1439,11 @@ class Dashboard(QWidget):
         """(Re)build the kill-chain nodes for the active board + posture."""
         if not hasattr(self, "_kc_v") or _attackgraph is None:
             return
+        # a rebuild means "the operator is looking at this tab right now" — reset the new-dumps baseline
+        # and clear any stale banner from a previous visit.
+        self._kc_dump_baseline = count_dumps()
+        if hasattr(self, "_kc_dump_banner"):
+            self._kc_dump_banner.hide()
         while self._kc_v.count():
             it = self._kc_v.takeAt(0)
             if it.widget():
@@ -1341,7 +1500,8 @@ class Dashboard(QWidget):
             except Exception:
                 ex = []
             if ex:
-                lbl = QLabel("EXTRACTION AVENUES  ·  best-first  ·  ▶ drops the command in the console")
+                lbl = QLabel("EXTRACTION AVENUES  ·  best-first  ·  ▶ drops the command in the console — "
+                            "run it there, and the result shows up here + in Memory")
                 lbl.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700; padding-top:8px;")
                 self._kc_v.addWidget(lbl)
                 for m in ex:
@@ -1792,6 +1952,7 @@ class Dashboard(QWidget):
 
     def _caps_panel(self):
         p = QFrame(); p.setProperty("cls", "panel"); p.setFixedWidth(240)
+        self._caps_frame = p
         self._caps_v = QVBoxLayout(p); self._caps_v.setContentsMargins(8, 0, 8, 8); self._caps_v.setSpacing(8)
         self._fill_caps_panel(getattr(self, "_board_soc", "zynqmp"))
         return p

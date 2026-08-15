@@ -445,6 +445,86 @@ _after2 = set(_glob.glob(_os.path.join(qt_spike.ROOT, "reports", "raw-*.json")))
 if _after2 != _before2: bad("a blocked enumerate must not produce any capture file")
 w.dash.set_backend("openocd")   # restore
 
+# 27. guided-path stepper (Enumerate -> Posture -> Extract -> Analyze): renders, tracks real state,
+# and each step navigates. On the real (mutable) reports/+dumps/ dir this board has a capture, dumps,
+# and reports, so all four should read done — assert the mechanism, not a specific board snapshot.
+if not hasattr(d, "_step_btns") or len(d._step_btns) != 4:
+    bad("dashboard should have a 4-step guided-path stepper")
+steps, current = d._stepper_state()
+if [s[0] for s in steps] != ["① Enumerate", "② Posture", "③ Extract", "④ Analyze"]:
+    bad(f"stepper labels wrong: {[s[0] for s in steps]}")
+if current > 4 or current < 0:
+    bad(f"stepper current index out of range: {current}")
+d._step_btns[1].click()   # "② Posture" should jump to the Posture tab (index 0)
+if d._center_tabs.currentIndex() != 0: bad("clicking the Posture step should switch to the Posture tab")
+d._step_btns[2].click()   # "③ Extract" should jump to the Kill Chain tab (index 4)
+if d._center_tabs.currentIndex() != 4: bad("clicking the Extract step should switch to the Kill Chain tab")
+seen3 = []
+d.navigate.connect(lambda i: seen3.append(i))
+d._step_btns[3].click()   # "④ Analyze" should navigate to the Reports PAGE (not a center tab)
+if seen3 != [4]: bad("clicking the Analyze step should navigate to the Reports page")
+
+# 28. side-panel auto-collapse on task-focused tabs, auto-expand on browse tabs, manual pin overrides
+if not hasattr(d, "_chain_frame") or not hasattr(d, "_caps_frame"):
+    bad("dashboard should track chain/caps frame handles for collapse")
+d._center_tabs.setCurrentIndex(0)   # Posture — a browse tab
+if d._chain_frame.isHidden() or d._caps_frame.isHidden():
+    bad("side panels should be visible on a browse tab (Posture)")
+d._center_tabs.setCurrentIndex(4)   # Kill Chain — a focused tab
+if not d._chain_frame.isHidden() or not d._caps_frame.isHidden():
+    bad("side panels should auto-collapse on a task-focused tab (Kill Chain)")
+d._center_tabs.setCurrentIndex(6)   # Shell — also focused
+if not d._chain_frame.isHidden() or not d._caps_frame.isHidden():
+    bad("side panels should auto-collapse on Shell too")
+d._center_tabs.setCurrentIndex(0)   # back to Posture — should re-expand
+if d._chain_frame.isHidden() or d._caps_frame.isHidden():
+    bad("side panels should auto-re-expand switching back to a browse tab")
+# manual pin: explicitly hide the chain panel, then switching tabs must NOT override that choice
+d._chain_toggle.setChecked(False); d._toggle_chain_panel()
+if not d._chain_frame.isHidden(): bad("manual toggle should hide the chain panel")
+d._center_tabs.setCurrentIndex(4)   # a focused tab — chain panel already hidden, caps still auto-collapses
+if not d._chain_frame.isHidden(): bad("manually-pinned-hidden chain panel should stay hidden on any tab")
+d._center_tabs.setCurrentIndex(0)   # back to a browse tab — pin should still win over auto-expand
+if not d._chain_frame.isHidden():
+    bad("a manual pin must survive a tab switch (auto-behavior should not override an explicit choice)")
+d._chain_toggle.setChecked(True); d._toggle_chain_panel()   # restore
+if d._chain_frame.isHidden(): bad("re-toggling should show the chain panel again")
+d._chain_pinned = None   # release the pin so later checks see normal auto-behavior
+# regression guard: the toggles must NOT be QTabWidget corner widgets (that ate tab-bar width and
+# pushed tabs into scroll-arrow overflow) — they're a separate always-visible outer rail instead.
+from PySide6.QtCore import Qt as _QtCorner
+if d._center_tabs.cornerWidget(_QtCorner.TopLeftCorner) is not None:
+    bad("side-panel toggle must not be a tab-bar corner widget (regresses to tab overflow)")
+if d._center_tabs.cornerWidget(_QtCorner.TopRightCorner) is not None:
+    bad("side-panel toggle must not be a tab-bar corner widget (regresses to tab overflow)")
+
+# 29. extraction -> Memory feedback loop: a console-run command finishing with MORE dumps than the
+# Kill-Chain-tab's baseline surfaces a banner with a working "Open in Memory" link; revisiting the
+# tab (refresh_killchain) resets the baseline and clears it.
+d._center_tabs.setCurrentIndex(4)   # (re)build the Kill Chain tab, sets a fresh baseline
+if not hasattr(d, "_kc_dump_banner") or not hasattr(d, "_kc_dump_baseline"):
+    bad("Kill Chain tab should track a dump baseline + banner")
+if not d._kc_dump_banner.isHidden(): bad("dump banner should start hidden")
+_orig_count_dumps = qt_spike.count_dumps
+qt_spike.count_dumps = lambda: d._kc_dump_baseline + 2
+try:
+    d._on_run_done(0)   # simulate BUS.run_done firing after an extraction avenue's command finished
+    if d._kc_dump_banner.isHidden(): bad("2 new dumps should show the Kill-Chain banner")
+    if "2 new dump" not in d._kc_dump_msg.text(): bad(f"banner text wrong: {d._kc_dump_msg.text()}")
+    seen4 = []
+    d.navigate.connect(lambda i: seen4.append(i))
+    from PySide6.QtWidgets import QPushButton as _QPB
+    openbtn = next(b for b in d._kc_dump_banner.findChildren(_QPB) if "Memory" in b.text())
+    openbtn.click()
+    if seen4 != [3]: bad("the banner's Open-in-Memory button should navigate to the Memory page")
+finally:
+    qt_spike.count_dumps = _orig_count_dumps
+d.refresh_killchain()
+if not d._kc_dump_banner.isHidden(): bad("refresh_killchain should clear a stale banner and reset the baseline")
+# a console command finishing with NO new dumps must not show a stale/false banner
+d._on_run_done(0)
+if not d._kc_dump_banner.isHidden(): bad("no new dumps should NOT show the banner")
+
 w.dash.stop()
 print("  gui end-to-end OK (5 pages, hero real, tabs filled, nav flow, memory selector, unlock plans)")
 PY
