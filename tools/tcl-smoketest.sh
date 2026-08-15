@@ -380,4 +380,8 @@ echo ""
 echo "Running CLI adversarial checks (every tool vs missing/empty/garbage input, as a real subprocess)..."
 if ! bash tools/cli-adversarial-smoketest.sh; then echo "FAIL: cli-adversarial smoketest"; exit 1; fi
 
+echo ""
+echo "Running happy-path checks (tools coverage flagged as zero/near-zero: good input, real assertions)..."
+if ! bash tools/happy-path-smoketest.sh; then echo "FAIL: happy-path smoketest"; exit 1; fi
+
 exit 0
