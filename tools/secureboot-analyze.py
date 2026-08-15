@@ -18,15 +18,26 @@ reported as absent, not guessed. Findings tie the CHES-2025 instruction-skip cla
 of the check (the deferred fault-injection target), without claiming to run any attack.
 """
 import argparse
+import base64
+import hashlib
 import json
+import os
 import struct
 import sys
 
 MCUBOOT_MAGIC = 0x96F3B83D          # MCUboot image_header.ih_magic (LE u32 @0)
 MCUBOOT_TLV_INFO = 0x6907           # IMAGE_TLV_INFO_MAGIC (unprotected TLV area)
 MCUBOOT_TLV_PROT = 0x6908           # protected TLV area
-MCUBOOT_SIG_TLVS = {0x20: "SHA256", 0x22: "RSA2048/PKCS1.5", 0x23: "ECDSA-P256",
-                    0x24: "ED25519", 0x25: "ENCEC256", 0x26: "ENCX25519", 0x10: "KEYHASH"}
+# real MCUboot IMAGE_TLV_* values (bootutil/image.h) — corrected from the Phase-4 stub.
+MCUBOOT_TLV = {0x01: "KEYHASH", 0x02: "PUBKEY", 0x10: "SHA256", 0x11: "SHA384",
+               0x20: "RSA2048-PSS", 0x21: "ECDSA224", 0x22: "ECDSA-P256", 0x23: "RSA3072-PSS",
+               0x24: "ED25519", 0x30: "ENC-RSA2048", 0x31: "ENC-KW", 0x32: "ENC-EC256",
+               0x33: "ENC-X25519", 0x40: "DEPENDENCY", 0x50: "SEC_CNT"}
+# which TLVs are an actual authentication signature, and each one's strength verdict
+MCUBOOT_SIG_STRENGTH = {0x20: ("RSA2048-PSS", "ok"), 0x21: ("ECDSA-P224", "WEAK (224-bit)"),
+                        0x22: ("ECDSA-P256", "ok"), 0x23: ("RSA3072-PSS", "strong"),
+                        0x24: ("ED25519", "strong")}
+MCUBOOT_TLV_KEYHASH, MCUBOOT_TLV_PUBKEY, MCUBOOT_TLV_SEC_CNT = 0x01, 0x02, 0x50
 MCUBOOT_FLAG_ENCRYPTED = 0x04 | 0x08 | 0x10   # ENCRYPTED_AES128 / AES256 / (any enc flag)
 WOLFBOOT_MAGIC = 0x464C4F57         # 'WOLF' — wolfBoot image header magic (LE u32 @0)
 WOLFBOOT_TAG_SIGNATURE = 0x0020     # HDR_SIGNATURE
@@ -47,6 +58,29 @@ def _find(d, needle, start=0):
     return i
 
 
+_KNOWN_KEYS = None
+
+
+def _known_key(sha256_hex):
+    """Look up a signing-key SHA256 against references/known-keys/*.json — a {hash: description} DB of
+    KNOWN/DEFAULT/TEST public keys (e.g. the MCUboot/wolfBoot repo test keys, or leaked vendor keys).
+    Returns the description or None. The DB ships EMPTY (no fabricated hashes) — populate it from the
+    real vendor repos; a match means the image is signed with a publicly-available key = forgeable."""
+    global _KNOWN_KEYS
+    if _KNOWN_KEYS is None:
+        _KNOWN_KEYS = {}
+        kd = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "references", "known-keys")
+        try:
+            for fn in os.listdir(kd):
+                if fn.endswith(".json"):
+                    for k, v in json.load(open(os.path.join(kd, fn))).items():
+                        _KNOWN_KEYS[k.lower()] = v
+        except Exception:
+            pass
+    return _KNOWN_KEYS.get((sha256_hex or "").lower())
+
+
 # ---- per-format analyzers: each returns (fmt, dict-of-facts, [findings]) or None if magic absent ----
 def analyze_mcuboot(d):
     if u32le(d, 0) != MCUBOOT_MAGIC:
@@ -58,8 +92,8 @@ def analyze_mcuboot(d):
     facts = {"header_size": hdr_size, "image_size": img_size, "flags": hex(flags),
              "version": ".".join(str(x) for x in ver[:3]) if ver else "?",
              "encrypted": bool(flags & MCUBOOT_FLAG_ENCRYPTED)}
-    # TLV area follows header+image; scan for the TLV info magic and enumerate signature TLVs
-    sigs = []
+    # TLV area follows header+image; enumerate ALL TLVs (semantic: sigs, key-hash, rollback counter)
+    sigs, sig_types, keyhash, pubkey, sec_cnt, all_tlvs = [], [], None, None, None, []
     tlv_off = _find(d, struct.pack("<H", MCUBOOT_TLV_INFO))
     if tlv_off < 0:
         tlv_off = _find(d, struct.pack("<H", MCUBOOT_TLV_PROT))
@@ -69,23 +103,52 @@ def analyze_mcuboot(d):
         end = min(tlv_off + total, len(d))
         while o + 4 <= end:
             t = d[o]; ln = u16le(d, o + 2) or 0
-            if t in MCUBOOT_SIG_TLVS:
-                sigs.append(MCUBOOT_SIG_TLVS[t])
+            val = d[o + 4:o + 4 + ln]
+            all_tlvs.append(MCUBOOT_TLV.get(t, hex(t)))
+            if t in MCUBOOT_SIG_STRENGTH:
+                sigs.append(MCUBOOT_SIG_STRENGTH[t][0]); sig_types.append(t)
+            elif t == MCUBOOT_TLV_KEYHASH:
+                keyhash = val.hex()
+            elif t == MCUBOOT_TLV_PUBKEY:
+                pubkey = val
+            elif t == MCUBOOT_TLV_SEC_CNT and len(val) >= 4:
+                sec_cnt = struct.unpack_from("<I", val, 0)[0]
             o += 4 + ln
-    facts["signature_tlvs"] = sigs
-    signed = any(s in ("RSA2048/PKCS1.5", "ECDSA-P256", "ED25519") for s in sigs)
-    facts["signed"] = signed
+    # if the image EMBEDS the public key (PUBKEY TLV) but no KEYHASH, fingerprint it ourselves
+    if pubkey and not keyhash:
+        keyhash = hashlib.sha256(pubkey).hexdigest()
+    signed = bool(sig_types)
+    facts.update(signature=", ".join(sigs) or "(none)", signed=signed, key_sha256=keyhash,
+                 pubkey_embedded=bool(pubkey), security_counter=sec_cnt, tlvs=all_tlvs)
     F = []
     if not signed:
         F.append(("HIGH", "unsigned-image",
-                  "no signature TLV (RSA/ECDSA/ED25519) found — the image is NOT authenticated; a modified "
-                  "image boots. If the bootloader is configured to require a signature this may be a "
-                  "truncated/unsigned build, but as-is nothing verifies it."))
+                  "no signature TLV (RSA/ECDSA/ED25519) in the image — it is NOT authenticated; a modified "
+                  "image boots on any MCUboot built without mandatory verification."))
     else:
+        weak = [MCUBOOT_SIG_STRENGTH[t] for t in sig_types if MCUBOOT_SIG_STRENGTH[t][1].startswith("WEAK")]
+        if weak:
+            F.append(("HIGH", "weak-signature",
+                      f"signature algorithm is weak: {', '.join(a for a, _ in weak)} — below current "
+                      "strength; forgeable/collision-prone relative to RSA3072/ED25519."))
         F.append(("INFO", "sig-verify-target",
-                  f"signed ({', '.join(sigs)}). MCUboot verifies with a single accept/reject branch in "
-                  "boot_image_validate() -> an instruction-skip fault at that call forges acceptance "
-                  "(TCHES 2025). Static finding: this call is the deferred fault-injection target."))
+                  f"signed ({', '.join(sigs)}). MCUboot verifies in a single boot_image_validate() "
+                  "accept/reject branch → an instruction-skip fault there forges acceptance (TCHES 2025). "
+                  "This call is the deferred fault-injection target."))
+    if keyhash:
+        kv = _known_key(keyhash)
+        if kv:
+            F.append(("CRIT", "default-signing-key",
+                      f"the signing key SHA256 {keyhash[:16]}… matches a KNOWN key: {kv}. Anyone with that "
+                      "(public) key repo can FORGE a valid signature — authentication is void."))
+        else:
+            F.append(("INFO", "signing-key",
+                      f"signing key SHA256 = {keyhash} (KEYHASH TLV). Cross-ref against vendor/test-key "
+                      "hashes in references/known-keys/ (add the MCUboot/wolfBoot repo test keys there)."))
+    if signed and sec_cnt is None:
+        F.append(("MED", "no-rollback-counter",
+                  "no SEC_CNT (security-counter) TLV — no hardware anti-rollback binding; an attacker can "
+                  "DOWNGRADE to an older validly-signed image with a known vulnerability."))
     if not facts["encrypted"]:
         F.append(("LOW", "plaintext-image",
                   "image is not encrypted — extractable in the clear once dumped (confidentiality relies "
@@ -178,12 +241,40 @@ def analyze(d):
                         "Run tools/dump-triage.py to identify the blob first.")])
 
 
+def hash_pubkey(path):
+    """SHA256 of a public key, matching how MCUboot computes KEYHASH (over the DER-encoded key). Accepts
+    a raw DER (binary) or a PEM (-----BEGIN ...-----) file. Returns the hex digest."""
+    raw = open(path, "rb").read()
+    if b"-----BEGIN" in raw:
+        body = b"".join(ln for ln in raw.splitlines() if b"-----" not in ln)
+        try:
+            raw = base64.b64decode(body)
+        except Exception:
+            pass
+    return hashlib.sha256(raw).hexdigest()
+
+
 def main():
     ap = argparse.ArgumentParser(description="Generic secure-boot image analyzer (static, offline).")
-    ap.add_argument("image")
+    ap.add_argument("image", nargs="?")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--hash-key", metavar="KEYFILE",
+                    help="print SHA256 of a DER/PEM public key (the value to add to references/known-keys/)")
     a = ap.parse_args()
-    d = open(a.image, "rb").read()
+    if a.hash_key:
+        try:
+            h = hash_pubkey(a.hash_key)
+        except OSError as e:
+            sys.exit(f"error: cannot read {a.hash_key}: {e.strerror}")
+        print(f'"{h}": "<describe this key — e.g. vendor default / repo test key>"')
+        print(f"# add the line above to a references/known-keys/*.json for {a.hash_key}", file=sys.stderr)
+        return 0
+    if not a.image:
+        ap.error("supply an image (or --hash-key KEYFILE)")
+    try:
+        d = open(a.image, "rb").read()
+    except OSError as e:
+        sys.exit(f"error: cannot read {a.image}: {e.strerror}")
     fmt, facts, findings = analyze(d)
     if a.json:
         print(json.dumps({"format": fmt, "facts": facts,

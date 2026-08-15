@@ -48,7 +48,7 @@ if dict((t[0], t[1]) for t in tiles)["CAPABILITIES"] != str(caps_on): bad("capab
 # 3. dead tabs are filled: Registers tab has real content + search/decode when a capture exists
 regs = qt_spike.load_registers(qt_spike.ROOT)
 tabw = d.findChild(QTabWidget)
-if tabw.count() != 5: bad("dashboard center should have 5 tabs")
+if tabw.count() != 6: bad("dashboard center should have 6 tabs (incl. Kill Chain)")
 if regs and "Registers (" not in tabw.tabText(1): bad("registers tab should show a count")
 if regs:
     if len(regs[0]) != 5: bad("load_registers should include the decoded fields (5-tuple)")
@@ -276,6 +276,14 @@ probes = [pr for *_, pr in d._as_findings if pr]
 if probes:
     d.run_in_console.emit(probes[0])
     if not w.console.input.text(): bad("a probe should populate the console input")
+
+# 21c. Kill Chain tab: the attack-graph planner renders + follows the board posture
+if not hasattr(d, "_kc_reach"): bad("dashboard should have a Kill Chain tab")
+d.set_board_posture("zynqmp", {"jtag_open": True})
+if "5/5" not in d._kc_reach.text(): bad(f"zynqmp OPEN kill-chain should reach 5/5 (got {d._kc_reach.text()})")
+d.set_board_posture("igloo2", {"flashlock": True})
+if "4/5" not in d._kc_reach.text(): bad(f"igloo2 kill-chain should reach 4/5 via readback (got {d._kc_reach.text()})")
+d.set_board_posture("zynqmp", None)   # restore
 
 # 24. chain-panel cores → backend-scoped console commands
 d.set_backend("openocd")

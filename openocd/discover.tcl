@@ -2,7 +2,9 @@
 #
 # Enumerates whatever TAPs the loaded target config knows about, reads
 # the DAP's access ports (APs), decodes their types, and suggests next
-# steps based on TAP naming patterns.
+# steps based on TAP naming patterns. For the FULL CoreSight fabric map
+# (every AP's ROM table + the components behind it — CTI/ETM/per-core
+# debug), use openocd/coresight-topology.tcl.
 #
 # IDCODEs themselves are reported by OpenOCD's init in stderr lines like:
 #   "Info : JTAG tap: NAME tap/device found: 0x24738093"

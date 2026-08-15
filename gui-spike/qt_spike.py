@@ -38,6 +38,10 @@ try:
     from jtagx.unlock import security_model as _security_model     # board-generic lock model (posture tab)
 except Exception:
     _security_model = None
+try:
+    from jtagx import attackgraph as _attackgraph                  # kill-chain planner (Kill Chain tab)
+except Exception:
+    _attackgraph = None
 
 # capabilities that are OpenOCD-Tcl-specific (no xsdb/hw_server equivalent wired) — gated by backend
 OPENOCD_ONLY_CAPS = {"Break & capture", "Live-patch VA→PA", "Dump BootROM", "Dump PMU ROM"}
@@ -973,6 +977,7 @@ class Dashboard(QWidget):
         tabs.addTab(self._launcher("🗎  Engagement reports",
                     "Rendered Markdown deliverables (engagement, VxWorks, DRAM secrets, captures).",
                     "Open Reports page →", 4), "🗎  Report")
+        tabs.addTab(self._killchain_tab(), "⛓  Kill Chain")            # jtagx.attackgraph planner
         tabs.addTab(self._attack_surface_tab(), "⚗  Attack Surface")   # jtagx.weakness misuse layer
         v.addWidget(tabs)
         return p
@@ -1150,6 +1155,102 @@ class Dashboard(QWidget):
         self._as_soc = soc
         self._as_posture = dict(P or {})
         self.refresh_attack_surface()
+        self.refresh_killchain()
+
+    _KC_STATE = {"ACHIEVED": ("#3ecf8e", "✓"), "AVAILABLE": ("#5bb6f0", "▶"),
+                 "BLOCKED": ("#f2685f", "✗"), "GATED": ("#7c8898", "…"), "N/A": ("#5e6b7c", "·")}
+
+    def _load_profile(self, soc):
+        """Load profiles/<soc>.json (JSONC) so the kill-chain's capability-matrix nodes resolve. Cached."""
+        cache = getattr(self, "_prof_cache", None)
+        if cache is None:
+            cache = self._prof_cache = {}
+        if soc in cache:
+            return cache[soc]
+        import json
+        p = os.path.join(ROOT, "profiles", f"{soc}.json")
+        prof = None
+        try:
+            prof = json.loads("".join(ln for ln in open(p, encoding="utf-8")
+                                      if not ln.lstrip().startswith(("//", "#"))))
+        except Exception:
+            prof = None
+        cache[soc] = prof
+        return prof
+
+    def _killchain_tab(self):
+        """The kill-chain planner (jtagx.attackgraph): the ordered objective ladder for the active board +
+        posture, each node's state, and its exact next command (▶ runs it in the console)."""
+        w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(8, 8, 8, 8); v.setSpacing(6)
+        self._kc_hdr = QLabel("KILL CHAIN — the ordered path for this board + posture")
+        self._kc_hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700;")
+        self._kc_hdr.setWordWrap(True)
+        v.addWidget(self._kc_hdr)
+        self._kc_reach = QLabel(""); self._kc_reach.setWordWrap(True)
+        self._kc_reach.setStyleSheet("color:#cdd6e2; font-size:12px;")
+        v.addWidget(self._kc_reach)
+        self._kc_scroll = QScrollArea(); self._kc_scroll.setWidgetResizable(True)
+        self._kc_scroll.setFrameShape(QFrame.NoFrame)
+        self._kc_host = QWidget(); self._kc_v = QVBoxLayout(self._kc_host)
+        self._kc_v.setContentsMargins(2, 2, 2, 8); self._kc_v.setSpacing(7)
+        self._kc_scroll.setWidget(self._kc_host); v.addWidget(self._kc_scroll, 1)
+        foot = QLabel("fuses the unlock engine + capability matrix + findings (jtagx.attackgraph) · ▶ runs "
+                      "the node's next command in the console · ✗ BLOCKED = only a physical rig continues")
+        foot.setStyleSheet("color:#5e6b7c; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
+        self.refresh_killchain()
+        return w
+
+    def refresh_killchain(self):
+        """(Re)build the kill-chain nodes for the active board + posture."""
+        if not hasattr(self, "_kc_v") or _attackgraph is None:
+            return
+        while self._kc_v.count():
+            it = self._kc_v.takeAt(0)
+            if it.widget():
+                it.widget().setParent(None)
+        soc = getattr(self, "_as_soc", "zynqmp")
+        P = getattr(self, "_as_posture", None)
+        if P is None:                       # derived from the live capture (zynqmp) → CONFIRMED source
+            P = self._misuse_posture() if soc == "zynqmp" else {}
+            source = "capture" if (soc == "zynqmp" and getattr(self, "_posture_is_real", False)) else "asserted"
+        else:                               # operator-toggled posture (Unlock panel) → ASSERTED
+            source = "asserted"
+        try:
+            g = _attackgraph.plan(soc, P, self._load_profile(soc), source)
+        except Exception as e:
+            self._kc_reach.setText(f"attack-graph unavailable: {e}")
+            return
+        _src = "posture CONFIRMED from capture" if g.get("source") == "capture" else "posture ASSERTED (verify on HW)"
+        self._kc_reach.setText(f"Reach: {g['depth']}/5 — {g['depth_label']}  ·  {_src}  (non-physical; "
+                               "glitch/side-channel/physical deferred)")
+        for i, n in enumerate(g["nodes"]):
+            col, glyph = self._KC_STATE.get(n["state"], ("#7c8898", "·"))
+            card = QFrame(); card.setProperty("cls", "cap")
+            cv = QVBoxLayout(card); cv.setContentsMargins(11, 8, 11, 8); cv.setSpacing(3)
+            head = QHBoxLayout()
+            spine = "↳ branch" if n["id"] == "secure-boot" else f"{i + 1}"
+            num = QLabel(spine); num.setStyleSheet("color:#5e6b7c; font:600 11px monospace;")
+            num.setFixedWidth(52); head.addWidget(num)
+            head.addWidget(tag(n["title"], cls="capTitle"))
+            head.addStretch(1)
+            st = QLabel(f"{glyph} {n['state']}")
+            st.setStyleSheet(f"color:{col}; font-weight:700; font-size:11px;")
+            head.addWidget(st)
+            if n["state"] == "AVAILABLE" and n.get("action") and not n["action"].lstrip().startswith("#"):
+                pb = QPushButton("▶ run"); pb.setProperty("cls", "cbtn"); pb.setCursor(Qt.PointingHandCursor)
+                pb.setToolTip(n["action"])
+                pb.clicked.connect(lambda _=False, c=n["action"]: self.run_in_console.emit(c))
+                head.addWidget(pb)
+            cv.addLayout(head)
+            if n.get("why"):
+                why = QLabel(n["why"]); why.setWordWrap(True)
+                why.setStyleSheet("color:#98a6b8; font-size:11px;")
+                cv.addWidget(why)
+            self._kc_v.addWidget(card)
+        self._kc_v.addStretch(1)
+        if hasattr(self, "_kc_hdr"):
+            self._kc_hdr.setText(f"KILL CHAIN · {soc.upper()} — the ordered objective ladder for this "
+                                 "board + observed posture")
 
     def refresh_attack_surface(self):
         """(Re)build the cards for the active board (default zynqmp) from its posture — the real capture
@@ -1418,6 +1519,7 @@ class Dashboard(QWidget):
             self._fill_posture(self._ptable, rows)
             self._update_ring(rows)
             self.refresh_attack_surface()   # the misuse layer follows the live posture
+            self.refresh_killchain()        # and so does the kill-chain planner
 
     def _caps_panel(self):
         p = QFrame(); p.setProperty("cls", "panel"); p.setFixedWidth(240)

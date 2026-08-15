@@ -1,0 +1,41 @@
+// Nordic nRF5340 (dual Cortex-M33: application + network core, BLE/802.15.4 SoC) — Paradigm B.
+// New 2026-08-15. auto_match:false — select with --profile nrf53. Gate = APPROTECT / SECUREAPPROTECT
+// (the nRF52 APPROTECT successor, now with a TrustZone-M secure APPROTECT). Same CTRL-AP ERASEALL
+// recovery model as nRF52 (destructive). SECUREAPPROTECT can gate the secure side separately.
+// HW-UNVALIDATED (no MCU on the bench). FI bypass (SySS nRF54 EMFI class) is deferred.
+{
+  "schema_version": 1,
+  "name": "Nordic nRF5340 (dual Cortex-M33)",
+  "soc": "nrf53",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-nrf53.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/nrf53-flash.bin",
+               "note": "App-core flash (0x0) + SRAM via the mem-AP. Net core is a 2nd target (nrf53.cpu.net); dump it separately.", "env": {} }
+  },
+
+  "reopen": [],
+  "absent": { "reopen": "no non-destructive reopen — APPROTECT/SECUREAPPROTECT clears only via CTRL-AP ERASEALL (wipes flash)" },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "nrf53.cpu", "PATCH_AXI": "nrf53.cpu", "PATCH_DAP": "nrf53.dap" } },
+
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/nrf53-flash-patched.bin" },
+               "note": "Reflash via OpenOCD's nrf5 driver. DESTRUCTIVE; part must be APPROTECT-off." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto",
+
+  // nRF53 is SWD-only; two cores (app + net). tier e if APPROTECT not enabled.
+  "adapters": [
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd"], "usb_ids": ["1366:0101"], "tier": "e", "vendor_sw": false, "note": "Nordic nRF5340-DK carries an onboard J-Link; SWD-only, dual-core." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd"], "usb_ids": [],            "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe over SWD." }
+  ]
+}

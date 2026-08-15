@@ -63,10 +63,9 @@ print("  matrix OK (zynqmp full, SF2 M3-vs-FlashPro split, IGLOO2 mem/run honest
 PY
 
 # 4. the CLI renders + supports --list
-python3 tools/capability-matrix.py --profile zynqmp | grep -q "Capability matrix" \
+O=$((python3 tools/capability-matrix.py --profile zynqmp) 2>/dev/null); grep -q "Capability matrix" <<<"$O" \
     || fail "CLI should render the matrix"
-python3 tools/capability-matrix.py --profile igloo2 | grep -q "BLOCKED" \
+O=$((python3 tools/capability-matrix.py --profile igloo2) 2>/dev/null); grep -q "BLOCKED" <<<"$O" \
     || fail "CLI should show BLOCKED ops for igloo2"
-python3 tools/capability-matrix.py --list | grep -q "zynqmp" || fail "CLI --list should list profiles"
-
+O=$(python3 tools/capability-matrix.py --list 2>/dev/null); grep -q "zynqmp" <<<"$O" || fail "CLI --list should list profiles"
 echo "PASS: capability-matrix (adapter × backend × op grid + honest op routing)"

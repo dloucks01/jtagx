@@ -16,7 +16,7 @@ OUT="$(mktemp)"
 JTAGX_MOCK_MAXBYTES=8192 SF2_OUT="$OUT" "$M" -c "init; halt; source openocd/cortexm-dump.tcl; resume; shutdown" >/dev/null
 [ -s "$OUT" ] || fail "unlocked M3 should dump eNVM to a file"
 [ "$(stat -c%s "$OUT")" -eq 8192 ] || fail "eNVM dump should be the capped size (8192)"
-python3 tools/dram-secrets.py "$OUT" --base 0x60000000 2>/dev/null | grep -qi "aeskey" \
+O=$((python3 tools/dram-secrets.py "$OUT" --base 0x60000000 2>/dev/null) 2>/dev/null); grep -qi "aeskey" <<<"$O" \
     || fail "the eNVM dump should carry a recognizable secret (dram-secrets)"
 rm -f "$OUT"
 

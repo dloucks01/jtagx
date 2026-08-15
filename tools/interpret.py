@@ -86,8 +86,14 @@ def load_rules(path: Path) -> list:
 
 
 def load_json(path: Path) -> dict:
-    with open(path) as fh:
-        return json.load(fh)
+    try:
+        with open(path) as fh:
+            return json.load(fh)
+    except OSError as e:
+        sys.exit(f"error: cannot read {path}: {e.strerror}")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        sys.exit(f"error: {path} is not a valid raw JSON capture (expected reports/raw-*.json). "
+                 "Did you pass a binary dump by mistake?")
 
 
 # ---------------------------------------------------------------------------

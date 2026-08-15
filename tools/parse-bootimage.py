@@ -323,7 +323,10 @@ def main(argv=None):
                     help="carve each partition (FSBL/PMUFW/bl31/kernel) to its own .bin in DIR")
     args = ap.parse_args(argv)
 
-    data = Path(args.image).read_bytes()
+    try:
+        data = Path(args.image).read_bytes()
+    except OSError as e:
+        sys.exit(f"error: cannot read {args.image}: {e.strerror}")
     base = int(args.base, 0)
     report, regs, problems = parse_image(data, base, extract_dir=args.extract)
 

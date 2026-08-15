@@ -18,9 +18,11 @@ _OPENOCD = os.environ.get("OPENOCD", "openocd")
 # Drives the board-aware verify command (cortexm-access-check.tcl) and the runnable recovery levers.
 _CM_CFG = {
     "nrf52": "cortexm-nrf52.cfg",
+    "nrf53": "cortexm-nrf53.cfg",
     "stm32f4": "cortexm-stm32f4.cfg",
     "stm32f1": "cortexm-stm32f1.cfg",
     "stm32l4": "cortexm-stm32l4.cfg",
+    "gd32": "cortexm-gd32.cfg",
     "kinetis": "cortexm-kinetis.cfg",
     "samd5x": "cortexm-samd5x.cfg",
     "smartfusion2": "cortexm.cfg",
@@ -184,9 +186,10 @@ def lock_runtime(soc, P):
 
 # --- general Cortex-M / ESP unlock levers (breadth, mirroring cve-match) ---
 def lock_nrf(soc, P):
-    if soc != "nrf52" or not P.get("approtect_locked"):
+    if soc not in ("nrf52", "nrf53") or not P.get("approtect_locked"):
         return None
-    _cmd = (f'{_OPENOCD} -f openocd/cortexm-nrf52.cfg '
+    _cfg = _CM_CFG.get(soc, "cortexm-nrf52.cfg")
+    _cmd = (f'{_OPENOCD} -f openocd/{_cfg} '
             f'-c "init; source openocd/nrf52-recover.tcl; shutdown"')
     return dict(name="nRF52 APPROTECT (AHB-AP blocked)", state="LOCKED", enforcement="UICR (flash) — glitchable",
                 strategies=[
@@ -202,7 +205,7 @@ def lock_nrf(soc, P):
 
 
 def lock_stm(soc, P):
-    if soc not in ("stm32f4", "stm32f1", "stm32l4") or P.get("rdp_level") in (None, 0):
+    if soc not in ("stm32f4", "stm32f1", "stm32l4", "gd32") or P.get("rdp_level") in (None, 0):
         return None
     lvl = P.get("rdp_level")
     _cfg = _CM_CFG.get(soc)
@@ -396,6 +399,8 @@ _ENGAGE_POSTURE = {
     "smartfusion2": {"debug_locked": True, "flashlock": True},
     "igloo2":       {"flashlock": True},
     "nrf52":        {"approtect_locked": True},
+    "nrf53":        {"approtect_locked": True},
+    "gd32":         {"rdp_level": 1},
     "stm32f4":      {"rdp_level": 1},
     "stm32f1":      {"rdp_level": 1},
     "stm32l4":      {"rdp_level": 1},

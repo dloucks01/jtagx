@@ -243,6 +243,48 @@ if ! bash tools/secureboot-analyze-smoketest.sh; then
 fi
 
 echo ""
+echo "Running attack-graph checks (kill-chain planner: ordered path + honest BLOCKED stalls)..."
+if ! bash tools/attack-graph-smoketest.sh; then
+    echo "FAIL: attack-graph smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running bench-validate checks (per-board validation protocol: generate + grade)..."
+if ! bash tools/bench-validate-smoketest.sh; then
+    echo "FAIL: bench-validate smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running break-secrets checks (automatic secret-in-flight capture from break-capture derefs)..."
+if ! bash tools/break-secrets-smoketest.sh; then
+    echo "FAIL: break-secrets smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running coverage-chart generator checks (chart generated from live data — no drift)..."
+if ! bash tools/gen-coverage-chart-smoketest.sh; then
+    echo "FAIL: gen-coverage-chart smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running extract-plan checks (per-board extraction: mem-AP + vendor ROM loaders + chip-off)..."
+if ! bash tools/extract-plan-smoketest.sh; then
+    echo "FAIL: extract-plan smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running preflight checks (engagement blocker check: adapters/backends/transport → GO/BLOCKED)..."
+if ! bash tools/preflight-smoketest.sh; then
+    echo "FAIL: preflight smoketest"
+    exit 1
+fi
+
+echo ""
 echo "Running unlock-workflow checks (guided reopen→verify loop; core locked-board mission)..."
 if ! bash tools/unlock-workflow-smoketest.sh; then
     echo "FAIL: unlock-workflow smoketest"

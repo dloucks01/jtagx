@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 find-patch-target.py — find good PRINTABLE-STRING targets for the Capability-2 live-patch demo.
 
 Scans the kernel image (a partition from parse-bootimage --extract, or dumps/sd-extract/vxWorks.bin,

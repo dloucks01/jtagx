@@ -88,7 +88,10 @@ def main():
     ap.add_argument("blob", help="binary file: the deref'd config/registers from break-capture")
     ap.add_argument("--base", type=lambda s: int(s, 0), default=0, help="VA of byte 0 (label offsets)")
     a = ap.parse_args()
-    data = open(a.blob, "rb").read()
+    try:
+        data = open(a.blob, "rb").read()
+    except OSError as e:
+        sys.exit(f"error: cannot read {a.blob}: {e.strerror}")
     print(f"# oe-key-extract: {a.blob} ({len(data)} bytes)")
 
     scheds = find_schedules(data)

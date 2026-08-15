@@ -1,0 +1,42 @@
+// GigaDevice GD32 (STM32-compatible Cortex-M clone; GD32F1/F3/F4 families) — Paradigm B.
+// New 2026-08-15. auto_match:false — presents an STM32-like IDCODE; select with --profile gd32.
+// Gate = RDP option bytes (STM32-compatible interface) BUT the readout protection is weaker than
+// genuine STM32: reset-timing / partial-access quirks have defeated it (PT SWARM 2024, "GigaVulnerability").
+// See jtagx.weakness stm32-clone-rdp-gap + jtagx.cve GD32-RDP-bypass. HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "GigaDevice GD32 (STM32 clone)",
+  "soc": "gd32",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-gd32.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/gd32-flash.bin",
+               "note": "Internal flash (0x08000000) + SRAM via the mem-AP (stm32f4x driver). If RDP blocks it, use the RDP-1→0 downgrade or the GD32 readout-bypass quirk (weaker than STM32).", "env": {} }
+  },
+
+  "reopen": [],
+  "absent": { "reopen": "RDP-1→0 downgrade mass-erases (like STM32); GD32's readout is also bypassable by reset-timing quirks (non-destructive) the genuine STM32 resists — PT SWARM 2024." },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "gd32.cpu", "PATCH_AXI": "gd32.cpu", "PATCH_DAP": "gd32.dap" } },
+
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/gd32-flash-patched.bin" },
+               "note": "Reflash via OpenOCD's stm32f4x driver (GD32F4-compatible). DESTRUCTIVE; RDP-0." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto",
+
+  // GD32 speaks SWD + JTAG (STM32-compatible); tier e if RDP not enabled.
+  "adapters": [
+    { "id": "stlink",    "name": "ST-Link (works on GD32)", "backend": "openocd", "driver": "stlink",    "transports": ["swd"],        "usb_ids": ["0483:3748", "0483:374b"], "tier": "e", "vendor_sw": false, "note": "ST-Link drives GD32 as an STM32 in most cases." },
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd", "jtag"], "usb_ids": ["1366:0101"], "tier": "e", "vendor_sw": false, "note": "Select the GD32 or the STM32-equivalent device." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd", "jtag"], "usb_ids": [],            "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe." }
+  ]
+}

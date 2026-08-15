@@ -44,9 +44,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 QEMU_ROOT = Path("/opt/xilinx/qemu")
-OUTPUT_PATH = Path(
-    "/home/kali/Desktop/research/JTAG/openocd/lib/zynqmp-regs-qemu.tcl"
-)
+# repo-relative (was a stale hardcoded /home/kali/Desktop/research/JTAG/... path)
+_REPO = Path(__file__).resolve().parent.parent
+OUTPUT_PATH = _REPO / "openocd" / "lib" / "zynqmp-regs-qemu.tcl"
 
 # Blocks to ingest. Each entry: (qemu_file, block_base_address, block_name).
 # Adding a new block here + re-running this script extends coverage with

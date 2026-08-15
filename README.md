@@ -57,6 +57,42 @@ python3 tools/interpret.py "$(ls -t reports/raw-*.json | head -1)" -O
 make -C payloads
 ```
 
+## Engagement workflow (any board)
+
+The toolkit reasons about a whole engagement, not just the ZCU102. All of these are offline/planning
+(the operator runs the live JTAG); each is `--help`-documented and covered by `tools/tcl-smoketest.sh`.
+
+```bash
+# 0. PRE-FLIGHT — before touching the board: adapters plugged? backend software installed? transport
+#    match? → GO / BLOCKED + the exact fix (catches the "wrong adapter blocked me" surprise up front)
+python3 tools/preflight.py --soc smartfusion2 --detect
+
+# 1. First contact on an unknown board → a ready-to-enumerate cfg + access verdict
+tools/probe-board.sh                                  # operator-launched, read-only
+python3 tools/board-runner.py --idcodes 0x14738093 0x5ba00477   # chain fingerprint → ordered plan
+
+# 2. Capability matrix — which adapter runs which op on this board (honest BLOCKED where a rig is needed)
+python3 tools/capability-matrix.py --profile zynqmp
+
+# 3. Kill-chain plan — ordered path (jtag-up→debug-open→mem-read→secrets→persistence) + next command
+python3 tools/attack-graph.py --soc nrf52 --approtect-locked
+python3 tools/extract-plan.py --soc imx6              # every extraction avenue incl. vendor ROM loaders
+
+# 4. Unlock a locked board — ranked defeat plan / guided reopen→verify (nRF/STM/Kinetis/SAMD/IGLOO2/…)
+python3 tools/unlock-engine.py --soc kinetis --flash-secured
+
+# 5. Analyze what you extracted — secure-boot auth structure, OS/RTOS → CVE classes, secrets in flight
+python3 tools/secureboot-analyze.py BOOT.bin         # MCUboot/wolfBoot/FIT: signed? weak sig? default key?
+python3 tools/firmware-id.py dump.bin                # Linux/VxWorks/… version → known-CVE classes
+python3 tools/break-secrets.py capture.txt           # break-capture derefs → password/key caught in flight
+
+# 6. Bench-validation — turn "bench-ready (mock)" into "bench-VALIDATED" once you have the real board
+python3 tools/bench-validate.py --soc kinetis        # generated checklist; --ingest results.json to grade
+
+# Board coverage/confidence chart (generated from live data — regenerate any time)
+python3 tools/gen-coverage-chart.py -o board-coverage.html
+```
+
 ## Hardware model
 
 The **operator drives all live JTAG/OpenOCD commands** — this toolkit writes the Tcl scripts

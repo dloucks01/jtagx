@@ -102,9 +102,11 @@ def main():
         buf = bytearray(open(a.image, "rb").read())
     except OSError as e:
         sys.exit(f"cannot read {a.image}: {e}")
-    if pb._u32(buf, pb.BH_WIDTH_DET) != 0xAA995566:
-        sys.exit(f"not a Zynq(MP) boot image — width-detect @0x20 is not 0xAA995566 (got "
-                 f"0x{pb._u32(buf, pb.BH_WIDTH_DET):08x}). repack only handles bootgen images.")
+    _wd = pb._u32(buf, pb.BH_WIDTH_DET)
+    if _wd != 0xAA995566:
+        got = f"0x{_wd:08x}" if _wd is not None else "(truncated — buffer too short)"
+        sys.exit(f"not a Zynq(MP) boot image — width-detect @0x20 is not 0xAA995566 (got {got}). "
+                 "repack only handles bootgen images.")
     parts = partitions(buf)
 
     print(f"# repack-bootimage: {a.image}  ({len(buf):,} bytes, {len(parts)} partitions)")

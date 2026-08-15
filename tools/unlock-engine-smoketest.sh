@@ -66,7 +66,7 @@ import importlib.util, struct, sys
 s=importlib.util.spec_from_file_location('o','tools/oe-key-extract.py'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m)
 sys.stdout.buffer.write(struct.pack('<I',0x120)+b'\x00'*12+m._expand(bytes(range(16))))
 PYEOF
-python3 tools/oe-key-extract.py /tmp/oke-smoke.bin | grep -q "000102030405060708090a0b0c0d0e0f" \
+O=$((python3 tools/oe-key-extract.py /tmp/oke-smoke.bin) 2>/dev/null); grep -q "000102030405060708090a0b0c0d0e0f" <<<"$O" \
     || fail "oe-key-extract should recover the planted AES-128 key from a stored schedule"
 
 # 5. SmartFusion2 (Paradigm-B M3 target): debug-lock + FlashLock model + the M3-dump extraction lever
@@ -75,7 +75,7 @@ echo "$OUT" | grep -q "M3 debug lock"        || fail "SF2 should classify the M3
 echo "$OUT" | grep -q "FlashLock"            || fail "SF2 should classify FlashLock/eNVM readback"
 echo "$OUT" | grep -q "Skorobogatov"         || fail "SF2 should offer the DPA pass-key recovery (Skorobogatov/Woods)"
 echo "$OUT" | grep -q "M3 mem-AP dump"        || fail "SF2 should offer the Cortex-M mem-AP extraction path"
-python3 tools/cve-match.py --soc smartfusion2 | grep -q "Actel-JTAG-backdoor" \
+O=$((python3 tools/cve-match.py --soc smartfusion2) 2>/dev/null); grep -q "Actel-JTAG-backdoor" <<<"$O" \
     || fail "cve-match should surface the Actel/Microsemi JTAG-backdoor for SmartFusion2"
 
 # 6. IGLOO2 (fabric-only sibling): FlashLock model with NO M3 mem-AP lever (no Cortex-M)
@@ -115,7 +115,7 @@ assert "microsemi-preprovision-open" not in [h for _,_,_,h,_ in misuse_findings(
     "a provisioned FlashLock board closes the preprovision-open surface"
 print("  misuse layer OK (trust-assumption/thesis/volatile-secret/design-primitive + board-broadening sweep)")
 PY
-python3 tools/cve-match.py --soc zynqmp --jtag-open | grep -q "implementation-review misuse" \
+O=$((python3 tools/cve-match.py --soc zynqmp --jtag-open) 2>/dev/null); grep -q "implementation-review misuse" <<<"$O" \
     || fail "cve-match should print the implementation-review misuse section"
 
 echo "PASS: unlock-engine (+ SmartFusion2 + IGLOO2 + implementation-misuse layer) — full coverage"

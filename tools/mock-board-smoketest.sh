@@ -21,7 +21,7 @@ done
 tmp=$(mktemp)
 JTAGX_MOCK_BOARD=stm32f4 JTAGX_MOCK_MAXBYTES=4096 "$M" -c "init; halt; dump_image $tmp 0x08000000 0x1000; resume; shutdown" >/dev/null
 [ "$(stat -c%s "$tmp")" -eq 4096 ] || fail "stm32f4 flash dump should be the capped size"
-python3 tools/dram-secrets.py "$tmp" --base 0x08000000 2>/dev/null | grep -qi "key=" \
+O=$((python3 tools/dram-secrets.py "$tmp" --base 0x08000000 2>/dev/null) 2>/dev/null); grep -qi "key=" <<<"$O" \
     || fail "the flash dump should carry a recognizable secret"
 rm -f "$tmp"
 

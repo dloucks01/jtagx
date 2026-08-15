@@ -169,10 +169,10 @@ for s in cortexm-flash mem-search watch-access break-capture; do
     echo "  ok: openocd/$s.tcl"
 done
 # patch-recipe: encoding correctness (aarch64 ret0 must be mov w0,#0 ; ret)
-python3 tools/patch-recipe.py --arch aarch64 --va 0x1000 --behavior ret0 2>/dev/null | grep -q 'PATCH_HEX=00008052c0035fd6' \
-    || fail "patch-recipe aarch64 ret0 encoding wrong"
-python3 tools/patch-recipe.py --arch thumb --va 0x1000 --behavior ret0 2>/dev/null | grep -q 'PATCH_HEX=00207047' \
-    || fail "patch-recipe thumb ret0 encoding wrong"
+O=$(python3 tools/patch-recipe.py --arch aarch64 --va 0x1000 --behavior ret0 2>/dev/null)
+grep -q 'PATCH_HEX=00008052c0035fd6' <<<"$O" || fail "patch-recipe aarch64 ret0 encoding wrong"
+O=$(python3 tools/patch-recipe.py --arch thumb --va 0x1000 --behavior ret0 2>/dev/null)
+grep -q 'PATCH_HEX=00207047' <<<"$O" || fail "patch-recipe thumb ret0 encoding wrong"
 echo "  ok: patch-recipe.py (aarch64 + thumb ret0 encodings)"
 # repack-bootimage: parses + --help
 python3 tools/repack-bootimage.py --help >/dev/null 2>&1 || fail "repack-bootimage.py --help"
@@ -184,12 +184,13 @@ expect '--profile imx6'   'TIER 1: NXP i.MX6'              "imx6 -> Paradigm A p
 expect '--profile riscv'  'Paradigm E'                     "riscv -> Paradigm E"
 expect '--profile esp32'  'esptool'                        "esp32 -> esptool flash note"
 echo "board-runner: intel tools (cve-match + engagement-report)"
-python3 tools/cve-match.py --soc zynqmp --jtag-open --secure-boot off 2>/dev/null | grep -q 'POSTURE.*full debug compromise' \
-    || fail "cve-match zynqmp posture finding"
-python3 tools/cve-match.py --soc stm32f4 --rdp 0 2>/dev/null | grep -q 'RDP level 0' || fail "cve-match stm32 rdp0"
+O=$(python3 tools/cve-match.py --soc zynqmp --jtag-open --secure-boot off 2>/dev/null)
+grep -q 'POSTURE.*full debug compromise' <<<"$O" || fail "cve-match zynqmp posture finding"
+O=$(python3 tools/cve-match.py --soc stm32f4 --rdp 0 2>/dev/null)
+grep -q 'RDP level 0' <<<"$O" || fail "cve-match stm32 rdp0"
 echo "  ok: cve-match.py (zynqmp + stm32 posture findings)"
-python3 tools/engagement-report.py --soc zynqmp --jtag-open 2>/dev/null | grep -q '# JTAG Engagement Report' \
-    || fail "engagement-report.py"
+O=$(python3 tools/engagement-report.py --soc zynqmp --jtag-open 2>/dev/null)
+grep -q '# JTAG Engagement Report' <<<"$O" || fail "engagement-report.py"
 echo "  ok: engagement-report.py"
 
 echo "board-runner smoketest: all checks passed"
