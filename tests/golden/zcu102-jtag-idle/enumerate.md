@@ -2,8 +2,8 @@
 
 - Generated: GOLDEN-FROZEN-TIMESTAMP
 - Tool: OpenOCD via on-board Digilent SMT2 / FT232H
-- Report file: /tmp/tmp.GQ2G5piA7m/reports/enumerate-GOLDEN-FROZEN-TIMESTAMP.md
-- Raw JSON capture: /tmp/tmp.GQ2G5piA7m/reports/raw-GOLDEN-FROZEN-TIMESTAMP.json
+- Report file: /tmp/tmp.lp7gstghWX/reports/enumerate-GOLDEN-FROZEN-TIMESTAMP.md
+- Raw JSON capture: /tmp/tmp.lp7gstghWX/reports/raw-GOLDEN-FROZEN-TIMESTAMP.json
 
 # 1. JTAG Chain
 
@@ -75,6 +75,16 @@ decoded fields against UG1085 §10 (CSU) and UG1087 register descriptions.
 - **CSU.JTAG_CHAIN_CFG**: `0xffca0030 = 0x00000000`
     [ 1]     SSSS_LINK_ARM_DAP              = 0 
     [ 0]     SSSS_LINK_PL_TAP               = 0 
+- **CRL_APB.DBG_LPD_CTRL**: `0xff5e00b0 = 0x01000f00`
+    [24]     CLKACT                         = 1 
+    [13: 8] DIVISOR0                       = 0xf 
+    [ 2: 0] SRCSEL                         = 0x0 
+- **CRL_APB.RST_LPD_DBG**: `0xff5e0240 = 0x00000000`
+    [15]     DBG_ACK                        = 0 
+    [ 5]     RPU_DBG1_RESET                 = 0 
+    [ 4]     RPU_DBG0_RESET                 = 0 
+    [ 1]     DBG_LPD_RESET                  = 0 
+    [ 0]     DBG_FPD_RESET                  = 0 
 
 **eFUSE secure boot policy** (LPD eFUSE controller at 0xFFCC0000):
 - **EFUSE.STATUS**: `0xffcc0008 = 0x00000027`
@@ -709,10 +719,10 @@ Two posture questions about the APU debug surface:
 
 **EDPCSR sweep — non-invasive PC sample of all 4 A53 cores:**
 ```
-  core 0: PC=(no sample)  EDPRSR=0x00000000  powered=false
-  core 1: PC=(no sample)  EDPRSR=0x00000000  powered=false
-  core 2: PC=(no sample)  EDPRSR=0x00000000  powered=false
-  core 3: PC=(no sample)  EDPRSR=0x00000000  powered=false
+  core 0: PC=(no sample)  EDPRSR=0x00000000  DBGAUTH=0x000000ff  powered=false
+  core 1: PC=(no sample)  EDPRSR=0x00000000  DBGAUTH=0x000000ff  powered=false
+  core 2: PC=(no sample)  EDPRSR=0x00000000  DBGAUTH=0x000000ff  powered=false
+  core 3: PC=(no sample)  EDPRSR=0x00000000  DBGAUTH=0x000000ff  powered=false
 ```
 
 **Releasing A53 core 0 from reset** (cores appear idle; idempotent):
@@ -1305,5 +1315,5 @@ _(A53 core 0 is now back in reset. Re-run of this script will start clean.)_
 
 # Done
 
-Report saved to: `/tmp/tmp.GQ2G5piA7m/reports/enumerate-GOLDEN-FROZEN-TIMESTAMP.md`
-Raw JSON capture: `/tmp/tmp.GQ2G5piA7m/reports/raw-GOLDEN-FROZEN-TIMESTAMP.json`
+Report saved to: `/tmp/tmp.lp7gstghWX/reports/enumerate-GOLDEN-FROZEN-TIMESTAMP.md`
+Raw JSON capture: `/tmp/tmp.lp7gstghWX/reports/raw-GOLDEN-FROZEN-TIMESTAMP.json`

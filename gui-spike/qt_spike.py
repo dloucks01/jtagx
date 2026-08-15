@@ -44,6 +44,36 @@ try:
 except Exception:
     _attackgraph = None
     _extraction_plan = None
+try:
+    from jtagx import debugauth as _debugauth                      # cross-arch debug-auth verdict
+except Exception:
+    _debugauth = None
+
+
+def _debug_auth_verdict(soc, P):
+    """Map a board + posture to a debug-auth verdict via jtagx.debugauth (mirrors
+    the engagement-report 1d logic). Returns (verdict, detail) or None."""
+    if _debugauth is None:
+        return None
+    _M = {"stm32f4", "stm32f1", "stm32l4", "stm32h7", "gd32", "nrf52", "nrf53",
+          "kinetis", "samd5x", "lpc", "rp2040", "smartfusion2"}
+    _R = {"riscv", "esp32c3"}
+    if soc in _R:
+        arch, sig = "riscv", {"authenticated": (None if P.get("jtag_open") else False)}
+    elif soc in _M:
+        lock = "engaged" if (P.get("jtag_locked") or P.get("flashlock")) else "none"
+        arch, sig = "cortex-m", {"lock": lock,
+                                 "dauthstatus": ("provisioned" if P.get("debug_auth") == "provisioned" else None)}
+    else:
+        arch = "armv8a"
+        if P.get("debug_auth") in ("present", "provisioned"):
+            sig = {"auth_debug": P["debug_auth"]}
+        elif P.get("efuse_jtag_dis"):
+            sig = {"edprsr": 0x40}
+        else:
+            sig = {"dbgauthstatus": 0xFF if P.get("jtag_open") else 0xAA}
+    v = _debugauth.classify(arch, sig)
+    return (v["verdict"], v["detail"], arch)
 
 # capabilities that are OpenOCD-Tcl-specific (no xsdb/hw_server equivalent wired) — gated by backend
 OPENOCD_ONLY_CAPS = {"Break & capture", "Live-patch VA→PA", "Dump BootROM", "Dump PMU ROM"}
@@ -1225,7 +1255,13 @@ class Dashboard(QWidget):
             self._kc_reach.setText(f"attack-graph unavailable: {e}")
             return
         _src = "posture CONFIRMED from capture" if g.get("source") == "capture" else "posture ASSERTED (verify on HW)"
-        self._kc_reach.setText(f"Reach: {g['depth']}/5 — {g['depth_label']}  ·  {_src}  (non-physical; "
+        _dav = _debug_auth_verdict(soc, P)
+        _davtxt = ""
+        if _dav:
+            _DAV_COL = {"OPEN": "#f2685f", "GATED": "#e7b04b",
+                        "AUTHENTICATED": "#5aa0e0", "LOCKED": "#5cc98f", "NONE": "#7c8898"}
+            _davtxt = f"  ·  debug-auth: {_dav[0]} ({_dav[2]})"
+        self._kc_reach.setText(f"Reach: {g['depth']}/5 — {g['depth_label']}  ·  {_src}{_davtxt}  (non-physical; "
                                "glitch/side-channel/physical deferred)")
         for i, n in enumerate(g["nodes"]):
             col, glyph = self._KC_STATE.get(n["state"], ("#7c8898", "·"))

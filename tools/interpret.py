@@ -34,6 +34,15 @@ sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 
 from interpret_lib import Capture, Finding, Annotation, RegisterAnnotation  # noqa: E402
 
+# jtagx package (repo root) — optional; enriches the CoreSight topology + debug-auth
+# verdict when present. interpret.py must still work if the package is unavailable.
+sys.path.insert(0, str(PROJECT_ROOT))
+try:
+    from jtagx import coresight as _cs          # noqa: E402
+    from jtagx import debugauth as _dbgauth      # noqa: E402
+except Exception:                                # pragma: no cover
+    _cs = _dbgauth = None
+
 
 ANNOTATIONS_DIR = PROJECT_ROOT / "docs" / "annotations"
 RULES_MODULE = PROJECT_ROOT / "docs" / "findings" / "zynqmp_rules.py"
@@ -324,6 +333,20 @@ def render_markdown(captured: dict, annotations: list[Annotation],
         out.append("An AP that returns `ERR` or empty output is either not present on this")
         out.append("variant or is gated by JTAG security state (CSU.JTAG_DAP_CFG).")
         out.append("")
+        # Structured parse of the verbatim text (jtagx.coresight) — turns the
+        # dap-info tree into an identified component table when available.
+        if _cs is not None:
+            all_comps = []
+            for ap_num in sorted(ap_info.keys(), key=lambda k: int(k)):
+                try:
+                    all_comps.extend(_cs.parse_dap_info(ap_info[ap_num] or ""))
+                except Exception:
+                    pass
+            if all_comps:
+                md = _cs.render_md(all_comps, title="Identified components (parsed from dap info)")
+                if md:
+                    out.append(md)
+                    out.append("")
         for ap_num in sorted(ap_info.keys(), key=lambda k: int(k)):
             text = ap_info[ap_num]
             out.append(f"### AP {ap_num}")
@@ -332,6 +355,43 @@ def render_markdown(captured: dict, annotations: list[Annotation],
             out.append(text if text else "(empty)")
             out.append("```")
             out.append("")
+        out.append("---")
+        out.append("")
+
+    # ===== Debug-authentication verdict (cross-arch model) =====
+    # Collapse the per-core DBGAUTHSTATUS reads (captured in §8) into one
+    # OPEN/GATED/AUTHENTICATED verdict via jtagx.debugauth.
+    a53 = captured.get("a53", {}) if isinstance(captured.get("a53"), dict) else {}
+    if _dbgauth is not None and any(k.endswith("_dbgauth") for k in a53):
+        out.append("## Debug-authentication verdict (per-core)")
+        out.append("")
+        out.append("The A53 cores' own DBGAUTHSTATUS_EL1 read-back, classified by the cross-arch")
+        out.append("debug-auth model (`jtagx.debugauth`) into OPEN / GATED / AUTHENTICATED / LOCKED.")
+        out.append("")
+        for n in range(4):
+            raw = a53.get(f"core{n}_dbgauth")
+            if raw is None:
+                continue
+            try:
+                v = int(str(raw), 16)
+            except (ValueError, TypeError):
+                continue
+            if v == 0xFFFFFFFF:
+                continue
+            edr = a53.get(f"core{n}_edprsr")
+            sig = {"dbgauthstatus": v}
+            if edr is not None:
+                try:
+                    sig["edprsr"] = int(str(edr), 16)
+                except (ValueError, TypeError):
+                    pass
+            res = _dbgauth.classify("armv8a", sig)
+            dec = _dbgauth.decode_dbgauthstatus(v)
+            out.append(
+                f"- **core{n}: {res['verdict']}** — {res['detail']} "
+                f"(NSID={dec['NSID']}, SID={dec['SID']})"
+            )
+        out.append("")
         out.append("---")
         out.append("")
 

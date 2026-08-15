@@ -24,3 +24,6 @@ vxworks_symbols_ghidra.py
 # OS / editor cruft
 .DS_Store
 *.swp
+
+# generated coverage chart (regenerate via tools/gen-coverage-chart.py; published as an artifact)
+board-coverage.html

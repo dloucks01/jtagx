@@ -868,6 +868,115 @@ def rule_engagement_triage(c: Capture) -> Finding | None:
 # Registry — interpret.py imports this list
 # =============================================================================
 
+def _decode_dbgauth(v: int) -> dict:
+    """Decode DBGAUTHSTATUS_EL1 into its four 2-bit debug-authentication fields.
+
+    Layout (Arm DDI0487, external view at DBGBASE+0xFB8):
+      NSID  [1:0]  non-secure invasive     (driven by DBGEN)
+      NSNID [3:2]  non-secure non-invasive (driven by NIDEN)
+      SID   [5:4]  secure invasive         (driven by SPIDEN)   <- the critical one
+      SNID  [7:6]  secure non-invasive     (driven by SPNIDEN)
+    Each 2-bit field: 0b00 = not implemented, 0b10 = implemented+DISABLED,
+    0b11 = implemented+ENABLED (0b01 reserved).
+    """
+    def st(field_val: int) -> str:
+        return {0b00: "not-impl", 0b10: "disabled", 0b11: "ENABLED"}.get(field_val, f"?{field_val:02b}")
+    return {
+        "NSID":  st(v & 0x3),
+        "NSNID": st((v >> 2) & 0x3),
+        "SID":   st((v >> 4) & 0x3),
+        "SNID":  st((v >> 6) & 0x3),
+    }
+
+
+def rule_debug_auth_matrix(c: Capture) -> Finding | None:
+    """Decode the per-A53-core DBGAUTHSTATUS_EL1 read and cross-check it against
+    the CSU-side JTAG_DAP_CFG gate.
+
+    DBGAUTHSTATUS is the core's OWN read-back of the four authentication signals
+    (DBGEN/NIDEN/SPIDEN/SPNIDEN). It corroborates JTAG_DAP_CFG from the other end
+    of the wire: if the CSU gate says secure-debug is open but the core reports
+    SID=disabled (or vice-versa), something between the CSU and the core is
+    overriding the gate — worth surfacing either way.
+    """
+    a53 = c.raw.get("a53", {}) if isinstance(c.raw, dict) else {}
+    cores = {}
+    for n in range(4):
+        raw = a53.get(f"core{n}_dbgauth")
+        if raw is None:
+            continue
+        try:
+            v = int(str(raw), 16) if isinstance(raw, str) else int(raw)
+        except (ValueError, TypeError):
+            continue
+        if v == 0xFFFFFFFF:      # bus float / core unreachable — not a real read
+            continue
+        cores[n] = v
+    if not cores:
+        return None
+
+    # The CSU-side gate for the APU secure-invasive signal (SPIDEN).
+    csu_spiden = c.field("CSU.JTAG_DAP_CFG.SSSS_APU_SPIDEN")
+
+    lines = []
+    any_secure = False
+    disagree = False
+    for n, v in sorted(cores.items()):
+        d = _decode_dbgauth(v)
+        if d["SID"] == "ENABLED":
+            any_secure = True
+        # Cross-check: CSU says SPIDEN on but the core reports secure-invasive not enabled?
+        if csu_spiden is not None:
+            core_sid_on = (d["SID"] == "ENABLED")
+            if bool(csu_spiden) != core_sid_on and d["SID"] != "not-impl":
+                disagree = True
+        lines.append(
+            f"core{n}: raw 0x{v:02X} — NS-invasive(DBGEN)={d['NSID']}, "
+            f"NS-trace(NIDEN)={d['NSNID']}, SECURE-invasive(SPIDEN)={d['SID']}, "
+            f"secure-trace(SPNIDEN)={d['SNID']}"
+        )
+
+    body = (
+        "Per-core DBGAUTHSTATUS_EL1 (the A53's own read-back of its four debug-"
+        "authentication signals, DBGBASE+0xFB8):\n  " + "\n  ".join(lines)
+    )
+    if disagree:
+        sev = "MAJOR"
+        concl = (
+            "MISMATCH between the CSU JTAG_DAP_CFG gate and the core's own "
+            "DBGAUTHSTATUS read-back. The CSU-side SPIDEN setting and the "
+            "signal the core actually sees disagree — meaning a stage between "
+            "the CSU secure-stream-switch and the A53 (firmware writing the "
+            "debug-auth override, a CoreSight authentication interface, or a "
+            "held reset/clock) is overriding the nominal gate. Reconcile which "
+            "value is authoritative before trusting the debug posture."
+        )
+    elif any_secure:
+        sev = "INFO"
+        concl = (
+            "At least one A53 core reports SECURE-invasive debug ENABLED "
+            "(SID=0b11), corroborating SPIDEN=1 from JTAG_DAP_CFG. The core "
+            "confirms the CSU gate: JTAG can halt/inspect the EL3/secure world. "
+            "Expected on this open dev board; a finding on a fielded device. "
+            "This is the core-side confirmation of the SPIDEN gate — the two "
+            "reads agree, so the secure-debug exposure is real, not a mislabel."
+        )
+    else:
+        sev = "INFO"
+        concl = (
+            "Non-secure debug authentication read back from the A53 cores; "
+            "secure-invasive (SID) is not enabled on any examined core. The "
+            "core-side read agrees with a gated SPIDEN — secure-world debug is "
+            "closed even though non-secure debug may be open."
+        )
+    return Finding(
+        name="Debug-authentication matrix (per-core DBGAUTHSTATUS)",
+        severity=sev,
+        description="Core-side read-back of DBGEN/NIDEN/SPIDEN/SPNIDEN, cross-checked vs JTAG_DAP_CFG.",
+        conclusion=body + "\n\n" + concl,
+    )
+
+
 ALL_RULES = [
     rule_engagement_triage,
     rule_security_posture_summary,
@@ -881,6 +990,7 @@ ALL_RULES = [
     rule_sec_lock_mutable,
     rule_jtag_dis_clear,
     rule_rpu_debug_enabled,
+    rule_debug_auth_matrix,
     rule_pltap_path_unlocked,
     rule_xppu_disabled,
     rule_xppu_parity_disabled,

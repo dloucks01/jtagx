@@ -145,6 +145,37 @@ def main():
     except Exception as e:
         L.append(f"## 1c. Extraction avenues\n_(extraction layer unavailable: {e})_\n")
 
+    # --- 1d. Debug-authentication posture (cross-arch model) ---
+    try:
+        from jtagx import debugauth as _dbgauth
+        # arch from the profile paradigm / soc family; signals from the posture flags.
+        _M = {"stm32f4", "stm32f1", "stm32l4", "stm32h7", "gd32", "nrf52", "nrf53",
+              "kinetis", "samd5x", "lpc", "rp2040", "smartfusion2"}
+        _R = {"riscv", "esp32c3"}
+        if a.soc in _R:
+            arch, sig = "riscv", {"authenticated": (None if P.get("jtag_open") else False)}
+        elif a.soc in _M:
+            lock = "engaged" if (P.get("jtag_locked") or P.get("approtect_open") is False
+                                 or P.get("flashlock")) else "none"
+            sig = {"lock": lock, "dauthstatus": ("provisioned" if P.get("debug_auth") == "provisioned" else None)}
+            arch = "cortex-m"
+        else:  # zynqmp / zynq7000 / cortex-a default
+            arch = "armv8a"
+            if P.get("debug_auth") in ("present", "provisioned"):
+                sig = {"auth_debug": P["debug_auth"]}
+            elif P.get("efuse_jtag_dis"):
+                sig = {"edprsr": 0x40}          # model a hard debug-disable → LOCKED
+            else:
+                sig = {"dbgauthstatus": 0xFF if P.get("jtag_open") else 0xAA}
+        v = _dbgauth.classify(arch, sig)
+        L.append(f"## 1d. Debug-auth posture — **{v['verdict']}** ({arch})")
+        L.append(f"_{v['detail']}_")
+        if v["reopen_levers"]:
+            L.append(f"- reopen levers: {', '.join(v['reopen_levers'])}")
+        L.append("")
+    except Exception as e:
+        L.append(f"## 1d. Debug-auth posture\n_(debug-auth model unavailable: {e})_\n")
+
     # --- 2. Dumps captured ---
     L.append("## 2. Dumps captured")
     ddir = os.path.join(ROOT, a.dumps) if not os.path.isabs(a.dumps) else a.dumps

@@ -205,6 +205,16 @@ dump_reg_qemu 0xFFCA003C
 dump_reg_qemu 0xFFCA0034 "CSU.JTAG_CHAIN_STATUS"
 dump_reg_qemu 0xFFCA0030 "CSU.JTAG_CHAIN_CFG"
 
+# LPD debug clock + reset gates (CRL_APB). DBG_LPD_CTRL.CLKACT gates the LPD
+# debug clock — with it off, the CoreSight/APB-debug fabric in the LPD is
+# unclocked and the DAP can't reach A53/R5 debug at all; RST_LPD_DBG holds the
+# debug logic (FPD/LPD/RPU) in reset. Both are part of "is the debug path even
+# powered/clocked?" — read them so a gated-vs-open verdict isn't ambiguous.
+# (addresses match the QEMU CRL_APB map: 0xFF5E00B0 / 0xFF5E0240)
+set _dbg_lpd [safe_rd 0xFF5E00B0]
+dump_reg_qemu 0xFF5E00B0
+dump_reg_qemu 0xFF5E0240
+
 # Security state interpretation is now in interpret.py rules. Raw register
 # fields for JTAG_DAP_CFG, JTAG_SEC, etc. are already in ::CAPTURED via
 # the dump_reg_qemu calls above.
@@ -538,6 +548,12 @@ foreach _c {0 1 2 3} {
     set _ok  [dict get $_ep sampling_ok]
     set _pc  [dict get $_ep pc_lo]
     set _pr  [dict get $_ep edprsr]
+    set _da  [dict get $_ep dbgauth]
+    # Capture the per-core debug-authentication read for interpret.py to decode
+    # (DBGAUTHSTATUS_EL1 + EDPRSR). These describe the debug surface even when
+    # no PC is sampled, so record them unconditionally.
+    dict set ::CAPTURED a53 "core${_c}_dbgauth" [hex32 $_da]
+    dict set ::CAPTURED a53 "core${_c}_edprsr"  [hex32 $_pr]
     set _valid [list]
     foreach _s [dict get $_ep samples] {
         if {$_s ne "ERR" && $_s ne "0xffffffff"} { lappend _valid $_s }
@@ -556,9 +572,9 @@ foreach _c {0 1 2 3} {
         set _fw_running 1
         if {$_first_live_pc eq "0xffffffff"} { set _first_live_pc $_pc }
         if {$_pin} { set _pintxt "pinned" } else { set _pintxt "moving" }
-        say [format "  core %d: PC=%s  EDPRSR=%s  powered=%s  (%s)" $_c $_pc [hex32 $_pr] $_pwr $_pintxt]
+        say [format "  core %d: PC=%s  EDPRSR=%s  DBGAUTH=%s  powered=%s  (%s)" $_c $_pc [hex32 $_pr] [hex32 $_da] $_pwr $_pintxt]
     } else {
-        say [format "  core %d: PC=(no sample)  EDPRSR=%s  powered=%s" $_c [hex32 $_pr] $_pwr]
+        say [format "  core %d: PC=(no sample)  EDPRSR=%s  DBGAUTH=%s  powered=%s" $_c [hex32 $_pr] [hex32 $_da] $_pwr]
     }
 }
 say "\`\`\`"

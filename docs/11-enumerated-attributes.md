@@ -48,7 +48,7 @@ board.
 | A53 release state | `RST_FPD_APU · 0xFD1A0104` + `APU.RVBARADDR0L · 0xFD5C0040` | core 0 releasable → halts at `0xFFFC0000`, CPSR `0x000003cd` (EL3H) | Whether/where a core can be brought up over JTAG (the release primitive). |
 | A53 EL3 system regs | per-core debug regs (when halted) | EL3-Secure, MMU off after release | Security state of a halted core (SCR_EL3, SCTLR, etc.). |
 | Invasive debug gate (halt) | live `halt` attempt via DAP → `a53.invasive_debug` | `open` (DAP halts the core) | Whether the DAP can actually halt the APU. `open` on a bare board; flips to **`gated`** once secure firmware (ATF/bl31) restricts invasive debug — a posture signal that depends on the *running firmware*, not just eFuses/SPIDEN. `unreachable` if the core won't examine. |
-| Non-invasive PC sampling (EDPCSR) | `DBGBASE+0xA0` per core (APB-AP, AP1) → `a53.pc_sampling` / `live_pc` | `off` at idle (no code running) | Reads a *running* core's PC without halting — works even when halt is gated. Reveals whether code is executing (an OS/firmware) and where. DBGBASE: core0 `0x80410000`, +`0x100000`/core. EDPRSR `+0x314`, EDSCR `+0x088`. |
+| Non-invasive PC sampling (EDPCSR) | `DBGBASE+0xA0` per core (APB-AP, AP1) → `a53.pc_sampling` / `live_pc` | `off` at idle (no code running) | Reads a *running* core's PC without halting — works even when halt is gated. Reveals whether code is executing (an OS/firmware) and where. DBGBASE: core0 `0x80410000`, +`0x100000`/core. EDPRSR `+0x314`, EDSCR `+0x088`, DBGAUTHSTATUS `+0xFB8` (see B1). |
 | RPU cores | dual Cortex-R5 (`RPU.* · 0xFF9A0000`) | lockstep vs split per `RPU_GLBL_CNTL` | Real-time cores + TCM; RPU island is PMU-gated from JTAG-idle. |
 
 ## A3. Clocks (PLLs and reference clocks)
@@ -90,7 +90,8 @@ board.
 |---|---|---|---|
 | JTAG chain (TAPs) | scan chain | `uscale.tap` (DAP, IRLen 4) + `uscale.ps` (PS, IRLen 12) | Which TAPs are present (PMU TAP appears only when its eFuse policy allows). |
 | Access Ports | DAP AP enumeration (`discover.tcl`) | AP0/AP1 = APB debug (`0x44770002`), AP2 = AXI mem (`0x24770004`) | Which debug/memory access paths respond — itself a posture datum on a hardened part. |
-| CoreSight components | per-AP ROM-table walk | Debug Units / CTIs / ETMs / funnels / ETB | The trace/debug fabric available. |
+| CoreSight components | per-AP ROM-table walk | Debug Units / CTIs / ETMs / funnels / ETB | The trace/debug fabric available. Parsed to a named component table by `jtagx.coresight` (ADIv5/v6 walker + PIDR→name via `references/coresight-parts.json`); interpret.py renders "Identified components". |
+| Debug-auth verdict | per-core `DBGAUTHSTATUS` → `jtagx.debugauth.classify` | **OPEN** (SID+NSID enabled) | GATED / AUTHENTICATED / LOCKED | Cross-arch classification (Armv8-A / Cortex-M / RISC-V) — the 3-state trust boundary above on/off debug (SDC-600 / RISC-V debug-auth = AUTHENTICATED). Shown in interpret.py + engagement-report §1d + GUI Kill-Chain. |
 
 ## A8. IPI fabric
 
@@ -113,7 +114,10 @@ are the rows the **Security Posture Summary** distills.
 | **APU secure invasive debug** | `CSU.JTAG_DAP_CFG · 0xFFCA003C · bit 2` (SPIDEN) | `1` (open) | `0` |
 | **APU secure trace** | `0xFFCA003C · bit 3` (SPNIDEN) | `1` | `0` |
 | APU / RPU non-secure debug+trace | `0xFFCA003C · bits 0,1,4,5` | `1` | `0` or `1` |
+| RPU secure debug+trace | `0xFFCA003C · bits 6,7` (RPU SPIDEN/SPNIDEN) | `1` | `0` |
 | DAP / PL-TAP / PMU JTAG paths | `CSU.JTAG_SEC · 0xFFCA0038 · [2:0]/[5:3]/[8:6]` | `0x3F` (DAP+PLTAP open, PMU gated) | not `0b111` |
+| **Per-core debug-auth read-back** | `DBGAUTHSTATUS_EL1` (DBGBASE+`0xFB8`) per A53 → `a53.coreN_dbgauth` | `0xFF` (NSID/NSNID/SID/SNID all `0b11` = enabled) | secure fields `0b10`/`0b00` | The core's OWN view of DBGEN/NIDEN/SPIDEN/SPNIDEN. Cross-checked against `JTAG_DAP_CFG` by `rule_debug_auth_matrix`; a **mismatch** means a stage between the CSU gate and the core is overriding it. *(mock/golden value HW-UNVALIDATED)* |
+| LPD debug clock/reset gates | `CRL_APB.DBG_LPD_CTRL · 0xFF5E00B0 · CLKACT` + `RST_LPD_DBG · 0xFF5E0240` | clock ACTIVE, all resets `0` (debug fabric powered) | clock gated / held-in-reset | Disambiguates a `gated` verdict: no clock / held reset shuts debug at the *power* level, distinct from the `JTAG_DAP_CFG` authentication gate. *(mock/golden HW-UNVALIDATED)* |
 
 ## B2. Secure-boot policy
 

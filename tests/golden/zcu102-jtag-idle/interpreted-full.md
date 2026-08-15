@@ -50,7 +50,7 @@ _One-line board-state verdict + which tools to run next, derived from the postur
 
 ## Findings (rules fired)
 
-**12 rule(s) fired** out of 16 evaluated (the Engagement Triage banner is shown at the top).
+**13 rule(s) fired** out of 17 evaluated (the Engagement Triage banner is shown at the top).
 
 ### 🔴 CRITICAL — Secure-world TrustZone debug enabled
 
@@ -77,6 +77,19 @@ _AES_RDLK is clear — if an AES key is stored in eFUSE, it can be read from JTA
 
 - Read AES key directly from eFUSE shadow (if loaded)
 - Decrypt all encrypted boot images for this device offline
+
+
+### 🔵 INFO — Debug-authentication matrix (per-core DBGAUTHSTATUS)
+
+_Core-side read-back of DBGEN/NIDEN/SPIDEN/SPNIDEN, cross-checked vs JTAG_DAP_CFG._
+
+**Conclusion:** Per-core DBGAUTHSTATUS_EL1 (the A53's own read-back of its four debug-authentication signals, DBGBASE+0xFB8):
+  core0: raw 0xFF — NS-invasive(DBGEN)=ENABLED, NS-trace(NIDEN)=ENABLED, SECURE-invasive(SPIDEN)=ENABLED, secure-trace(SPNIDEN)=ENABLED
+  core1: raw 0xFF — NS-invasive(DBGEN)=ENABLED, NS-trace(NIDEN)=ENABLED, SECURE-invasive(SPIDEN)=ENABLED, secure-trace(SPNIDEN)=ENABLED
+  core2: raw 0xFF — NS-invasive(DBGEN)=ENABLED, NS-trace(NIDEN)=ENABLED, SECURE-invasive(SPIDEN)=ENABLED, secure-trace(SPNIDEN)=ENABLED
+  core3: raw 0xFF — NS-invasive(DBGEN)=ENABLED, NS-trace(NIDEN)=ENABLED, SECURE-invasive(SPIDEN)=ENABLED, secure-trace(SPNIDEN)=ENABLED
+
+At least one A53 core reports SECURE-invasive debug ENABLED (SID=0b11), corroborating SPIDEN=1 from JTAG_DAP_CFG. The core confirms the CSU gate: JTAG can halt/inspect the EL3/secure world. Expected on this open dev board; a finding on a fielded device. This is the core-side confirmation of the SPIDEN gate — the two reads agree, so the secure-debug exposure is real, not a mislabel.
 
 
 ### 🔵 INFO — Encrypted boot not enforced
@@ -239,6 +252,18 @@ ERR: AP # 0x3
 		No AP found at this AP#0x3
 
 ```
+
+---
+
+## Debug-authentication verdict (per-core)
+
+The A53 cores' own DBGAUTHSTATUS_EL1 read-back, classified by the cross-arch
+debug-auth model (`jtagx.debugauth`) into OPEN / GATED / AUTHENTICATED / LOCKED.
+
+- **core0: OPEN** — Secure AND non-secure invasive debug enabled (SID+NSID) — fully open. (NSID=ENABLED, SID=ENABLED)
+- **core1: OPEN** — Secure AND non-secure invasive debug enabled (SID+NSID) — fully open. (NSID=ENABLED, SID=ENABLED)
+- **core2: OPEN** — Secure AND non-secure invasive debug enabled (SID+NSID) — fully open. (NSID=ENABLED, SID=ENABLED)
+- **core3: OPEN** — Secure AND non-secure invasive debug enabled (SID+NSID) — fully open. (NSID=ENABLED, SID=ENABLED)
 
 ---
 
@@ -804,6 +829,17 @@ interpretation when a curated annotation exists.
 - `SRCSEL` [bits 2:0] = `2`
     - **RPLL (LPD) or DPLL (FPD)** — Alternate PLL. RPLL is the LPD secondary PLL; DPLL is the DDR PLL (also used for some FPD peripherals).
 
+#### `0xFF5E00B0` — `CRL_APB.DBG_LPD_CTRL` = `0x01000F00`
+
+- `CLKACT` [bits 24] = `1`
+    - **LPD debug clock ACTIVE** — The debug fabric is clocked — DAP can reach A53/R5 debug components. Normal on an open board.
+
+- `DIVISOR0` [bits 13:8] = `15`
+    - _First-stage clock divider (6-bit). Output frequency = PLL_OUT / DIVISOR0 / DIVISOR1. A value of 0 is reserved (treated as 1 by the divider). Common values: 0x18=24 for UART at 100 MHz LPD_LSBUS, 0x5=5 for 200 MHz I2C ref, 0xC=12 for 100 MHz USB._
+
+- `SRCSEL` [bits 2:0] = `0`
+    - **IOPLL (LPD) or APLL (FPD)** — Most common source. For LPD peripherals, IOPLL (~1.5 GHz typical). For FPD peripherals, APLL (~1.2 GHz typical). Reset default.
+
 #### `0xFF5E0120` — `CRL_APB.I2C0_REF_CTRL` = `0x01000500`
 
 - `CLKACT` [bits 24] = `1`
@@ -1009,6 +1045,22 @@ interpretation when a curated annotation exists.
 - `RPU_R50_RESET` [bits 0] = `1`
     - **Cortex-R5 core 0 HELD IN RESET** — Functionality inhibited. Register reads may return zeros or wedge the AXI bus depending on the block.
 
+#### `0xFF5E0240` — `CRL_APB.RST_LPD_DBG` = `0x00000000`
+
+- `DBG_ACK` [bits 15] = `0`
+
+- `RPU_DBG1_RESET` [bits 5] = `0`
+    - **R5-1 debug out of reset**
+
+- `RPU_DBG0_RESET` [bits 4] = `0`
+    - **R5-0 debug out of reset**
+
+- `DBG_LPD_RESET` [bits 1] = `0`
+    - **LPD debug out of reset** — Debug logic is running — reachable if also clocked.
+
+- `DBG_FPD_RESET` [bits 0] = `0`
+    - **FPD debug out of reset** — APU-side debug logic is running.
+
 ### Block: `CSU`
 
 #### `0xFFCA0000` — `CSU.CSU_STATUS` = `0x00000000`
@@ -1150,8 +1202,11 @@ _CSU fault-tolerance (triple-modular-redundancy / SEU) status._
 #### `0xFFCA003C` — `CSU.JTAG_DAP_CFG` = `0x000000FF`
 
 - `SSSS_RPU_SPNIDEN` [bits 7] = `1`
+    - **RPU secure trace enabled** — R5 secure-world execution traces are visible to JTAG — passive observation of secure real-time firmware.
 
 - `SSSS_RPU_SPIDEN` [bits 6] = `1`
+    - **RPU secure debug enabled** — JTAG can halt and inspect R5 secure-world execution — any secure real-time firmware (safety monitors, secure RTOS) is fully exposed, including secrets it holds in registers/TCM.
+    - _Offensive use:_ ['Halt R5 secure firmware and dump TCM/secure state', 'Observe secure real-time control loops (safety/motor/power)']
 
 - `SSSS_RPU_NIDEN` [bits 5] = `1`
     - **RPU trace enabled** — R5 ETM trace visible to JTAG observer.

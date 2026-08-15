@@ -181,6 +181,27 @@ if [ -d "$GOLDEN_DIR" ]; then
 fi
 
 echo ""
+echo "Running debug-authentication rule test (DBGAUTHSTATUS decode + cross-check)..."
+if ! python3 tests/rule-debug-auth.py; then
+    echo "FAIL: rule-debug-auth test"
+    exit 1
+fi
+
+echo ""
+echo "Running CoreSight ROM-table walker test (ADIv5/v6 walk + PIDR identify)..."
+if ! python3 tests/coresight-walk.py; then
+    echo "FAIL: coresight-walk test"
+    exit 1
+fi
+
+echo ""
+echo "Running cross-arch debug-auth classifier test (OPEN/GATED/AUTHENTICATED/LOCKED)..."
+if ! python3 tests/debugauth-classify.py; then
+    echo "FAIL: debugauth-classify test"
+    exit 1
+fi
+
+echo ""
 echo "Running boot-image parser + PHT-walk test..."
 if ! bash tests/test-bootimage.sh; then
     echo "FAIL: boot-image test"

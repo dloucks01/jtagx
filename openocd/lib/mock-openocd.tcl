@@ -166,6 +166,10 @@ proc uscale.dbg {args} {
         }
         if {$off == 0x0A0 || $off == 0x0AC} { return [list 0xFFFFFFFF] }
         if {$off == 0x314} { return [list 0] }
+        # DBGAUTHSTATUS_EL1 (0xFB8): dev-baseline = all four debug-auth signals
+        # implemented+enabled (0b11 each → 0xFF), consistent with this board's
+        # JTAG_DAP_CFG=0xFF (DBGEN/NIDEN/SPIDEN/SPNIDEN all set). HW-UNVALIDATED.
+        if {$off == 0xFB8} { return [list 0xFF] }
         return [list 0]
     }
     return 0

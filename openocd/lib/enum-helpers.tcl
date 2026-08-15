@@ -141,17 +141,25 @@ proc dbg_rd {addr} {
 }
 
 # Non-invasively probe an A53 core's debug status + sample its PC via EDPCSR.
-# Returns a dict: powered(true/false/ERR) edprsr edscr pc_lo pc_hi
+# Returns a dict: powered(true/false/ERR) edprsr edscr dbgauth pc_lo pc_hi
 # samples(list) sampling_ok(0/1). Does NOT halt the core.
+#
+# dbgauth = DBGAUTHSTATUS_EL1 (external view at DBGBASE+0xFB8, Arm DDI0487):
+# the CORE's own read-back of the four debug-authentication signals
+# (NSID/NSNID/SID/SNID = DBGEN/NIDEN/SPIDEN/SPNIDEN). This corroborates the
+# CSU-side JTAG_DAP_CFG gate from the core's perspective — if the two disagree,
+# something between the CSU and the core is overriding the gate.
 proc edpcsr_probe {core {nsamples 6}} {
     set base [a53_dbgbase $core]
-    set res [dict create powered ERR edprsr ERR edscr ERR \
+    set res [dict create powered ERR edprsr ERR edscr ERR dbgauth ERR \
                  pc_lo ERR pc_hi ERR samples [list] sampling_ok 0]
     if {![dbg_ap_init]} { return $res }
-    set edprsr [dbg_rd [expr {$base + 0x314}]]
-    set edscr  [dbg_rd [expr {$base + 0x088}]]
-    dict set res edprsr $edprsr
-    dict set res edscr  $edscr
+    set edprsr  [dbg_rd [expr {$base + 0x314}]]
+    set edscr   [dbg_rd [expr {$base + 0x088}]]
+    set dbgauth [dbg_rd [expr {$base + 0xFB8}]]
+    dict set res edprsr  $edprsr
+    dict set res edscr   $edscr
+    dict set res dbgauth $dbgauth
     if {$edprsr ne "ERR"} {
         if {[expr {$edprsr & 1}]} { dict set res powered true } else { dict set res powered false }
     }

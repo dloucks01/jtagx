@@ -218,6 +218,131 @@ ANNOTATIONS: list[Annotation] = [
     # =========================================================================
 
     Annotation(
+        register="CSU.JTAG_DAP_CFG",
+        field="SSSS_RPU_SPIDEN",
+        description=(
+            "Enables invasive debug of the R5 cluster in the SECURE world "
+            "(TrustZone). The RPU analog of APU SPIDEN — gates JTAG halt/inspect "
+            "of secure-side R5 execution."
+        ),
+        values={
+            0: _v(
+                label="RPU secure debug gated",
+                meaning="JTAG cannot halt/inspect R5 cores executing secure-world "
+                        "real-time firmware. Production hardening.",
+                expected_state="hardened-production",
+            ),
+            1: _v(
+                label="RPU secure debug enabled",
+                meaning="JTAG can halt and inspect R5 secure-world execution — any "
+                        "secure real-time firmware (safety monitors, secure RTOS) is "
+                        "fully exposed, including secrets it holds in registers/TCM.",
+                expected_state="dev",
+                offensive_use=[
+                    "Halt R5 secure firmware and dump TCM/secure state",
+                    "Observe secure real-time control loops (safety/motor/power)",
+                ],
+            ),
+        },
+    ),
+
+    Annotation(
+        register="CSU.JTAG_DAP_CFG",
+        field="SSSS_RPU_SPNIDEN",
+        description="Enables non-invasive trace of secure-world R5 execution.",
+        values={
+            0: _v(label="RPU secure trace gated",
+                  meaning="Cannot trace R5 secure-world execution via JTAG.",
+                  expected_state="hardened-production"),
+            1: _v(label="RPU secure trace enabled",
+                  meaning="R5 secure-world execution traces are visible to JTAG — "
+                          "passive observation of secure real-time firmware.",
+                  expected_state="dev"),
+        },
+    ),
+
+    # =========================================================================
+    # CRL_APB.DBG_LPD_CTRL / RST_LPD_DBG — the LPD debug clock + reset gates.
+    # Before the DAP can reach A53/R5 debug, the LPD debug fabric must be
+    # clocked (DBG_LPD_CTRL.CLKACT) and out of reset (RST_LPD_DBG). These
+    # disambiguate a "gated" verdict: no clock / held-in-reset debug looks the
+    # same as authentication-gated from the halt side, but is a different cause.
+    # =========================================================================
+
+    Annotation(
+        register="CRL_APB.DBG_LPD_CTRL",
+        field="CLKACT",
+        description=(
+            "LPD debug-fabric clock gate. Drives the CoreSight/APB-debug clock "
+            "for the LPD (A53 debug via APB, R5 debug, CTI, cross-trigger)."
+        ),
+        values={
+            1: _v(label="LPD debug clock ACTIVE",
+                  meaning="The debug fabric is clocked — DAP can reach A53/R5 debug "
+                          "components. Normal on an open board.",
+                  expected_state="dev | debug-in-use"),
+            0: _v(label="LPD debug clock GATED",
+                  meaning="Debug fabric unclocked. External debug of A53/R5 is "
+                          "unavailable regardless of the JTAG_DAP_CFG gates — a "
+                          "power/clock-level way to shut debug. If a core reads as "
+                          "'gated' from the halt side AND this is 0, the cause is the "
+                          "clock, not authentication.",
+                  expected_state="hardened / debug-not-provisioned"),
+        },
+    ),
+
+    Annotation(
+        register="CRL_APB.RST_LPD_DBG",
+        field="DBG_LPD_RESET",
+        description="Reset for the LPD debug logic (the A53/R5 APB-debug fabric).",
+        values={
+            0: _v(label="LPD debug out of reset",
+                  meaning="Debug logic is running — reachable if also clocked.",
+                  expected_state="dev"),
+            1: _v(label="LPD debug HELD IN RESET",
+                  meaning="LPD debug logic is held in reset — external debug is "
+                          "unavailable. Another clock/reset-level debug shutoff, "
+                          "distinct from the JTAG_DAP_CFG authentication gates.",
+                  expected_state="hardened / debug-not-provisioned"),
+        },
+    ),
+    Annotation(
+        register="CRL_APB.RST_LPD_DBG",
+        field="DBG_FPD_RESET",
+        description="Reset for the FPD-side debug logic (the APU/A53 debug in the full-power domain).",
+        values={
+            0: _v(label="FPD debug out of reset",
+                  meaning="APU-side debug logic is running.", expected_state="dev"),
+            1: _v(label="FPD debug HELD IN RESET",
+                  meaning="APU-side debug logic held in reset — A53 external debug "
+                          "unavailable at the reset level.",
+                  expected_state="hardened / debug-not-provisioned"),
+        },
+    ),
+    Annotation(
+        register="CRL_APB.RST_LPD_DBG",
+        field="RPU_DBG0_RESET",
+        description="Reset for R5 core-0 debug logic.",
+        values={
+            0: _v(label="R5-0 debug out of reset", meaning="", expected_state="dev"),
+            1: _v(label="R5-0 debug held in reset",
+                  meaning="R5 core-0 external debug held in reset.",
+                  expected_state="hardened"),
+        },
+    ),
+    Annotation(
+        register="CRL_APB.RST_LPD_DBG",
+        field="RPU_DBG1_RESET",
+        description="Reset for R5 core-1 debug logic.",
+        values={
+            0: _v(label="R5-1 debug out of reset", meaning="", expected_state="dev"),
+            1: _v(label="R5-1 debug held in reset",
+                  meaning="R5 core-1 external debug held in reset.",
+                  expected_state="hardened"),
+        },
+    ),
+
+    Annotation(
         register="CSU.JTAG_SEC",
         field="SSSS_DAP_SEC",
         description=(
