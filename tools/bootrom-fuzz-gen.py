@@ -132,7 +132,10 @@ def main():
                     help="ALSO emit broken-checksum variants (probe whether the BootROM enforces the checksum)")
     args = ap.parse_args()
 
-    base = bytearray(open(args.base, "rb").read())
+    try:
+        base = bytearray(open(args.base, "rb").read())
+    except OSError as e:
+        sys.exit(f"error: cannot read {args.base!r}: {e}")
     if u32(base, 0x24) != 0x584C4E58:   # identification word (matches parse-bootimage HEADER_ID_XLNX)
         sys.exit(f"base image identification word @0x24 is 0x{u32(base,0x24):08X}, not 0x584C4E58 — not a ZynqMP boot image?")
     os.makedirs(args.outdir, exist_ok=True)

@@ -37,7 +37,11 @@ def main():
     ap.add_argument("--annotate", action="store_true",
                     help="echo stdin lines, appending the symbol after each hex VA found")
     a = ap.parse_args()
-    addrs, syms = load(a.syms)
+    try:
+        addrs, syms = load(a.syms)
+    except OSError as e:
+        sys.exit(f"error: cannot read the symbol map {a.syms!r}: {e}\n"
+                 f"  generate one first: python3 tools/vxworks-symtab.py <kernel.bin> --out-map {a.syms}")
     if not syms:
         sys.exit(f"no symbols loaded from {a.syms}")
 

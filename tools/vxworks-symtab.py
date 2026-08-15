@@ -117,7 +117,11 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     va_base = int(args.va_base, 0)
-    data = Path(args.image).read_bytes()
+    try:
+        data = Path(args.image).read_bytes()
+    except OSError as e:
+        print(f"error: cannot read {args.image!r}: {e}", file=sys.stderr)
+        return 1
     syms = extract(data, va_base)
     if not syms:
         print("No symbol-table entries found. Wrong --va-base? "

@@ -30,7 +30,10 @@ def main():
     log_base = pd_sub << 1           # logical base of the 8KB region (4KB/die)
     span = SUB * 2                   # 8192 logical bytes
 
-    data = open(a.image, "rb").read()
+    try:
+        data = open(a.image, "rb").read()
+    except OSError as e:
+        raise SystemExit(f"error: cannot read {a.image!r}: {e}")
     if log_base + span > len(data):
         raise SystemExit(f"image too short: need 0x{log_base+span:x}, have 0x{len(data):x}")
     region = bytearray(data[log_base:log_base + span])

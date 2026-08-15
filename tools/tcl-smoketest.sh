@@ -376,4 +376,8 @@ echo ""
 echo "Running mock-secureboot checks (auth/key bypass model: JustSTART / Starbleed)..."
 if ! bash tools/mock-secureboot-smoketest.sh; then echo "FAIL: mock-secureboot smoketest"; exit 1; fi
 
+echo ""
+echo "Running CLI adversarial checks (every tool vs missing/empty/garbage input, as a real subprocess)..."
+if ! bash tools/cli-adversarial-smoketest.sh; then echo "FAIL: cli-adversarial smoketest"; exit 1; fi
+
 exit 0

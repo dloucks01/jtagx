@@ -40,8 +40,18 @@ def parse_log(path):
 def main():
     if len(sys.argv) < 3:
         sys.exit("usage: bootrom-fuzz-triage.py <fuzz.log> <manifest.json>")
-    trials = parse_log(sys.argv[1])
-    manifest = {str(e["id"]): e for e in json.load(open(sys.argv[2]))}
+    try:
+        trials = parse_log(sys.argv[1])
+    except OSError as e:
+        sys.exit(f"error: cannot read the fuzz log {sys.argv[1]!r}: {e}")
+    try:
+        with open(sys.argv[2]) as fh:
+            manifest_raw = json.load(fh)
+    except OSError as e:
+        sys.exit(f"error: cannot read the manifest {sys.argv[2]!r}: {e}")
+    except json.JSONDecodeError as e:
+        sys.exit(f"error: {sys.argv[2]!r} is not valid JSON: {e}")
+    manifest = {str(e["id"]): e for e in manifest_raw}
 
     if "0" not in trials:
         sys.exit("no baseline (id=0) fingerprint in the log — boot 0000-baseline.bin and observe it first.")

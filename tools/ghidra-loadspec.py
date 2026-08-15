@@ -143,7 +143,11 @@ def main(argv=None):
     ap.add_argument("image")
     ap.add_argument("--window", type=int, default=0x10000, help="bytes to disassemble for arch scoring")
     args = ap.parse_args(argv)
-    data = Path(args.image).read_bytes()
+    try:
+        data = Path(args.image).read_bytes()
+    except OSError as e:
+        print(f"error: cannot read {args.image!r}: {e}", file=sys.stderr)
+        return 1
 
     if cs is None:
         print("capstone not installed (pip install capstone) — cannot detect architecture.", file=sys.stderr)

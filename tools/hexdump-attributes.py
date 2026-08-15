@@ -118,8 +118,12 @@ def main():
     if not os.path.exists(path):
         print(f"capture not found: {path}", file=sys.stderr)
         return 2
-    with open(path) as f:
-        capture = json.load(f)
+    try:
+        with open(path) as f:
+            capture = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"{path} is not valid JSON: {e}", file=sys.stderr)
+        return 2
 
     md = render(capture, security_only=args.security, src_path=path)
     if args.out:

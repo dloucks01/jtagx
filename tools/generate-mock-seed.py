@@ -237,7 +237,11 @@ def main() -> int:
     if not args.raw_json.exists():
         print(f"ERROR: {args.raw_json} not found", file=sys.stderr)
         return 1
-    raw = json.loads(args.raw_json.read_text())
+    try:
+        raw = json.loads(args.raw_json.read_text())
+    except json.JSONDecodeError as e:
+        print(f"ERROR: {args.raw_json} is not valid JSON: {e}", file=sys.stderr)
+        return 1
 
     # Derive paired markdown path if not given (raw.json -> enumerate.md)
     md_path = args.md
