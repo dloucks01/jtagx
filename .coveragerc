@@ -1,0 +1,19 @@
+[run]
+source = tools,jtagx
+branch = True
+parallel = True
+data_file = .coverage
+omit =
+    tools/mock-openocd.py
+    tools/mock-xsdb.py
+    tools/coverage-sitecustomize/*
+
+[report]
+skip_empty = True
+precision = 1
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+
+[html]
+directory = reports/coverage-html

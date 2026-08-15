@@ -28,5 +28,9 @@ vxworks_symbols_ghidra.py
 # generated coverage chart (regenerate via tools/gen-coverage-chart.py; published as an artifact)
 board-coverage.html
 
+# coverage.py data files (test-coverage-report.sh); the report itself lands under reports/, already ignored
+.coverage
+.coverage.*
+
 # generated HTML reports (regenerate via tools/report-html.py)
 reports/report-*.html
