@@ -15,7 +15,9 @@ Packaged builds write outputs to `~/.local/share/jtagx` (override with `JTAGX_DA
 
 ## Layout
 
-- **Top bar**: target crumb · **Transport** selector (Auto / OpenOCD / hw_server-xsdb) · **Enumerate** · DAP badge.
+- **Top bar**: target crumb · **board** selector (switches the whole app to another profile —
+  Chain/Console/Dashboard/Reports all retarget) · **Transport** selector (Auto / OpenOCD /
+  hw_server-xsdb) · **Enumerate** · DAP badge.
 - **Icon rail** (left): the 6 pages. **Console** (bottom): always visible, follows the active tab.
 - **Status bar**: connection · detected adapter · effective backend · chain · verdict.
 
@@ -23,12 +25,23 @@ Packaged builds write outputs to `~/.local/share/jtagx` (override with `JTAGX_DA
 
 | # | Page | What you do |
 |---|------|-------------|
-| 1 | **Dashboard** | Hero tiles (click CHAIN→Chain, POSTURE→posture tab, ARTIFACTS→Memory) · posture ring + table · **Registers** (search / security-only / click-to-decode / right-click copy or *send mrd to console*) · **Attack Surface** (implementation-review misuse hypotheses — where the design could be MISUSED, distinct from CVEs; **▶ probe** sends the investigation command to the console; grows via `jtagx/weakness.py`) · **Capabilities** (click to run the real command) · chain panel (**right-click a core** → halt/resume/read → console) |
-| 2 | **Unlock** | The locked-board plan derived from the newest **real capture**. Click **▶ Run** on an AUTO lever → it runs reopen-debug **and** re-reads the access verdict → marks the lock ✓defeated / ◐partial / ✗resisted. ↻ Refresh re-derives. |
-| 3 | **Chain** | Detected adapters + backend · JTAG chain (IDCODE decode + APs) · **xsdb debug-target tree** (click a core → copy its xsdb command) · per-board adapter allowlist with "● detected". ↻ Refresh re-scans USB. |
+| 1 | **Dashboard** | Hero tiles (click CHAIN→Chain, POSTURE→posture tab, ARTIFACTS→Memory) · 7 center tabs (below) · **Capabilities** (click to run the real command) · chain panel (**right-click a core** → halt/resume/read → console) |
+| 2 | **Unlock** | The locked-board plan derived from the newest **real capture**. Click **▶ Run** on an AUTO lever → it runs reopen-debug **and** re-reads the access verdict → marks the lock ✓defeated / ◐partial / ✗resisted. Posture-toggle chips assert a hypothetical lock state per board. ↻ Refresh re-derives. |
+| 3 | **Chain** | **🛟 Stuck at first contact?** search box (type a symptom — "flashpro won't work", "no idcode" — get the ranked blocker + concrete fix, `jtagx.firstcontact`) · **pre-flight** GO/BLOCKED verdict (adapter/backend/transport/physical checklist, `jtagx.preflight`) · detected adapters + backend · JTAG chain (IDCODE decode + APs) · **xsdb debug-target tree** (click a core → copy its xsdb command) · per-board adapter allowlist with "● detected" · capability matrix (adapter × op). ↻ Refresh re-scans USB. |
 | 4 | **Memory** | Virtualized hex over any dump (dropdown selects the dump; ↻ rescans). **Find** hex bytes (`de ad be ef`) or ASCII (`'text`) → jumps + green-highlights the match. Go-to offset. |
-| 5 | **Reports** | Rendered Markdown deliverables. **＋ Generate** runs engagement-report.py from the live capture; ↻ Refresh. |
+| 5 | **Reports** | Rendered Markdown deliverables. **＋ Generate** runs engagement-report.py from the live capture. **⚡ Stylized HTML** runs `tools/report-html.py` (operator-first: verdict → posture chips → critical findings+actions → next-steps → anomalies) and opens it in your browser. ↻ Refresh. |
 | 6 | **Help** | This guide, rendered in-app. |
+
+## Dashboard center tabs
+
+| Tab | What you see |
+|---|---|
+| **Posture** | Ring (N hardened / M total) + the security-implementation table, derived from the real capture. |
+| **Registers** | The §1–16 sweep — search / security-only filter / click-to-decode / right-click *send mrd to console*. A **🧬 Debug topology (CoreSight)** panel sits above the table: components identified from the captured `dap info` text (`jtagx.coresight`) — base address, class, name, part. Honest-empty with an explanation when the capture's DAP exposes no walkable ROM table. |
+| **Memory / Report** | Launchers that jump to the full Memory / Reports pages. |
+| **Kill Chain** | The ordered objective ladder (jtag-up → debug-open → mem-read → secrets → persistence) for the active board + posture, plus **EXTRACTION AVENUES** (best-first, incl. no-debug ROM loaders) — **▶ run** drops each node's command in the console. `jtagx.attackgraph` + `jtagx.extraction`. |
+| **Attack Surface** | Implementation-review misuse hypotheses — where the design could be MISUSED, distinct from CVEs; class-filter chips; **▶ probe** sends the investigation command to the console. Grows via `jtagx/weakness.py`. |
+| **→] Shell** | **The capstone.** Goal chips (Get a shell / Catch a credential / Persist) pick the path from `jtagx.jtagtoshell`, auto-detecting board state (firmware running? debug open?) from the newest capture. Each numbered step has a **▶ run** button; the OpenOCD-0.12 code-injection wedge warning is always shown above the steps. |
 
 ## Console (the command line)
 

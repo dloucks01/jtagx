@@ -1622,8 +1622,12 @@ class Dashboard(QWidget):
         cap = comps[:12]
         for c in cap:
             d = c.as_dict()
-            row = QLabel(f"{d['base']}  ·  {d['kind']:<10}  {d['name']}" +
-                        (f"  ({d.get('part')})" if d.get("part") else ""))
+            kind, name = d["kind"], d["name"]
+            # avoid the "ROM-table  ·  ROM table" stutter when the identified name just restates the
+            # class (e.g. a bare ROM table with no distinguishing PIDR) — show the class once.
+            same = kind.replace("-", " ").lower() == name.lower()
+            label = kind if same else f"{kind:<10}  {name}"
+            row = QLabel(f"{d['base']}  ·  {label}" + (f"  ({d.get('part')})" if d.get("part") else ""))
             row.setStyleSheet("color:#33d6c4; font-size:10.5px; font-family:monospace;")
             v.addWidget(row)
         if len(comps) > 12:
@@ -1843,14 +1847,22 @@ class Dashboard(QWidget):
     def start_enumerate(self):
         if self.runner.busy():
             return
+        be = self._effective_backend()
+        if be != "openocd":
+            self.append_line("w", f"✕ Enumerate needs the OpenOCD backend (enumerate.tcl); active "
+                             f"transport is “{be}”. Bridge via XVC (Chain page) or set Transport = OpenOCD.")
+            return
         self.navigate.emit(0)           # bring the operator to the Dashboard to watch the live stream
         if self._enum_btn:
             self._enum_btn.setEnabled(False)
-        cmd = "init; source openocd/enumerate.tcl; shutdown"
+        # Honor a custom/mock openocd binary ($OPENOCD) — same indirection the console's /enumerate and
+        # every jtagx.unlock lever use, so offline tooling (and the mock harness) can drive this button.
+        oc = os.environ.get("OPENOCD", "openocd")
+        cmd = f'{oc} -f openocd/zcu102.cfg -c "init; source openocd/enumerate.tcl; shutdown"'
         self._last_was_enum = True
         BUS.mark.emit("enumerate")
-        BUS.command.emit("Dashboard", f'openocd -f openocd/zcu102.cfg -c "{cmd}"')
-        self.runner.run(["openocd", "-f", "openocd/zcu102.cfg", "-c", cmd], cwd=ROOT)
+        BUS.command.emit("Dashboard", cmd)
+        self.runner.run_shell(cmd, cwd=ROOT)
 
     def _on_done(self, code=0):
         if self._enum_btn:
@@ -1919,12 +1931,7 @@ class Dashboard(QWidget):
     def _cap_action(self, title, kind):
         # capability card clicked → RUN the real command (operator-driven), or copy if it needs a VA/symbol
         if title == "Enumerate posture":
-            be = self._effective_backend()
-            if be != "openocd":
-                self.append_line("w", f"✕ Enumerate needs the OpenOCD backend (enumerate.tcl); active "
-                                 f"transport is “{be}”. Bridge via XVC (Chain page) or set Transport = OpenOCD.")
-                return
-            self.start_enumerate(); return
+            self.start_enumerate(); return   # backend gate + $OPENOCD resolution live in start_enumerate
         if kind == "off":
             self.append_line("w", f"✕ {title} — not available on this target"); return
         cmd, blocked = self._resolve_cap_cmd(title)

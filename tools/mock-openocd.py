@@ -17,12 +17,17 @@ no-write-path→lever resists. State in $JTAGX_MOCK_STATE (default /tmp/jtagx-mo
 to reset to LOCKED). Dumps capped at $JTAGX_MOCK_MAXBYTES (default 2 MiB) with a truncation banner.
 REHEARSAL tool — real validation is G1/G2/G3 against silicon. Supersedes the old mock-openocd-locked.py.
 """
+import json
 import os
 import re
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mock_common import load_regs, reg_word, mem_bytes
+
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_GOLDEN_RAW = os.path.join(_REPO_ROOT, "tests", "golden", "zcu102-jtag-idle", "raw.json")
 
 STATE = os.environ.get("JTAGX_MOCK_STATE", "/tmp/jtagx-mock-lock.state")
 SCENARIO = os.environ.get("JTAGX_MOCK_LOCK", "register-gated")
@@ -57,6 +62,30 @@ def mdw(out, args):
     for i in range(0, n, 4):
         row = vals[i:i + 4]
         out.append(f"0x{addr + 4 * i:08x}: " + " ".join(f"{v:08x}" for v in row))
+
+
+def enumerate_mock(out):
+    """Emulate `source openocd/enumerate.tcl`: write a FRESH reports/raw-<ts>.json so anything
+    downstream of a real enumerate (the GUI's post-decode cross-page flow, tools/interpret.py, the
+    HTML report) has genuinely new data to react to — not just a no-op that leaves the exit code as
+    the only observable signal. Content is the frozen golden capture (known-good, already validated
+    by golden-test.sh) with a fresh timestamp; this is a REHEARSAL of the button/pipeline wiring, not
+    a fidelity claim about the register values — real posture always comes from actual silicon."""
+    out.append("# [mock-openocd] enumerate.tcl — writing a mock capture (rehearsal; not real silicon)")
+    try:
+        with open(_GOLDEN_RAW, encoding="utf-8") as fh:
+            cap = json.load(fh)
+    except OSError as e:
+        out.append(f"# [mock-openocd] enumerate.tcl mock FAILED to read the golden fixture: {e}")
+        return
+    ts = time.strftime("%Y-%m-%d-%H%M%S")
+    cap.setdefault("metadata", {})["timestamp"] = ts
+    out_path = os.path.join("reports", f"raw-{ts}.json")
+    os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(cap, fh, indent=2)
+    out.append(f"Raw JSON capture: {out_path}")
+    out.append(f"# [mock-openocd] wrote {out_path} ({len(cap.get('registers', {}))} registers)")
 
 
 def dump_image(out, args):
@@ -198,7 +227,7 @@ def run_source(out, script):
     elif "reopen-debug.tcl" in script:
         reopen_debug(out)
     elif "enumerate.tcl" in script:
-        out.append("# [mock-openocd] enumerate.tcl — (mock no-op; use the real board for a capture)")
+        enumerate_mock(out)
     else:
         out.append(f"# [mock-openocd] sourced {script} (no-op)")
 

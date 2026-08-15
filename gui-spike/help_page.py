@@ -18,12 +18,16 @@ The GUI is a **driver**: it builds and streams the real commands; **you drive al
 Everything shown is the real captured posture, detected adapters, and dumps.
 
 ## Pages (Ctrl+1..6)
-- **Dashboard** — hero tiles, posture ring + table, Registers (search / decode / right-click),
-  Capabilities (click to run), chain panel (right-click a core → halt/resume/read → console).
+- **Dashboard** — hero tiles + 7 center tabs: Posture, Registers (search / decode / right-click /
+  CoreSight topology), Memory/Report launchers, Kill Chain (objective ladder + extraction avenues),
+  Attack Surface (implementation-review misuse hypotheses), **→] Shell** (the get-a-shell planner:
+  live-patch / catch-a-credential / cold-boot / persist). Capabilities panel (click to run), chain
+  panel (right-click a core → halt/resume/read → console).
 - **Unlock** — the locked-board plan from the newest capture; ▶ Run a lever → reopen + verify.
-- **Chain** — adapters, JTAG chain, xsdb target tree; ↻ re-scans USB.
+- **Chain** — first-contact troubleshooting search (symptom → blocker + fix), pre-flight GO/BLOCKED,
+  adapters, JTAG chain, xsdb target tree; ↻ re-scans USB.
 - **Memory** — virtualized hex over any dump; Find hex bytes or 'ASCII.
-- **Reports** — rendered Markdown; ＋ Generate an engagement report.
+- **Reports** — rendered Markdown; ＋ Generate an engagement report, ⚡ Stylized HTML report.
 - **Help** — this page.
 
 ## Console (bottom, always visible)

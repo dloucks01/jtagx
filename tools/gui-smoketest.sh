@@ -409,6 +409,42 @@ if sf2 is not None:
     if w.dash._board_soc != "zynqmp" or "Registers (" not in w.dash._center_tabs.tabText(1):
         bad("switching back to ZynqMP should restore the real §1–16 register capture")
 
+# 26. THE Run Enumerate button, actually clicked, through mock-openocd.py (the $OPENOCD indirection
+# every other live command already respects — this one used to hardcode a literal "openocd" argv,
+# bypassing both the mock and the transport backend gate; regression-guard that fix here).
+import glob as _glob, time as _t2
+_before = set(_glob.glob(_os.path.join(qt_spike.ROOT, "reports", "raw-*.json")))
+w.dash.set_backend("openocd")
+w.console.clear()
+w.dash.start_enumerate()
+if not w.dash.runner.busy() and w.dash.runner.proc is None:
+    bad("start_enumerate under the OpenOCD backend + $OPENOCD=mock should actually launch a process")
+_t0 = _t2.time()
+while w.dash.runner.busy() and _t2.time() - _t0 < 15:
+    app.processEvents(); _t2.sleep(0.03)
+app.processEvents()
+_after = set(_glob.glob(_os.path.join(qt_spike.ROOT, "reports", "raw-*.json")))
+_new = _after - _before
+if not _new: bad("clicking Run Enumerate should produce a fresh reports/raw-*.json via the mock")
+if w.dash._center_tabs.currentIndex() != 0:
+    bad("a successful enumerate should land the operator on the decoded Posture tab (cross-page flow)")
+if "Enumeration decoded" not in w.console.text.toPlainText():
+    bad("a successful enumerate should announce the decode in the console")
+for _f in _new:
+    _os.remove(_f)   # don't leave test-generated captures in the real reports/ dir
+
+# 26b. the SAME button, under the hw_server backend — must BLOCK, not silently try to run "openocd"
+w.dash.set_backend("hw_server")
+w.console.clear()
+_before2 = set(_glob.glob(_os.path.join(qt_spike.ROOT, "reports", "raw-*.json")))
+w.dash.start_enumerate()
+if w.dash.runner.busy(): bad("Run Enumerate under hw_server must NOT launch a process")
+if "OpenOCD backend" not in w.console.text.toPlainText():
+    bad("Run Enumerate under hw_server should explain why it's blocked")
+_after2 = set(_glob.glob(_os.path.join(qt_spike.ROOT, "reports", "raw-*.json")))
+if _after2 != _before2: bad("a blocked enumerate must not produce any capture file")
+w.dash.set_backend("openocd")   # restore
+
 w.dash.stop()
 print("  gui end-to-end OK (5 pages, hero real, tabs filled, nav flow, memory selector, unlock plans)")
 PY
