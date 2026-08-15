@@ -8,7 +8,8 @@ selected one with Qt's native Markdown support (GitHub dialect — tables includ
 in-app.
 """
 import glob, os, sys
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QListWidgetItem, QTextBrowser,
     QPushButton,
@@ -85,6 +86,13 @@ class ReportsPage(QWidget):
         self.gen_btn.setToolTip("Run engagement-report.py (auto-derives posture from the newest capture)")
         self.gen_btn.clicked.connect(self._generate)
         top.addWidget(self.gen_btn)
+        self.html_btn = QPushButton("⚡  Stylized HTML"); self.html_btn.setCursor(Qt.PointingHandCursor)
+        self.html_btn.setStyleSheet(_bs)
+        self.html_btn.setToolTip("Run tools/report-html.py on the newest capture — operator-first: "
+                                 "verdict, posture chips, critical findings+actions, next-steps, "
+                                 "anomalies. Opens in your browser.")
+        self.html_btn.clicked.connect(self._generate_html)
+        top.addWidget(self.html_btn)
         btn = QPushButton("↻  Refresh"); btn.setCursor(Qt.PointingHandCursor)
         btn.setStyleSheet(_bs)
         btn.clicked.connect(self._populate)
@@ -98,6 +106,13 @@ class ReportsPage(QWidget):
         self.runner.done.connect(self._on_generated)
         if BUS is not None:
             self.runner.line.connect(lambda t: BUS.line.emit("d", t))   # stream into the shell console
+
+        # separate runner for the HTML report (independent of the markdown engagement-report flow above)
+        self._html_out = None
+        self.html_runner = ProcRunner(self)
+        self.html_runner.done.connect(self._on_html_generated)
+        if BUS is not None:
+            self.html_runner.line.connect(lambda t: BUS.line.emit("d", t))
 
         h = QHBoxLayout(); h.setSpacing(14)
         left = QVBoxLayout(); left.setSpacing(6)
@@ -174,6 +189,36 @@ class ReportsPage(QWidget):
                 self.list.setCurrentRow(i); break
         if code != 0:
             self.browser.setMarkdown(f"_engagement-report.py exited with code {code}._")
+
+    def _generate_html(self):
+        """One-click: run tools/report-html.py on the newest raw-<ts>.json capture, then open the
+        result in the default browser (the stylized HTML doesn't render inside QTextBrowser — no CSS
+        variables/media queries — so this opens it externally rather than trying to embed it)."""
+        if self.html_runner.busy():
+            return
+        caps = sorted(glob.glob(os.path.join(self.dir, "raw-*.json")), key=os.path.getmtime)
+        if not caps:
+            self.browser.setMarkdown("_No raw capture yet — run enumerate.tcl first "
+                                     "(the HTML report needs a raw-*.json)._")
+            return
+        raw = caps[-1]
+        stem = os.path.splitext(os.path.basename(raw))[0].replace("raw-", "")
+        self._html_out = os.path.join(self.dir, f"report-{stem}.html")
+        argv = ["python3", "tools/report-html.py", raw, "-o", self._html_out]
+        cmd = " ".join(argv)
+        if _paths is not None:
+            cmd = _paths.localize(cmd)
+        self.html_btn.setText("Generating…"); self.html_btn.setEnabled(False)
+        if BUS is not None:
+            BUS.command.emit("Reports", cmd)
+        self.html_runner.run_shell(cmd, cwd=self._code_root)
+
+    def _on_html_generated(self, code):
+        self.html_btn.setText("⚡  Stylized HTML"); self.html_btn.setEnabled(True)
+        if code == 0 and self._html_out and os.path.exists(self._html_out):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(self._html_out))
+        else:
+            self.browser.setMarkdown(f"_report-html.py exited with code {code}._")
 
     def set_board(self, soc, target=""):
         """Point the one-click Generate button at the active board (soc + display target)."""

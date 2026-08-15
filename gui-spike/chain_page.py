@@ -29,7 +29,12 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QFrame, QPushButton,
     QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem, QHeaderView, QApplication,
+    QLineEdit,
 )
+try:
+    from jtagx import firstcontact as _firstcontact
+except Exception:
+    _firstcontact = None
 
 # the real chain we discovered on the ZCU102 (openocd discover.tcl)
 CHAIN = [("TAP1 · PS TAP (ZynqMP)", 0x24738093), ("TAP0 · ARM DAP (CoreSight)", 0x5BA00477)]
@@ -93,12 +98,67 @@ class ChainPage(QWidget):
         hdr.addWidget(self.btn_refresh)
         outer.addLayout(hdr)
 
+        # first-contact troubleshooting search: symptom -> ranked blocker + fix (jtagx.firstcontact).
+        # A PERSISTENT panel (not inside self.body / refresh()'s rebuild) so typed text + results survive
+        # a Refresh click. Empty until the operator searches — doesn't compete with the preflight checklist.
+        if _firstcontact is not None:
+            tf = QFrame(); tf.setProperty("cls", "panel")
+            tv = QVBoxLayout(tf); tv.setContentsMargins(12, 10, 12, 10); tv.setSpacing(6)
+            trow = QHBoxLayout()
+            trow.addWidget(_lbl("🛟  STUCK AT FIRST CONTACT?", "#98a6b8", 11, True))
+            trow.addStretch(1)
+            tv.addLayout(trow)
+            srow = QHBoxLayout()
+            self._tc_input = QLineEdit()
+            self._tc_input.setPlaceholderText('describe the symptom — e.g. "flashpro won\'t work", "no idcode", "ttyUSB busy"')
+            self._tc_input.returnPressed.connect(self._run_troubleshoot)
+            srow.addWidget(self._tc_input, 1)
+            tbtn = QPushButton("Diagnose"); tbtn.setCursor(Qt.PointingHandCursor)
+            tbtn.clicked.connect(self._run_troubleshoot)
+            srow.addWidget(tbtn)
+            tv.addLayout(srow)
+            self._tc_results = QVBoxLayout(); self._tc_results.setSpacing(6)
+            tv.addLayout(self._tc_results)
+            outer.addWidget(tf)
+
         # a container the refresh() rebuilds
         self.body = QVBoxLayout(); self.body.setContentsMargins(0, 0, 0, 0); self.body.setSpacing(12)
         bw = QWidget(); bw.setLayout(self.body)
         outer.addWidget(bw, 1)
 
         self.refresh()
+
+    def _run_troubleshoot(self):
+        """Diagnose the typed symptom via jtagx.firstcontact and render the ranked blocker cards."""
+        while self._tc_results.count():
+            it = self._tc_results.takeAt(0)
+            if it.widget():
+                it.widget().setParent(None)
+        symptom = self._tc_input.text().strip()
+        if not symptom or _firstcontact is None:
+            return
+        hits = _firstcontact.diagnose(symptom, limit=3)
+        if not hits or hits[0][0] == 0:
+            none = _lbl("No strong match — try different words, or see docs/32-first-contact-troubleshooting.md.",
+                       "#5e6b7c", 11)
+            none.setWordWrap(True)
+            self._tc_results.addWidget(none)
+            return
+        for score, b in hits:
+            card = QFrame(); card.setProperty("cls", "cap")
+            cv = QVBoxLayout(card); cv.setContentsMargins(10, 8, 10, 8); cv.setSpacing(3)
+            sev_col = "#f2685f" if b["severity"] == "block" else "#e7b04b"
+            head = QHBoxLayout()
+            head.addWidget(_lbl(f"[{b['stage']}] {b['id']}", "#e7ecf3", 11, True))
+            head.addStretch(1)
+            head.addWidget(_lbl(b["severity"].upper(), sev_col, 10, True))
+            cv.addLayout(head)
+            sym = _lbl(b["symptom"], "#98a6b8", 10.5); sym.setWordWrap(True)
+            cv.addWidget(sym)
+            for f in b["fix"]:
+                fl = _lbl(f"→ {f}", "#3ecf8e", 10.5); fl.setWordWrap(True)
+                cv.addWidget(fl)
+            self._tc_results.addWidget(card)
 
     # ------------------------------------------------------------------ refresh
     def refresh(self):

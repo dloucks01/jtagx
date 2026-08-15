@@ -48,7 +48,7 @@ if dict((t[0], t[1]) for t in tiles)["CAPABILITIES"] != str(caps_on): bad("capab
 # 3. dead tabs are filled: Registers tab has real content + search/decode when a capture exists
 regs = qt_spike.load_registers(qt_spike.ROOT)
 tabw = d.findChild(QTabWidget)
-if tabw.count() != 6: bad("dashboard center should have 6 tabs (incl. Kill Chain)")
+if tabw.count() != 7: bad("dashboard center should have 7 tabs (incl. Kill Chain, Shell)")
 if regs and "Registers (" not in tabw.tabText(1): bad("registers tab should show a count")
 if regs:
     if len(regs[0]) != 5: bad("load_registers should include the decoded fields (5-tuple)")
@@ -94,6 +94,16 @@ w.chain.refresh(); w.chain.refresh()
 from PySide6.QtWidgets import QLabel as _QL
 _pf = [l for l in w.chain.findChildren(_QL) if "PRE-FLIGHT" in l.text()]
 if not _pf: bad("Chain page should show the pre-flight verdict panel")
+# 9c. first-contact troubleshooting search box (jtagx.firstcontact) — symptom -> ranked blocker + fix
+if not hasattr(w.chain, "_tc_input"): bad("Chain page should have the first-contact search box")
+w.chain._tc_input.setText("flashpro won't work")
+w.chain._run_troubleshoot()
+_tclabels = [l.text() for l in w.chain.findChildren(_QL)]
+if not any("proprietary-adapter" in x for x in _tclabels):
+    bad("troubleshoot search for 'flashpro' should surface the proprietary-adapter blocker")
+if not any("FlashPro Express" in x or "ftdi_sio" in x for x in _tclabels):
+    bad("troubleshoot result should show the concrete fix, not just the blocker id")
+w.chain._tc_input.setText(""); w.chain._run_troubleshoot()   # restore (empty query clears results)
 
 # 10. deepened console: §-section parsing, warn-flagging, filters, save format
 c = w.console            # the ONE shell-level interactive console (fed via console_bus)
@@ -294,6 +304,19 @@ _kclabels = [l.text() for l in d._kc_host.findChildren(_QL2)]
 if not any("EXTRACTION AVENUES" in x for x in _kclabels): bad("Kill Chain should list extraction avenues")
 if not any("SDP" in x for x in _kclabels): bad("imx6 extraction should show the SDP ROM-loader avenue")
 d.set_board_posture("zynqmp", None)   # restore
+
+# 21e. Shell tab (jtagx.jtagtoshell): goal chips switch paths, and the wedge warning is always visible
+if not hasattr(d, "_sh_v"): bad("dashboard should have a Shell tab")
+d.set_board_posture("zynqmp", {"jtag_open": True})   # zynqmp posture, but a53 state autodetects separately
+d._set_shell_goal("shell")
+_shlabels = [l.text() for l in d._sh_host.findChildren(_QL2)]
+if not any("Live-patch" in x or "Cold-boot" in x for x in _shlabels):
+    bad("Shell tab (goal=shell) should show the live-patch or cold-boot path")
+d._set_shell_goal("secret")
+_shlabels2 = [l.text() for l in d._sh_host.findChildren(_QL2)]
+if not any("Catch the credential" in x for x in _shlabels2):
+    bad("Shell tab (goal=secret) should show the catch-in-flight path")
+d._set_shell_goal("shell")  # restore
 
 # 24. chain-panel cores → backend-scoped console commands
 d.set_backend("openocd")

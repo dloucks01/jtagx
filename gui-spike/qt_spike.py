@@ -48,6 +48,14 @@ try:
     from jtagx import debugauth as _debugauth                      # cross-arch debug-auth verdict
 except Exception:
     _debugauth = None
+try:
+    from jtagx import jtagtoshell as _jtagtoshell                  # get-a-shell planner (→ Shell tab)
+except Exception:
+    _jtagtoshell = None
+try:
+    from jtagx import firstcontact as _firstcontact                # symptom -> blocker search (Chain page)
+except Exception:
+    _firstcontact = None
 
 
 def _debug_auth_verdict(soc, P):
@@ -223,6 +231,21 @@ def load_registers(root):
         return sorted(rows, key=lambda x: (x[0], x[2]))
     except Exception:
         return []
+
+
+def load_a53_state(root):
+    """Newest raw-*.json -> the captured a53 sub-dict (firmware_running/invasive_debug/...), or {}.
+    Feeds the JTAG-to-shell planner's board-state autodetection."""
+    try:
+        if root not in sys.path:
+            sys.path.insert(0, root)
+        from jtagx.posture import newest_capture
+        p = newest_capture(root)
+        if not p:
+            return {}
+        return json.load(open(p)).get("a53", {}) or {}
+    except Exception:
+        return {}
 
 
 def _dumps_dir():
@@ -1011,6 +1034,7 @@ class Dashboard(QWidget):
                     "Open Reports page →", 4), "🗎  Report")
         tabs.addTab(self._killchain_tab(), "⛓  Kill Chain")            # jtagx.attackgraph planner
         tabs.addTab(self._attack_surface_tab(), "⚗  Attack Surface")   # jtagx.weakness misuse layer
+        tabs.addTab(self._shell_tab(), "→]  Shell")                    # jtagx.jtagtoshell planner
         v.addWidget(tabs)
         return p
 
@@ -1190,6 +1214,7 @@ class Dashboard(QWidget):
         self._as_posture = dict(P or {})
         self.refresh_attack_surface()
         self.refresh_killchain()
+        self.refresh_shell()
 
     _KC_STATE = {"ACHIEVED": ("#3ecf8e", "✓"), "AVAILABLE": ("#5bb6f0", "▶"),
                  "BLOCKED": ("#f2685f", "✗"), "GATED": ("#7c8898", "…"), "N/A": ("#5e6b7c", "·")}
@@ -1321,6 +1346,110 @@ class Dashboard(QWidget):
         if hasattr(self, "_kc_hdr"):
             self._kc_hdr.setText(f"KILL CHAIN · {soc.upper()} — the ordered objective ladder for this "
                                  "board + observed posture")
+
+    def _shell_tab(self):
+        """The JTAG-to-shell planner (jtagx.jtagtoshell): pick a goal, see the auto-selected path(s) with
+        numbered steps, each with a ▶ run button. Board state (firmware_running/invasive_debug) is
+        auto-detected from the newest capture when available; the goal chips always work."""
+        w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(8, 8, 8, 8); v.setSpacing(6)
+        hdr = QLabel("JTAG-TO-SHELL — the capstone: from this access, how do I get IN")
+        hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700;")
+        v.addWidget(hdr)
+        fbar = QHBoxLayout(); fbar.setSpacing(6)
+        self._sh_group = QButtonGroup(self); self._sh_group.setExclusive(True)
+        for key, label in (("shell", "Get a shell"), ("secret", "Catch a credential"), ("persist", "Persist")):
+            b = QPushButton(label); b.setCheckable(True); b.setProperty("cls", "cfilter")
+            b.setCursor(Qt.PointingHandCursor); b.setChecked(key == "shell")
+            b.clicked.connect(lambda _=False, k=key: self._set_shell_goal(k))
+            self._sh_group.addButton(b); fbar.addWidget(b)
+        fbar.addStretch(1)
+        v.addLayout(fbar)
+        self._sh_state = QLabel(""); self._sh_state.setWordWrap(True)
+        self._sh_state.setStyleSheet("color:#cdd6e2; font-size:12px;")
+        v.addWidget(self._sh_state)
+        wedge = QLabel("⚠ Live code injection on a running core WEDGES the DAP on OpenOCD 0.12 — every "
+                       "step here is a memory WRITE to already-executing code, never fresh code+jump.")
+        wedge.setWordWrap(True)
+        wedge.setStyleSheet("color:#e7b04b; font-size:10.5px; background:#241d0d; border:1px solid "
+                            "#4a3a12; border-radius:6px; padding:6px 9px;")
+        v.addWidget(wedge)
+        self._sh_scroll = QScrollArea(); self._sh_scroll.setWidgetResizable(True)
+        self._sh_scroll.setFrameShape(QFrame.NoFrame)
+        self._sh_host = QWidget(); self._sh_v = QVBoxLayout(self._sh_host)
+        self._sh_v.setContentsMargins(2, 2, 2, 8); self._sh_v.setSpacing(9)
+        self._sh_scroll.setWidget(self._sh_host); v.addWidget(self._sh_scroll, 1)
+        foot = QLabel("jtagx.jtagtoshell chains dump → locate → patch → apply / cold-boot / break-capture "
+                      "/ reflash · ▶ drops each step's command in the console, in order")
+        foot.setStyleSheet("color:#5e6b7c; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
+        self._sh_goal = "shell"
+        self.refresh_shell()
+        return w
+
+    def _set_shell_goal(self, key):
+        self._sh_goal = key
+        self.refresh_shell()
+
+    def refresh_shell(self):
+        """(Re)build the jtag-to-shell runbook for the active board + posture + selected goal."""
+        if not hasattr(self, "_sh_v") or _jtagtoshell is None:
+            return
+        while self._sh_v.count():
+            it = self._sh_v.takeAt(0)
+            if it.widget():
+                it.widget().setParent(None)
+        soc = getattr(self, "_as_soc", "zynqmp")
+        goal = getattr(self, "_sh_goal", "shell")
+        a53 = load_a53_state(ROOT) if soc == "zynqmp" else {}
+        state = {
+            "firmware_running": bool(a53.get("firmware_running", False)),
+            "invasive_debug": a53.get("invasive_debug", "open"),
+            "goal": goal,
+        }
+        try:
+            result = _jtagtoshell.plan(state, soc=soc)
+        except Exception as e:
+            self._sh_state.setText(f"planner unavailable: {e}")
+            return
+        src = "auto-detected from the newest capture" if soc == "zynqmp" and a53 else "default (no capture yet — assumed open/idle)"
+        self._sh_state.setText(f"board state: firmware_running={state['firmware_running']} · "
+                               f"invasive_debug={state['invasive_debug']}  ({src})")
+        for p in result["paths"]:
+            card = QFrame(); card.setProperty("cls", "cap")
+            cv = QVBoxLayout(card); cv.setContentsMargins(12, 10, 12, 10); cv.setSpacing(6)
+            head = QHBoxLayout()
+            head.addWidget(tag(p["title"], cls="capTitle"))
+            if p["id"] == result.get("recommended"):
+                rec = QLabel("recommended"); rec.setStyleSheet(
+                    "color:#0d1017; background:#3ecf8e; border-radius:6px; padding:2px 8px; "
+                    "font-size:10px; font-weight:700;")
+                head.addWidget(rec)
+            head.addStretch(1)
+            cv.addLayout(head)
+            why = QLabel(p["why"]); why.setWordWrap(True); why.setStyleSheet("color:#98a6b8; font-size:11px;")
+            cv.addWidget(why)
+            for i, s in enumerate(p["steps"], 1):
+                srow = QFrame(); srow.setProperty("cls", "cap")
+                sv = QVBoxLayout(srow); sv.setContentsMargins(10, 6, 10, 6); sv.setSpacing(2)
+                stop = QHBoxLayout()
+                stop.addWidget(tag(f"{i}. {s['title']}", cls="capSub"))
+                stop.addStretch(1)
+                if s.get("cmd"):
+                    pb = QPushButton("▶ run"); pb.setProperty("cls", "cbtn"); pb.setCursor(Qt.PointingHandCursor)
+                    pb.setToolTip(s["cmd"])
+                    pb.clicked.connect(lambda _=False, c=s["cmd"]: self.run_in_console.emit(c))
+                    stop.addWidget(pb)
+                sv.addLayout(stop)
+                if s.get("cmd"):
+                    cmdlbl = QLabel(s["cmd"]); cmdlbl.setWordWrap(True)
+                    cmdlbl.setStyleSheet("color:#33d6c4; font-size:10.5px; font-family:monospace;")
+                    sv.addWidget(cmdlbl)
+                if s.get("note"):
+                    note = QLabel(s["note"]); note.setWordWrap(True)
+                    note.setStyleSheet("color:#5e6b7c; font-size:10px;")
+                    sv.addWidget(note)
+                cv.addWidget(srow)
+            self._sh_v.addWidget(card)
+        self._sh_v.addStretch(1)
 
     def refresh_attack_surface(self):
         """(Re)build the cards for the active board (default zynqmp) from its posture — the real capture
@@ -1599,6 +1728,7 @@ class Dashboard(QWidget):
             self._update_ring(rows)
             self.refresh_attack_surface()   # the misuse layer follows the live posture
             self.refresh_killchain()        # and so does the kill-chain planner
+            self.refresh_shell()            # and the jtag-to-shell planner's board-state autodetect
 
     def _caps_panel(self):
         p = QFrame(); p.setProperty("cls", "panel"); p.setFixedWidth(240)
