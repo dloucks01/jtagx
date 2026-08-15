@@ -116,6 +116,35 @@ def main():
         L.append(f"  (no profile for '{a.soc}' — generic Paradigm-A capabilities only)")
     L.append("")
 
+    # --- 1b. Kill chain (attack-graph) + extraction avenues (the ordered plan) ---
+    try:
+        from jtagx.attackgraph import plan as _agplan
+        g = _agplan(a.soc, P, prof, source=("capture" if a.from_capture else "asserted"))
+        L.append(f"## 1b. Kill chain — reach {g['depth']}/5 ({g['depth_label']})")
+        L.append(f"_{'posture confirmed from capture' if g.get('source') == 'capture' else 'posture asserted — verify on HW'}. "
+                 "glitch/side-channel/physical deferred._\n")
+        L.append("| # | objective | state | next move |")
+        L.append("|--|--|--|--|")
+        from jtagx.attackgraph import SPINE
+        for n in g["nodes"]:
+            tag = str(SPINE.index(n["id"]) + 1) if n["id"] in SPINE else "↳"
+            act = (n.get("action", "")[:64] + "…") if len(n.get("action", "")) > 65 else n.get("action", "")
+            L.append(f"| {tag} | {n['title']} | {n['state']} | {act or '—'} |")
+        L.append("")
+    except Exception as e:
+        L.append(f"## 1b. Kill chain\n_(attack-graph unavailable: {e})_\n")
+
+    try:
+        from jtagx.extraction import extraction_plan as _explan
+        L.append("## 1c. Extraction avenues (best-first)")
+        L.append("_ROM-loader / readback / chip-off paths do NOT need the debug port._\n")
+        for m in _explan(a.soc, P, prof):
+            gate = m["access"] if m["access"] != "jtag" else "debug-port"
+            L.append(f"- **{m['method']}** ({gate}{'; ⚠destructive' if not m['non_destructive'] else ''}) — needs: {m['needs']}")
+        L.append("")
+    except Exception as e:
+        L.append(f"## 1c. Extraction avenues\n_(extraction layer unavailable: {e})_\n")
+
     # --- 2. Dumps captured ---
     L.append("## 2. Dumps captured")
     ddir = os.path.join(ROOT, a.dumps) if not os.path.isabs(a.dumps) else a.dumps

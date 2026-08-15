@@ -20,6 +20,10 @@ except Exception:       # transport layer optional at import time
     detect_adapters = match_profile = for_profile = zynqmp_reference = flatten_targets = None
     make_transport = capability_matrix = routing_plan = join_present = None
     OPS = []; OP_LABEL = {}
+try:
+    from jtagx.preflight import preflight as _preflight
+except Exception:
+    _preflight = None
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -117,6 +121,9 @@ class ChainPage(QWidget):
                     sel_backend = first.get("backend")
 
         self._clear(self.body)
+        pf = self._preflight_panel(present)
+        if pf is not None:
+            self.body.addWidget(pf)
         self.body.addWidget(self._transport_card(present, sel_backend, adapter_line))
         self.body.addWidget(self._chain_tree(), 1)
         tt = self._target_tree(sel_backend)
@@ -138,6 +145,31 @@ class ChainPage(QWidget):
                 w.setParent(None)
 
     # ------------------------------------------------------------------ panels
+    def _preflight_panel(self, present):
+        """The go/no-go screen: can we actually REACH this board with what's plugged in + installed?
+        GO / BLOCKED + the fix (adapters, backend software, transport) — jtagx.preflight."""
+        if _preflight is None or not self.prof:
+            return None
+        try:
+            verdict, checks = _preflight(self.prof, present)
+        except Exception:
+            return None
+        pf = QFrame(); pf.setProperty("cls", "panel")
+        v = QVBoxLayout(pf); v.setContentsMargins(12, 10, 12, 10); v.setSpacing(5)
+        vcol = "#3ecf8e" if verdict == "GO" else "#f2685f"
+        vtxt = "✓ GO — you can reach this board" if verdict == "GO" else "✗ BLOCKED — fix the ✗ below before you start"
+        hdr = QLabel(f"⛑  PRE-FLIGHT:  {vtxt}")
+        hdr.setStyleSheet(f"color:{vcol}; font-size:12px; font-weight:700;"); hdr.setWordWrap(True)
+        v.addWidget(hdr)
+        icon = {"GO": ("✓", "#3ecf8e"), "BLOCKED": ("✗", "#f2685f"), "WARN": ("⚠", "#e7b04b"),
+                "info": ("·", "#8a97a8")}
+        for s, t, d in checks:
+            gl, col = icon.get(s, ("·", "#8a97a8"))
+            row = QLabel(f"{gl}  {t}: {d}"); row.setWordWrap(True)
+            row.setStyleSheet(f"color:{col if s in ('BLOCKED','WARN') else '#98a6b8'}; font-size:11px;")
+            v.addWidget(row)
+        return pf
+
     def _transport_card(self, present, sel_backend, adapter_line):
         card = QFrame(); card.setProperty("cls", "panel")
         g = QGridLayout(card); g.setContentsMargins(16, 12, 16, 12); g.setHorizontalSpacing(28); g.setVerticalSpacing(6)

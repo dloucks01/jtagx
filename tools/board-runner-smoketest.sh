@@ -191,6 +191,11 @@ grep -q 'RDP level 0' <<<"$O" || fail "cve-match stm32 rdp0"
 echo "  ok: cve-match.py (zynqmp + stm32 posture findings)"
 O=$(python3 tools/engagement-report.py --soc zynqmp --jtag-open 2>/dev/null)
 grep -q '# JTAG Engagement Report' <<<"$O" || fail "engagement-report.py"
-echo "  ok: engagement-report.py"
+grep -q 'Kill chain' <<<"$O"           || fail "engagement-report should include the kill-chain section"
+grep -q 'Extraction avenues' <<<"$O"   || fail "engagement-report should include the extraction avenues"
+# a locked board that has a ROM loader → the report shows extraction reachable without the debug port
+O2=$(python3 tools/engagement-report.py --soc imx6 --jtag-locked 2>/dev/null)
+grep -q 'SDP' <<<"$O2" || fail "imx6 report should surface the SDP extraction avenue"
+echo "  ok: engagement-report.py (+ kill-chain + extraction avenues consolidated)"
 
 echo "board-runner smoketest: all checks passed"

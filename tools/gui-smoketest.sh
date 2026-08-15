@@ -90,6 +90,10 @@ if d.runner.busy(): bad("copy-path capability must not launch a process")
 
 # 9. chain page refresh is idempotent
 w.chain.refresh(); w.chain.refresh()
+# 9b. the Chain page shows the pre-flight go/no-go panel (jtagx.preflight)
+from PySide6.QtWidgets import QLabel as _QL
+_pf = [l for l in w.chain.findChildren(_QL) if "PRE-FLIGHT" in l.text()]
+if not _pf: bad("Chain page should show the pre-flight verdict panel")
 
 # 10. deepened console: §-section parsing, warn-flagging, filters, save format
 c = w.console            # the ONE shell-level interactive console (fed via console_bus)
