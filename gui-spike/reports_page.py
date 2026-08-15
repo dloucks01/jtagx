@@ -7,7 +7,7 @@ A file list (left) + a Markdown renderer (right). Reads the engagement's reports
 selected one with Qt's native Markdown support (GitHub dialect — tables included). Real deliverables,
 in-app.
 """
-import glob, os, sys
+import glob, os, shlex, sys
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
@@ -170,14 +170,18 @@ class ReportsPage(QWidget):
             out = f"reports/engagement-{self._soc}.md"       # don't clobber the home engagement.md
         argv = ["python3", "tools/engagement-report.py", "--soc", self._soc, "--target", self._target,
                 *src, "--dumps", dumps, "-o", out]
-        cmd = " ".join(argv)
         if _paths is not None:
-            cmd = _paths.localize(cmd)      # -> writable reports/ when packaged (no-op in dev)
+            argv = [_paths.localize(a) for a in argv]   # -> writable reports/ when packaged (no-op in dev)
+        # run() (argv, no shell) rather than run_shell(" ".join(argv)): --target carries the board's
+        # display name (e.g. "Zynq UltraScale+ (ZynqMP)"), and shell-joining an unquoted string with
+        # spaces/parens breaks (found 2026-08-15 via gui-smoketest's Reports-Generate check — bash choked
+        # on the bare "(" the moment the board selector was exercised before Generate).
+        cmd = shlex.join(argv)                          # for the operator-visible preview only
         self.gen_btn.setText("Generating…"); self.gen_btn.setEnabled(False)
         self.browser.setMarkdown(f"_Generating engagement report…_\n\n`{cmd}`")
         if BUS is not None:
             BUS.command.emit("Reports", cmd)
-        self.runner.run_shell(cmd, cwd=self._code_root)
+        self.runner.run(argv, cwd=self._code_root)
 
     def _on_generated(self, code):
         self.gen_btn.setText("＋  Generate"); self.gen_btn.setEnabled(True)
@@ -205,13 +209,13 @@ class ReportsPage(QWidget):
         stem = os.path.splitext(os.path.basename(raw))[0].replace("raw-", "")
         self._html_out = os.path.join(self.dir, f"report-{stem}.html")
         argv = ["python3", "tools/report-html.py", raw, "-o", self._html_out]
-        cmd = " ".join(argv)
         if _paths is not None:
-            cmd = _paths.localize(cmd)
+            argv = [_paths.localize(a) for a in argv]
+        cmd = shlex.join(argv)                          # for the operator-visible preview only
         self.html_btn.setText("Generating…"); self.html_btn.setEnabled(False)
         if BUS is not None:
             BUS.command.emit("Reports", cmd)
-        self.html_runner.run_shell(cmd, cwd=self._code_root)
+        self.html_runner.run(argv, cwd=self._code_root)
 
     def _on_html_generated(self, code):
         self.html_btn.setText("⚡  Stylized HTML"); self.html_btn.setEnabled(True)

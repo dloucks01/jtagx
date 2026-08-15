@@ -129,7 +129,12 @@ def main():
         for n in g["nodes"]:
             tag = str(SPINE.index(n["id"]) + 1) if n["id"] in SPINE else "↳"
             act = (n.get("action", "")[:64] + "…") if len(n.get("action", "")) > 65 else n.get("action", "")
-            L.append(f"| {tag} | {n['title']} | {n['state']} | {act or '—'} |")
+            # backtick-wrap: action text often carries shell placeholders like "<cfg>"/"<dump>", which a
+            # plain markdown-in-a-table-cell renders fine as literal text in an editor, but Qt's
+            # QTextDocument.setMarkdown() (gui-spike/reports_page.py) parses raw "<...>" as an unclosed
+            # HTML tag and silently drops the rest of the table from that cell onward. A code span isn't
+            # parsed for further markup either way, so this is safe for both consumers.
+            L.append(f"| {tag} | {n['title']} | {n['state']} | {f'`{act}`' if act else '—'} |")
         L.append("")
     except Exception as e:
         L.append(f"## 1b. Kill chain\n_(attack-graph unavailable: {e})_\n")

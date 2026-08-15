@@ -487,6 +487,34 @@ if stm32 is not None:
     if w.dash._board_soc != "zynqmp":
         bad("switching back to ZynqMP after a Cortex-M posture run should restore the ZynqMP identity")
 
+# 26d. Reports "Generate" actually clicked, and the FULL rendered content checked — not just that the
+# button exists. Regression-guards a real bug found by hand (2026-08-15): engagement-report.py's kill-
+# chain table put raw "<cfg>"/"<dump>" placeholders straight into a markdown table cell; Qt's
+# QTextDocument.setMarkdown() parses a bare "<word>" as an unclosed HTML tag and silently drops
+# everything in the table from that cell onward — so only row 1 of a 6-row table ever rendered, with no
+# error. Fixed by backtick-wrapping the cell (a code span isn't parsed for further markup). Assert the
+# actual rendered widget text has every row, not just that generation "succeeded".
+rp._generate()
+_t0 = _t2.time()
+while getattr(rp, "runner", None) and rp.runner.busy() and _t2.time() - _t0 < 20:
+    app.processEvents(); _t2.sleep(0.03)
+app.processEvents()
+_rendered = rp.browser.toPlainText()
+# a SECOND real bug this check found (2026-08-15): reports_page.py built the subprocess command by
+# space-joining argv into a string and running it via bash -c ("run_shell"), unquoted — the board's
+# display name ("Zynq UltraScale+ (ZynqMP)", set on the Reports page by App._set_board on every board
+# switch, including switching back) has spaces AND parens, which bash chokes on. Fixed by switching to
+# ProcRunner.run(argv, ...) (no shell involved at all) instead of shell-joining. This assertion is
+# specifically for THAT bug class, so a regression here reads clearly instead of as a generic "row
+# missing" failure below.
+if "exited with code" in _rendered:
+    bad(f"Reports Generate: the subprocess itself failed — {_rendered!r}")
+for _needle in ("JTAG chain answers", "Debug port OPEN", "Memory / flash extractable",
+                "Keys / credentials extracted", "Persistent implant"):
+    if _needle not in _rendered:
+        bad(f"Reports Generate: kill-chain table row {_needle!r} missing from the rendered output "
+            "(a table-cell HTML-escaping regression would silently drop rows past the first)")
+
 # 27. guided-path stepper (Enumerate -> Posture -> Extract -> Analyze): renders, tracks real state,
 # and each step navigates. On the real (mutable) reports/+dumps/ dir this board has a capture, dumps,
 # and reports, so all four should read done — assert the mechanism, not a specific board snapshot.
