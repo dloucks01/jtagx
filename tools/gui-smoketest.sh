@@ -445,6 +445,48 @@ _after2 = set(_glob.glob(_os.path.join(qt_spike.ROOT, "reports", "raw-*.json")))
 if _after2 != _before2: bad("a blocked enumerate must not produce any capture file")
 w.dash.set_backend("openocd")   # restore
 
+# 26c. board-generic Enumerate: a Cortex-M board (stm32f4, has cortexm-protect.tcl wired) runs through
+# the SAME $OPENOCD mock indirection, and the REAL parsed measured posture (jtagx.cortexm_posture) lands
+# in _cm_posture / the Posture tab / the console — not the ZynqMP JSON-capture path, and not just the
+# static security-model fallback (closes the "Dashboard always shows the ZCU102 capture" gap).
+stm32 = next((i for i in range(w.board_sel.count()) if w.board_sel.itemData(i) == "stm32f4"), None)
+if stm32 is not None:
+    w.board_sel.setCurrentIndex(stm32); app.processEvents()
+    with open(_os.environ["JTAGX_MOCK_STATE"], "w") as _f:
+        _f.write("locked")   # deterministic regardless of what earlier checks left the mock state as
+    w.console.clear()
+    w.dash.start_enumerate()
+    _t0 = _t2.time()
+    while w.dash.runner.busy() and _t2.time() - _t0 < 15:
+        app.processEvents(); _t2.sleep(0.03)
+    app.processEvents()
+    cm = w.dash._cm_posture.get("stm32f4")
+    if not cm:
+        bad("board-generic Enumerate should populate _cm_posture for stm32f4 via the mock")
+    elif cm["verdict"] != "LOCKED":
+        bad(f"stm32f4 LOCKED-state mock should parse to verdict LOCKED, got {cm['verdict']}")
+    if w.dash._center_tabs.currentIndex() != 0:
+        bad("a successful board-generic posture measurement should land on the Posture tab")
+    if "Posture measured" not in w.console.text.toPlainText():
+        bad("a successful board-generic posture measurement should announce it in the console")
+    if "MEASURED" not in w.dash._center_tabs.widget(0).findChild(qt_spike.QLabel).text():
+        bad("the generic Posture tab should render a MEASURED section, not only the security-model fallback")
+    # flip the mock to OPEN and re-run — proves the verdict is live-parsed, not cached from the first run
+    with open(_os.environ["JTAGX_MOCK_STATE"], "w") as _f:
+        _f.write("open")
+    w.dash.start_enumerate()
+    _t0 = _t2.time()
+    while w.dash.runner.busy() and _t2.time() - _t0 < 15:
+        app.processEvents(); _t2.sleep(0.03)
+    app.processEvents()
+    cm2 = w.dash._cm_posture.get("stm32f4")
+    if not cm2 or cm2["verdict"] != "OPEN":
+        bad(f"stm32f4 OPEN-state mock should re-parse to verdict OPEN, got {cm2['verdict'] if cm2 else None}")
+    zb3 = next(i for i in range(w.board_sel.count()) if w.board_sel.itemData(i) == "zynqmp")
+    w.board_sel.setCurrentIndex(zb3); app.processEvents()
+    if w.dash._board_soc != "zynqmp":
+        bad("switching back to ZynqMP after a Cortex-M posture run should restore the ZynqMP identity")
+
 # 27. guided-path stepper (Enumerate -> Posture -> Extract -> Analyze): renders, tracks real state,
 # and each step navigates. On the real (mutable) reports/+dumps/ dir this board has a capture, dumps,
 # and reports, so all four should read done — assert the mechanism, not a specific board snapshot.

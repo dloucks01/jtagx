@@ -384,4 +384,8 @@ echo ""
 echo "Running happy-path checks (tools coverage flagged as zero/near-zero: good input, real assertions)..."
 if ! bash tools/happy-path-smoketest.sh; then echo "FAIL: happy-path smoketest"; exit 1; fi
 
+echo ""
+echo "Running cortexm-posture checks (real .tcl round-trip + mock matrix, board-generic Dashboard posture)..."
+if ! bash tools/cortexm-posture-smoketest.sh; then echo "FAIL: cortexm-posture smoketest"; exit 1; fi
+
 exit 0

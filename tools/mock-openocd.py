@@ -132,6 +132,78 @@ def reopen_debug(out):
     _set("open")
 
 
+# cfg basename -> CM_PROT_KIND, mirroring each openocd/cortexm-<board>.cfg's `set CM_PROT_KIND ...`
+CFG_FAMILY = {
+    "cortexm-stm32f4.cfg": "stm32-rdp", "cortexm-stm32h7.cfg": "stm32-rdp", "cortexm-gd32.cfg": "stm32-rdp",
+    "cortexm-stm32l4.cfg": "stm32l4", "cortexm-stm32f1.cfg": "stm32f1",
+    "cortexm-nrf52.cfg": "nrf-approtect", "cortexm-nrf53.cfg": "nrf-approtect",
+    "cortexm-samd5x.cfg": "sam-dsu", "cortexm-kinetis.cfg": "kinetis-fsec",
+    "cortexm-rp2040.cfg": "none", "cortexm-lpc.cfg": "none", "cortexm-nrf54.cfg": "none",
+}
+
+
+def cortexm_protect_mock(out, cfg):
+    """Emulate openocd/cortexm-protect.tcl's decoded output (jtagx.cortexm_posture parses this exact
+    `"   %-22s %s"` / `" (N) TITLE"` format — same shape the real .tcl's `_p`/section echoes produce),
+    so the GUI's board-generic Enumerate → measured-posture path is rehearsable with no MCU on the bench."""
+    kind = CFG_FAMILY.get(os.path.basename(cfg or ""), "none")
+    opened = _state() == "open"
+
+    def sec(n, title):
+        out.append(f" ({n}) {title}")
+
+    def p(label, value):
+        out.append(f"   {label:<22} {value}")
+
+    out.append("")
+    out.append("================================================================")
+    out.append(f" CORTEX-M SECURITY POSTURE  (family: {kind})")
+    out.append("================================================================")
+    if kind in ("stm32-rdp", "stm32l4", "stm32f1"):
+        sec(1, "IDENTITY")
+        p("DBGMCU_IDCODE", "DEV_ID=0x413 (STM32F405/407/415/417)  REV_ID=0x1001")
+        p("Unique device ID", "aabbccdd-11223344-55667788")
+        p("Flash size", "1024 KB")
+        sec(2, "READOUT PROTECTION")
+        if kind == "stm32f1":
+            p("RDPRT (FLASH_OBR bit 1)", "0 -> not protected, flash readable (dev)" if opened else
+              "1 -> READ-PROTECTED (unlock = mass-erase WIPE)")
+        else:
+            label = "RDP" if kind == "stm32-rdp" else "RDP (FLASH_OPTR 7-0)"
+            p(label, "0xaa -> LEVEL 0 — no protection, flash fully readable (dev)" if opened else
+              "0x55 -> LEVEL 1 — flash blocked from the debugger; unlock = mass-erase (WIPES flash)")
+    elif kind == "nrf-approtect":
+        sec(1, "IDENTITY (FICR)")
+        p("INFO.PART", "0x00052840 (e.g. 0x52840)")
+        p("RAM / FLASH", "256 KB / 1024 KB")
+        sec(2, "READOUT PROTECTION (UICR.APPROTECT @0x10001208)")
+        p("APPROTECT", "0xffffffff -> OPEN (HwDisabled / factory) — AHB-AP unrestricted, flash dumpable"
+          if opened else "0x0000ff00 -> ENABLED is the configured intent — a reset re-locks; only "
+                          "re-open is a CTRL-AP mass-erase (WIPE)")
+        sec(3, "DEBUG / OUTPUT")
+        p("DEBUGCTRL", "0xffffffff (CPUNIDEN/CPUFPBEN; 0xFFFFFFFF = all debug allowed)")
+    elif kind == "sam-dsu":
+        sec(1, "IDENTITY")
+        p("DSU.DID", "0x60060003 (FAMILY=0xc SERIES=0x0 DIE=0x0 REV=0x0 DEVSEL=0x03)")
+        sec(2, "READOUT PROTECTION (DSU.STATUSB.PROT)")
+        p("PROT", "0 -> open, debug + flash accessible (dev)" if opened else
+          "1 -> DEBUG-ACCESS PROTECTED (NVMCTRL security bit set; only chip-erase removes it = WIPE)")
+    elif kind == "kinetis-fsec":
+        sec(1, "IDENTITY")
+        p("SIM_SDID", "0x00000000 (FAMILYID=0x0 SUBFAMID=0x0 SERIESID=0x0 PINID=0x0 REVID=0x0)")
+        sec(2, "FLASH SECURITY (FTFE_FSEC)")
+        p("SEC (bits 1-0)", "0x2 -> UNSECURED (0b10) — flash readable (dev)" if opened else
+          "0x3 -> SECURED (debug-port access limited; unlock = mass-erase WIPE)")
+    else:   # none (rp2040 / lpc / nrf54 — CM_PROT_KIND=none, no fuse-based protection modeled)
+        sec(1, "IDENTITY (SYSINFO)")
+        p("CHIP_ID", "0x00000001  (PART=0x0000 REV=0x0 MANUF=0x000)")
+        sec(2, "READOUT PROTECTION")
+        p("On-chip protection", "NONE — no internal-flash readout-protection fuse modeled for this part.")
+    out.append("================================================================")
+    out.append(" NOTE: reading any of the above proves the AHB-AP is OPEN -> internal flash is dumpable now.")
+    out.append("================================================================")
+
+
 # ---- Cortex-M locked-board scenarios (nRF52 APPROTECT, STM32 RDP) — same state-file machine ----
 def cm_access_check(out):
     opened = _state() == "open"
@@ -207,13 +279,15 @@ def ms_readback(out):
     out.append("    fabric readback available — export a VERIFY/READ SVF from Libero and re-run with MSS_SVF=<file>")
 
 
-def run_source(out, script):
+def run_source(out, script, cfg=""):
     if "jtag-access-check.tcl" in script:
         access_check(out)
     elif "microsemi-access-check.tcl" in script:
         ms_access_check(out)
     elif "microsemi-readback.tcl" in script:
         ms_readback(out)
+    elif "cortexm-protect.tcl" in script:
+        cortexm_protect_mock(out, cfg)
     elif "cortexm-access-check.tcl" in script:
         cm_access_check(out)
     elif "nrf52-recover.tcl" in script:
@@ -232,7 +306,7 @@ def run_source(out, script):
         out.append(f"# [mock-openocd] sourced {script} (no-op)")
 
 
-def run_c(out, body):
+def run_c(out, body, cfg=""):
     for raw in re.split(r";|\n", body):
         c = raw.strip()
         if not c:
@@ -253,7 +327,7 @@ def run_c(out, body):
         elif head == "dump_image":
             dump_image(out, toks[1:])
         elif head == "source":
-            run_source(out, toks[1] if len(toks) > 1 else "")
+            run_source(out, toks[1] if len(toks) > 1 else "", cfg)
         else:
             out.append(f"# [mock-openocd] (ignored) {c}")
 
@@ -261,12 +335,13 @@ def run_c(out, body):
 def main():
     argv = sys.argv[1:]
     out = []
+    cfg = argv[argv.index("-f") + 1] if "-f" in argv and argv.index("-f") + 1 < len(argv) else ""
     if "-c" in argv:
         # collect all -c bodies (openocd allows several)
         i = 0
         while i < len(argv):
             if argv[i] == "-c" and i + 1 < len(argv):
-                run_c(out, argv[i + 1]); i += 2
+                run_c(out, argv[i + 1], cfg); i += 2
             else:
                 i += 1
     print("\n".join(out))

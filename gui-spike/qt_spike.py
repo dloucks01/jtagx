@@ -39,6 +39,10 @@ try:
 except Exception:
     _security_model = None
 try:
+    from jtagx.cortexm_posture import parse_cortexm_protect as _parse_cm_posture  # measured Cortex-M posture
+except Exception:
+    _parse_cm_posture = None
+try:
     from jtagx import attackgraph as _attackgraph                  # kill-chain planner (Kill Chain tab)
     from jtagx.extraction import extraction_plan as _extraction_plan
 except Exception:
@@ -880,6 +884,9 @@ class Dashboard(QWidget):
         self.backend = "auto"       # transport backend for capability commands (auto/openocd/hw_server)
         self._chain_pinned = None   # side-panel visibility: None=auto (follows the active tab), else an
         self._caps_pinned = None    # explicit True/False the operator set via the corner toggle buttons
+        self._board_soc = "zynqmp"; self._board_name = "Zynq UltraScale+"; self._board_paradigm = ""
+        self._cm_posture = {}       # soc -> parsed cortexm-protect.tcl result (measured, non-ZynqMP boards)
+        self._cm_capture = None     # list while a cortexm-protect run is streaming; None the rest of the time
         self.runner = ProcRunner(self)          # runs real OpenOCD/tools, streams stdout live
         self.runner.line.connect(self._proc_line)
         self.runner.done.connect(self._on_done)
@@ -1252,7 +1259,7 @@ class Dashboard(QWidget):
     def set_board_identity(self, soc, name, paradigm=""):
         """Make the hero identity AND the Posture/Registers tabs follow the selected board (closes the
         board-identity gap: other boards no longer show the ZCU102 capture)."""
-        self._board_soc = soc
+        self._board_soc = soc; self._board_name = name; self._board_paradigm = paradigm
         if soc == "zynqmp":
             self._hero_board.setText("Zynq UltraScale+")
             self._hero_chip.setText("XCZU9EG · MPSoC")
@@ -1261,9 +1268,16 @@ class Dashboard(QWidget):
         else:
             self._hero_board.setText(name.split("(")[0].split("—")[0].strip() or soc)
             self._hero_chip.setText(f"{soc}" + (f" · Paradigm {paradigm}" if paradigm else ""))
-            self._hero_access.setText("⛨ Access: UNKNOWN · run access-check")
-            self._hero_note.setText(f"{soc} posture is UNKNOWN until you run access-check (Chain tab). "
-                                    "Below is the board's security MODEL + extraction path.")
+            cm = self._cm_posture.get(soc)
+            if cm:
+                self._hero_access.setText(f"⛨ Access: {cm['verdict']}" +
+                                          (f" · {cm['verdict_row'][0]}" if cm["verdict_row"] else ""))
+                self._hero_note.setText(f"{soc} posture measured (family: {cm['family']}) — see the Posture "
+                                        "tab. Re-run Enumerate to refresh.")
+            else:
+                self._hero_access.setText("⛨ Access: UNKNOWN · run access-check")
+                self._hero_note.setText(f"{soc} posture is UNKNOWN until you run Enumerate/access-check. "
+                                        "Below is the board's security MODEL + extraction path.")
             self._hero_note.show()
         self._retarget_center_tabs(soc, name, paradigm)
         if hasattr(self, "_chain_v"):
@@ -1291,18 +1305,45 @@ class Dashboard(QWidget):
         self._center_tabs.setCurrentIndex(0)
 
     def _posture_tab_generic(self, soc, name, paradigm=""):
-        """Board-generic Posture: the security MODEL (lock mechanisms this silicon can present, from the
-        unlock engine) + honest 'posture UNKNOWN' banner, when there's no live capture for this board."""
+        """Board-generic Posture: MEASURED rows (from a live cortexm-protect.tcl run, if we have one for
+        this board) above the reference SECURITY MODEL (lock mechanisms this silicon type can present, from
+        the unlock engine) — plus an honest 'posture UNKNOWN' banner when there's no measurement yet."""
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(12, 10, 12, 10); v.setSpacing(8)
-        head = QLabel(f"SECURITY MODEL — {name}")
+        cm = self._cm_posture.get(soc)
+        if cm:
+            mhead = QLabel(f"MEASURED — {name}  (family: {cm['family']})")
+            mhead.setStyleSheet("color:#e7ecf3; font-size:13px; font-weight:700;"); mhead.setWordWrap(True)
+            v.addWidget(mhead)
+            vcol = {"OPEN": "#3ecf8e", "LOCKED": "#f2685f"}.get(cm["verdict"], "#e7b04b")
+            vtext = f"✓ {cm['verdict']}"
+            if cm["verdict_row"]:
+                vtext += f" — {cm['verdict_row'][0]}: {cm['verdict_row'][1]}"
+            elif cm["aborted"]:
+                vtext = f"⚠ {cm['aborted']}"
+            vbanner = QLabel(vtext); vbanner.setWordWrap(True)
+            vbanner.setStyleSheet(f"color:#0d1017; background:{vcol}; border-radius:8px; "
+                                  "padding:7px 10px; font-size:11px; font-weight:700;")
+            v.addWidget(vbanner)
+            for sec in cm["sections"]:
+                sl = QLabel(sec["title"]); sl.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700; padding-top:4px;")
+                v.addWidget(sl)
+                for label, val in sec["rows"]:
+                    r = QLabel(f"  {label} : {val}"); r.setWordWrap(True)
+                    r.setStyleSheet("color:#cdd6e2; font-size:11px; font-family:monospace;")
+                    v.addWidget(r)
+            div = QFrame(); div.setFixedHeight(1); div.setStyleSheet("background:#232c39;")
+            v.addWidget(div)
+        head = QLabel(f"SECURITY MODEL — {name}" + ("  (reference)" if cm else ""))
         head.setStyleSheet("color:#e7ecf3; font-size:13px; font-weight:700;"); head.setWordWrap(True)
         v.addWidget(head)
-        banner = QLabel(f"Posture UNKNOWN — no live capture for {soc}. Run access-check (Chain tab) to read "
-                        "the real state. The §1–16 register enumeration is ZynqMP-specific; for other boards "
-                        "the lock model below + the Chain capability matrix are the posture view.")
-        banner.setWordWrap(True)
-        banner.setStyleSheet("color:#0d1017; background:#e7b04b; border-radius:8px; padding:7px 10px; font-size:11px;")
-        v.addWidget(banner)
+        if not cm:
+            banner = QLabel(f"Posture UNKNOWN — no live measurement for {soc} yet. Run Enumerate (top bar) or "
+                            "access-check (Chain tab) to read the real state. The §1–16 register enumeration "
+                            "is ZynqMP-specific; for other boards the lock model below + the Chain capability "
+                            "matrix are the posture view until you measure it.")
+            banner.setWordWrap(True)
+            banner.setStyleSheet("color:#0d1017; background:#e7b04b; border-radius:8px; padding:7px 10px; font-size:11px;")
+            v.addWidget(banner)
         locks = _security_model(soc) if _security_model else []
         if not locks:
             none = QLabel("No lock mechanism modeled for this part yet — it is treated as open-debug "
@@ -1355,18 +1396,46 @@ class Dashboard(QWidget):
         return card
 
     def _registers_tab_generic(self, soc, name):
-        """Non-ZynqMP boards have no §1–16 sweep — say so honestly and point at the real views, instead
-        of showing stale ZynqMP registers."""
-        body = (f"No register sweep for {name}.\n\n"
-                "The §1–16 enumeration (JTAG_SEC / SEC_CTRL / CSU / eFuse …) is ZynqMP-specific — those "
-                f"registers don't exist on {soc}. For this board the posture comes from:\n\n"
-                "  •  Chain tab — silicon identity, access verdict, and the adapter × op capability matrix\n"
-                "  •  Posture tab — the security model (lock mechanisms + enforcement)\n"
-                "  •  Unlock tab — the ranked lock-defeat plan\n"
-                "  •  Attack Surface tab — implementation-review misuse hypotheses\n\n"
-                "Once a debugger is attached and access reads OPEN, use the capability matrix to pick the "
-                "extraction path (mem-read / flash dump).")
-        return self._launcher(f"▦  Registers — {soc}", body, "Open Chain tab →", 2)
+        """Non-ZynqMP boards have no §1–16 sweep. If we have a measured cortexm-protect.tcl run for this
+        board, show its real identity/protection rows (a small table, same idea as ZynqMP's Registers tab
+        just sourced from parsed text instead of a JSON capture); otherwise say so honestly and point at
+        the real views, instead of showing stale ZynqMP registers."""
+        cm = self._cm_posture.get(soc)
+        if not cm or not cm["sections"]:
+            body = (f"No register sweep for {name} yet — run Enumerate (top bar) to read the identity + "
+                    f"readout-protection registers.\n\nThe §1–16 enumeration (JTAG_SEC / SEC_CTRL / CSU / "
+                    f"eFuse …) is ZynqMP-specific — those registers don't exist on {soc}. For this board the "
+                    "posture comes from:\n\n"
+                    "  •  Chain tab — silicon identity, access verdict, and the adapter × op capability matrix\n"
+                    "  •  Posture tab — the security model (lock mechanisms + enforcement)\n"
+                    "  •  Unlock tab — the ranked lock-defeat plan\n"
+                    "  •  Attack Surface tab — implementation-review misuse hypotheses\n\n"
+                    "Once a debugger is attached and access reads OPEN, use the capability matrix to pick the "
+                    "extraction path (mem-read / flash dump).")
+            return self._launcher(f"▦  Registers — {soc}", body, "Run Enumerate", None,
+                                  on_click=self.start_enumerate)
+        rows = [(sec["title"], label, val) for sec in cm["sections"] for label, val in sec["rows"]]
+        w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(2, 4, 2, 2); v.setSpacing(6)
+        hdr = QLabel(f"MEASURED — {name}  (family: {cm['family']}, cortexm-protect.tcl)")
+        hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700; padding:2px 4px;")
+        v.addWidget(hdr)
+        t = QTableWidget(len(rows), 3)
+        t.setHorizontalHeaderLabels(["Section", "Register", "Value"])
+        t.verticalHeader().setVisible(False); t.setShowGrid(False)
+        t.setSelectionBehavior(QTableWidget.SelectRows); t.setEditTriggers(QTableWidget.NoEditTriggers)
+        hh = t.horizontalHeader()
+        hh.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(2, QHeaderView.Stretch)
+        mono = QFont("DejaVu Sans Mono", 9)
+        for r, (sec, label, val) in enumerate(rows):
+            si = QTableWidgetItem(sec); si.setForeground(Qt.gray)
+            t.setItem(r, 0, si)
+            t.setItem(r, 1, QTableWidgetItem(label))
+            vi = QTableWidgetItem(val); vi.setFont(mono); vi.setForeground(QColor("#33d6c4"))
+            t.setItem(r, 2, vi)
+        v.addWidget(t, 1)
+        return w
 
     def set_board_posture(self, soc, P):
         """Retarget the Attack-Surface layer to the active board + its observed posture (from the shell/
@@ -2010,16 +2079,33 @@ class Dashboard(QWidget):
             return
         be = self._effective_backend()
         if be != "openocd":
-            self.append_line("w", f"✕ Enumerate needs the OpenOCD backend (enumerate.tcl); active "
+            self.append_line("w", f"✕ Enumerate needs the OpenOCD backend; active "
                              f"transport is “{be}”. Bridge via XVC (Chain page) or set Transport = OpenOCD.")
             return
-        self.navigate.emit(0)           # bring the operator to the Dashboard to watch the live stream
-        if self._enum_btn:
-            self._enum_btn.setEnabled(False)
         # Honor a custom/mock openocd binary ($OPENOCD) — same indirection the console's /enumerate and
         # every jtagx.unlock lever use, so offline tooling (and the mock harness) can drive this button.
         oc = os.environ.get("OPENOCD", "openocd")
-        cmd = f'{oc} -f openocd/zcu102.cfg -c "init; source openocd/enumerate.tcl; shutdown"'
+        soc = self._board_soc
+        if soc == "zynqmp":
+            cmd = f'{oc} -f openocd/zcu102.cfg -c "init; source openocd/enumerate.tcl; shutdown"'
+            self._cm_capture = None            # not a cortexm-protect run — the ZynqMP JSON-capture path
+        else:
+            prof = self._load_profile(soc) or {}
+            enum = prof.get("enumerate")
+            if not enum or not enum.get("script"):
+                self.append_line("w", f"✕ No posture-check script for {soc} yet — this board's profile has "
+                                      "no `enumerate` entry. See the Posture/Registers tabs for what IS "
+                                      "available (the security model + capability matrix).")
+                return
+            cfg = prof.get("openocd_cfg") or prof.get("cfg")
+            if not cfg:
+                self.append_line("w", f"✕ {soc}'s profile has no openocd_cfg — can't build the command.")
+                return
+            cmd = f'{oc} -f {cfg} -c "init; source {enum["script"]}; shutdown"'
+            self._cm_capture = [] if not enum.get("interpret", True) else None
+        self.navigate.emit(0)           # bring the operator to the Dashboard to watch the live stream
+        if self._enum_btn:
+            self._enum_btn.setEnabled(False)
         self._last_was_enum = True
         BUS.mark.emit("enumerate")
         BUS.command.emit("Dashboard", cmd)
@@ -2029,6 +2115,24 @@ class Dashboard(QWidget):
         if self._enum_btn:
             self._enum_btn.setEnabled(True)
         self.append_line("g" if code == 0 else "w", f"— process exited ({code})")
+        if self._cm_capture is not None:
+            # a board-generic cortexm-protect.tcl run just finished — parse its captured text into the
+            # Posture/Registers generic tabs instead of the ZynqMP JSON-capture path (refresh_posture()
+            # would just re-show the last ZynqMP reading, which has nothing to do with this board).
+            text = "\n".join(self._cm_capture); self._cm_capture = None
+            if code == 0 and _parse_cm_posture:
+                self._cm_posture[self._board_soc] = _parse_cm_posture(text)
+                self.set_board_identity(self._board_soc, self._board_name, self._board_paradigm)
+                if getattr(self, "_last_was_enum", False):
+                    self._show_posture_tab()
+                    v = self._cm_posture[self._board_soc]["verdict"]
+                    self.append_line("g" if v != "UNKNOWN" else "w",
+                                     f"✓ Posture measured ({v}) → Posture & Registers tabs (this panel).")
+            else:
+                self.refresh_hero()
+            self._last_was_enum = False
+            self._last_cap = None
+            return
         self.refresh_posture()          # reflect any fresh capture in the posture table
         self.refresh_hero()             # update the hero counters (posture opens, artifacts)
         # cross-page flow: an enumerate decoded a fresh capture — land the operator on the results
@@ -2049,6 +2153,8 @@ class Dashboard(QWidget):
         self._last_cap = None
 
     def _proc_line(self, text):
+        if self._cm_capture is not None:
+            self._cm_capture.append(text)
         low = text.lower()
         kind = "w" if ("error" in low or "fail" in low) else ("i" if text.startswith("Info") else "d")
         self.append_line(kind, text)
