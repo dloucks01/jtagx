@@ -221,4 +221,68 @@ if ! bash tools/unlock-engine-smoketest.sh; then
     exit 1
 fi
 
+echo ""
+echo "Running transport checks (backend-agnostic adapter layer: openocd/hw_server/libero)..."
+if ! bash tools/transport-smoketest.sh; then
+    echo "FAIL: transport smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running capability-matrix checks (adapter × backend × op grid + honest op routing)..."
+if ! bash tools/capability-matrix-smoketest.sh; then
+    echo "FAIL: capability-matrix smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running unlock-workflow checks (guided reopen→verify loop; core locked-board mission)..."
+if ! bash tools/unlock-workflow-smoketest.sh; then
+    echo "FAIL: unlock-workflow smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running mock-xsdb checks (hw_server path rehearsed against the high-fidelity mock)..."
+if ! bash tools/mock-xsdb-smoketest.sh; then
+    echo "FAIL: mock-xsdb smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running GUI checks (offscreen end-to-end shell; SKIPs without PySide6)..."
+if ! bash tools/gui-smoketest.sh; then
+    echo "FAIL: gui smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running console-mock checks (console command surface under both backend mocks)..."
+if ! bash tools/console-mock-smoketest.sh; then
+    echo "FAIL: console-mock smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running mock-fidelity checks (per-region memory + captured regs + hardened-board rehearsal)..."
+if ! bash tools/mock-fidelity-smoketest.sh; then
+    echo "FAIL: mock-fidelity smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running mock-cortexm checks (SmartFusion2 M3 eNVM extraction; open vs debug-locked)..."
+if ! bash tools/mock-cortexm-smoketest.sh; then
+    echo "FAIL: mock-cortexm smoketest"
+    exit 1
+fi
+
+echo ""
+echo "Running mock-board checks (parametric per-board chain + flash dump + locked fault)..."
+if ! bash tools/mock-board-smoketest.sh; then echo "FAIL: mock-board smoketest"; exit 1; fi
+
+echo ""
+echo "Running mock-secureboot checks (auth/key bypass model: JustSTART / Starbleed)..."
+if ! bash tools/mock-secureboot-smoketest.sh; then echo "FAIL: mock-secureboot smoketest"; exit 1; fi
+
 exit 0

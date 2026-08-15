@@ -1,0 +1,342 @@
+#!/usr/bin/env bash
+# gui-smoketest.sh — offscreen end-to-end check of the PySide6 GUI shell (gui-spike/).
+# Constructs the whole app, cycles every page, and exercises the safe (non-executing) handlers to
+# catch dead-ends / crashes without touching hardware. SKIPs cleanly if PySide6 isn't importable
+# (CI boxes without Qt), like build-vxboot-smoketest.sh does for mkbootimage.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if ! python3 -c "import PySide6.QtWidgets" 2>/dev/null; then
+    echo "SKIP: gui-smoketest (PySide6 not installed)"
+    exit 0
+fi
+
+python3 -m py_compile gui-spike/*.py || { echo "FAIL(gui): a page does not compile"; exit 1; }
+
+# point the unlock levers/verify at the stateful locked-board mock so the guided flow is safe+real
+export OPENOCD="$PWD/tools/mock-openocd.py"
+export JTAGX_MOCK_STATE="$(mktemp)"; rm -f "$JTAGX_MOCK_STATE"
+export JTAGX_MOCK_LOCK="register-gated"
+trap 'rm -f "$JTAGX_MOCK_STATE"' EXIT
+
+QT_QPA_PLATFORM=offscreen python3 - <<'PY' || exit 1
+import sys
+sys.path.insert(0, "gui-spike")
+from PySide6.QtWidgets import QApplication, QTabWidget
+app = QApplication([])
+import qt_spike, unlock_panel, jtagx_app
+app.setStyleSheet(qt_spike.QSS + unlock_panel.QSS)
+
+def bad(m): print("FAIL(gui):", m); sys.exit(1)
+
+w = jtagx_app.App(); w.resize(1200, 800)
+
+# 1. all six pages present and switchable, no crash
+if w.stack.count() != 6: bad(f"expected 6 pages, got {w.stack.count()}")
+for i in range(6):
+    w._go(i)
+    if w.stack.currentIndex() != i: bad(f"nav to page {i} failed")
+
+# 2. dashboard hero counters are REAL (not the old hardcoded 13/4/7)
+d = w.dash
+tiles = d._tile_data()
+labels = {t[0] for t in tiles}
+if labels != {"CHAIN", "POSTURE", "CAPABILITIES", "ARTIFACTS"}: bad("hero tiles wrong")
+caps_on = sum(1 for k, *_ in qt_spike.CAPS if k != "off")
+if dict((t[0], t[1]) for t in tiles)["CAPABILITIES"] != str(caps_on): bad("capabilities count not derived")
+
+# 3. dead tabs are filled: Registers tab has real content + search/decode when a capture exists
+regs = qt_spike.load_registers(qt_spike.ROOT)
+tabw = d.findChild(QTabWidget)
+if tabw.count() != 5: bad("dashboard center should have 5 tabs")
+if regs and "Registers (" not in tabw.tabText(1): bad("registers tab should show a count")
+if regs:
+    if len(regs[0]) != 5: bad("load_registers should include the decoded fields (5-tuple)")
+    total = len(d._regs)
+    d._reg_search.setText("jtag")
+    vis = sum(1 for r in range(d._reg_table.rowCount()) if not d._reg_table.isRowHidden(r))
+    if not (0 < vis < total): bad("register search should narrow the visible rows")
+    d._reg_search.setText(""); d._reg_sec.setChecked(True)
+    secn = sum(1 for r in range(d._reg_table.rowCount()) if not d._reg_table.isRowHidden(r))
+    if not (0 < secn <= total): bad("security-only filter should narrow to security registers")
+    d._reg_sec.setChecked(False)
+    ji = next((i for i, r in enumerate(d._regs) if r[1] == "JTAG_SEC"), None)
+    if ji is not None:
+        d._show_reg_fields(ji)
+        if "JTAG_SEC" not in d._reg_detail.text() or "SSSS_DAP_SEC" not in d._reg_detail.text():
+            bad("clicking a register should decode its bit-fields")
+
+# 4. cross-page flow: dashboard navigate signal drives the shell
+seen = []
+w.dash.navigate.connect(lambda i: seen.append(i))
+w.dash.navigate.emit(3)
+if w.stack.currentIndex() != 3 or seen != [3]: bad("navigate signal should switch pages")
+
+# 5. memory page has a working dump selector
+if not hasattr(w, "dumpsel"): bad("memory page missing dump selector")
+w._refresh_memory()   # must not crash with 0..N dumps
+
+# 6. unlock panel renders the from-capture plan without crashing
+up = w.stack.widget(1)
+up.load()
+
+# 7. status bar reflects detection (real string, not the old hardcoded 'FT2232H ...')
+w.refresh_status()
+if not w._st_conn.text(): bad("status bar not populated")
+
+# 8. capability copy-path (placeholder cmd) must not execute — just clipboard/log
+d._cap_action("Break & capture", "ok")   # has <funcVA> -> copy path
+if d.runner.busy(): bad("copy-path capability must not launch a process")
+
+# 9. chain page refresh is idempotent
+w.chain.refresh(); w.chain.refresh()
+
+# 10. deepened console: §-section parsing, warn-flagging, filters, save format
+c = w.console            # the ONE shell-level interactive console (fed via console_bus)
+c.clear()   # step 8's copy-path already logged a line; start clean
+for k, t in [("i", "Info : JTAG tap 0x24738093"),
+             ("d", "# 4. Security State (research focus)"), ("d", "- **JTAG_SEC**: `0x0`"),
+             ("w", "warn: all gates enabled"), ("d", "# 9. Crypto / Keys")]:
+    c.append(k, t)
+if [n for n, _ in c._sections] != [4, 9]: bad(f"console should parse §4,§9; got {c._sections}")
+if not c._sec_warn.get(0): bad("§4 (idx0) should be warn-flagged (a warn line streamed under it)")
+c._set_kind("warn")
+if sum(1 for kk, tt, ss in c._log if c._passes(kk, tt, ss)) != 1: bad("warn filter should show exactly 1 line")
+c._set_kind("all"); c._toggle_section(0)
+if any(ss != 0 for kk, tt, ss in c._log if c._passes(kk, tt, ss)): bad("§4 section filter leaked other sections")
+c._toggle_section(0)   # unfilter
+if len(c._log) != 5: bad("console log should retain all 5 streamed lines")
+c.clear()
+if c._log or c._sections: bad("console clear should reset log + sections")
+
+# 11. unlock panel: refresh + capture-source note; reports page: count + refresh + generate button
+up.load()    # from-capture
+up.reload()  # must not crash
+rp = w.reports
+rp._populate()
+if "file(s)" not in rp.count_lbl.text(): bad("reports page should show a file count")
+if not hasattr(rp, "gen_btn"): bad("reports page should have a Generate button")
+
+# 12. posture ring reflects real counts; hero POSTURE tile jumps to the posture tab
+if d._ring._total <= 0: bad("posture ring should have a nonzero total")
+if "hardened" not in d._ring_head.text(): bad("ring header should mention hardened count")
+d._center_tabs.setCurrentIndex(2)
+d._show_posture_tab()
+if d._center_tabs.currentIndex() != 0: bad("POSTURE tile should switch to the posture tab")
+
+# 13. hero tiles route: CHAIN->2, ARTIFACTS->3 via navigate
+seen2 = []
+d.navigate.connect(lambda i: seen2.append(i))
+d.navigate.emit(2); d.navigate.emit(3)
+if seen2 != [2, 3]: bad("hero tile navigation targets wrong")
+
+# 14. keyboard shortcuts installed (Ctrl+1..6 / E / R)
+from PySide6.QtGui import QShortcut
+keys = {s.key().toString() for s in w.findChildren(QShortcut)}
+for need in ("Ctrl+1", "Ctrl+5", "Ctrl+E", "Ctrl+R"):
+    if need not in keys: bad(f"missing shortcut {need}")
+for i in range(6):        # Ctrl+R dispatch must not crash on any page
+    w._go(i); w._refresh_current()
+
+# 15. Chain target tree: clicking a core copies its xsdb command
+from PySide6.QtWidgets import QTreeWidget
+from PySide6.QtCore import Qt as _Qt
+core = None
+for tw in w.chain.findChildren(QTreeWidget):
+    stack = [tw.topLevelItem(i) for i in range(tw.topLevelItemCount())]
+    while stack:
+        it = stack.pop()
+        if it.data(0, _Qt.UserRole):
+            core = it; break
+        stack += [it.child(i) for i in range(it.childCount())]
+    if core: break
+if core is None: bad("chain target tree has no selectable core rows")
+w.chain._on_target_click(core, 0)
+if "xsdb" not in QApplication.clipboard().text(): bad("core click should copy an xsdb command")
+
+# 16. transport backend routing (P2/P3 wired into the Dashboard capability surface)
+if not hasattr(w, "backend_sel"): bad("topbar should have a transport backend selector")
+d.set_backend("openocd")
+cmd, blk = d._resolve_cap_cmd("Dump DDR / OCM")
+if blk or "openocd" not in cmd: bad("Dump DDR under openocd should be the openocd command")
+d.set_backend("hw_server")
+cmd, blk = d._resolve_cap_cmd("Dump DDR / OCM")
+if blk or "xsdb" not in cmd: bad("Dump DDR under hw_server should be the xsdb command")
+_, blk = d._resolve_cap_cmd("Break & capture")
+if not blk: bad("OpenOCD-only cap under hw_server should be blocked with a reason")
+d.set_backend("auto")
+if d._effective_backend() not in ("openocd", "hw_server"): bad("auto backend should resolve concretely")
+
+# 17. guided locked-board workflow: lever → verify → the lock is marked DEFEATED (via the mock).
+# The live capture is an OPEN board, so render a register-gated plan directly to exercise the GUI flow.
+from jtagx.unlock import build_plan
+_locks = build_plan("zynqmp", {"jtag_open": False, "efuse_jtag_dis": False})
+up._render({"soc": "zynqmp", "locks": _locks}, "register-gated (test)")
+gcard = up._cards.get("JTAG / DAP debug gate")
+if gcard is None: bad("register-gated plan should have a DAP lock card")
+glever = next((s for s in gcard.lock["strategies"] if s.get("verify") == "access-check"), None)
+if glever is None: bad("DAP lock should carry an access-check verify lever")
+up._action(glever, gcard.lock)          # starts the two-phase guided flow via the mock openocd
+import time as _t
+_t0 = _t.time()
+while (up.runner.busy() or up._wf is not None) and _t.time() - _t0 < 25:
+    app.processEvents(); _t.sleep(0.03)
+app.processEvents()
+if gcard.status_key != "DEFEATED":
+    bad(f"guided reopen→verify should mark the register-gated DAP DEFEATED (got {gcard.status_key})")
+
+# 18. the ONE shell console: bus feed from any tab, tab-follow divider, interactive run
+from console_bus import BUS as _BUS
+w.console.clear()
+_BUS.command.emit("Chain", "echo bus-cmd")
+_BUS.line.emit("i", "bus-line-xyz")
+app.processEvents()
+if "Chain $ echo bus-cmd" not in w.console.text.toPlainText(): bad("console should show bus commands")
+if "bus-line-xyz" not in w.console.text.toPlainText(): bad("console should show bus lines")
+w._go(2)   # switch tab → a divider should appear
+if "Chain" not in w.console.text.toPlainText(): bad("console should follow the active tab (divider)")
+w.console.input.setText("echo interactive-xyz"); w.console._run_input()
+_t0 = _t.time()
+while w.console.runner.busy() and _t.time() - _t0 < 10:
+    app.processEvents(); _t.sleep(0.03)
+app.processEvents()
+if "interactive-xyz" not in w.console.text.toPlainText(): bad("interactive console should run typed commands")
+if not w.console._history: bad("interactive console should keep command history")
+
+# 19. console command surface: backend-aware primitives + slash-commands + raw passthrough
+w._console_set_backend("openocd")
+exp, _ = w.console._interpret("mrd 0x100000 4")
+if "mdw 0x100000 4" not in exp: bad("mrd under openocd should become an mdw command")
+w._console_set_backend("hw_server")
+exp, _ = w.console._interpret("mrd 0xffca0040 1")
+if "xsdb" not in exp or "mrd 0xffca0040" not in exp: bad("mrd under hw_server should become an xsdb mrd")
+w._console_set_backend("openocd")
+exp, _ = w.console._interpret("/dump 0x100000 0x1000 dumps/x.bin")
+if "dump_image dumps/x.bin 0x100000 4096" not in exp: bad("/dump should expand to a backend mem dump")
+exp, _ = w.console._interpret("/verify")
+if "jtag-access-check.tcl" not in exp: bad("/verify should re-read the access verdict")
+if w.console._interpret("echo hi")[0] != "echo hi": bad("non-command input should pass through as raw shell")
+if w.console._interpret("/usr/bin/foo -x")[0] != "/usr/bin/foo -x":
+    bad("an absolute-path command must run as raw shell, not be eaten as a slash-command")
+w.console.clear(); w.console._interpret("/help")
+if "/enumerate" not in w.console.text.toPlainText(): bad("/help should list the commands")
+# /backend via the console reaches the shell selector
+w.console._interpret("/backend hw_server")
+if w.backend_sel.currentData() != "hw_server": bad("/backend should drive the shell transport selector")
+
+# 20. console tab-completion (slash + primitives)
+w.console.input.setText("/enu"); w.console._complete()
+if w.console.input.text().strip() != "/enumerate": bad("Tab should complete /enu → /enumerate")
+w.console.input.setText("sc"); w.console._complete()
+if w.console.input.text().strip() != "scan": bad("Tab should complete primitive 'sc' → 'scan'")
+# path completion of a later token
+w.console.cwd = qt_spike.ROOT
+w.console.input.setText("cat openocd/lib/enum-hel"); w.console._complete()
+if "enum-helpers.tcl" not in w.console.input.text(): bad("Tab should complete a file path argument")
+
+# 21. memory hex view: byte/ASCII find + match highlight
+hv = w.hexview
+hv.model.set_data(b"\x00" * 32 + b"NEEDLE" + b"\xde\xad\xbe\xef")
+hv.find.setText("'NEEDLE"); hv._find_next()
+if "0x20" not in hv.file_lbl.text(): bad("hex-view ASCII find should locate the needle at 0x20")
+if hv.model._hl != (32, 38): bad("hex-view find should highlight the matched byte range")
+hv._find_pos = 0; hv.find.setText("de ad be ef"); hv._find_next()
+if "0x26" not in hv.file_lbl.text(): bad("hex-view hex-byte find should locate the pattern at 0x26")
+
+# 22. posture row → jump to that register's decode in the Registers tab
+if regs:
+    pr = next((r for r in range(d._ptable.rowCount())
+               if d._ptable.item(r, 1) and any(x[1] == d._ptable.item(r, 1).text().strip() for x in d._regs)), None)
+    if pr is not None:
+        loc = d._ptable.item(pr, 1).text().strip()
+        d._posture_to_register(pr, 1)
+        if d._center_tabs.currentIndex() != 1 or d._reg_search.text() != loc:
+            bad("clicking a posture row should jump to that register in the Registers tab")
+
+# 23. register → console cross-link + ASCII-column highlight
+if regs:
+    ridx = next((i for i, r in enumerate(d._regs) if r[1] == "JTAG_SEC"), 0)
+    addr = d._regs[ridx][2]
+    d.run_in_console.emit(f"mrd {addr} 1")
+    if w.console.input.text() != f"mrd {addr} 1":
+        bad("sending a register mrd should populate the console input")
+from PySide6.QtCore import Qt as _Qt2
+hv.model.set_data(b"\x00" * 16 + b"MATCH"); hv.model.set_highlight(16, 5)
+if hv.model.data(hv.model.index(1, 16), _Qt2.BackgroundRole) is None:
+    bad("ASCII column should highlight on a matched row")
+if hv.model.data(hv.model.index(0, 16), _Qt2.BackgroundRole) is not None:
+    bad("ASCII column should NOT highlight an unmatched row")
+
+# 21b. Attack Surface tab: real-posture misuse layer + probe → console
+P = d._misuse_posture()
+if "jtag_open" not in P: bad("attack-surface should derive jtag_open from the real posture")
+d.refresh_attack_surface()
+if not d._as_findings: bad("attack surface should surface misuse hypotheses on an open board")
+probes = [pr for *_, pr in d._as_findings if pr]
+if probes:
+    d.run_in_console.emit(probes[0])
+    if not w.console.input.text(): bad("a probe should populate the console input")
+
+# 24. chain-panel cores → backend-scoped console commands
+d.set_backend("openocd")
+d._core_cmd("a53-0", "halt")
+if "halt" not in w.console.input.text() or "openocd" not in w.console.input.text():
+    bad("core Halt under openocd should build an openocd halt command")
+d.set_backend("hw_server")
+d._core_cmd("r5-0", "halt")
+if "xsdb" not in w.console.input.text() or "R5*#0" not in w.console.input.text():
+    bad("core Halt under hw_server should target R5#0 via xsdb")
+
+# 25. multi-board: the board selector retargets the Chain page + console soc/cfg + crumb
+if w.board_sel.count() < 5: bad("board selector should list the profile registry")
+if w.board["soc"] != "zynqmp": bad("default board should be zynqmp")
+z7 = next((i for i in range(w.board_sel.count()) if w.board_sel.itemData(i) == "zynq7000"), None)
+if z7 is not None:
+    w.board_sel.setCurrentIndex(z7)
+    if w.chain.soc != "zynq7000": bad("switching board should rebuild the Chain page for that soc")
+    if w.console.soc != "zynq7000": bad("switching board should retarget the console soc")
+    if "zynq7000" not in (w.console.cfg or ""): bad("switching board should retarget the console cfg")
+    if "Zynq-7000" not in w._crumb.text(): bad("switching board should update the crumb")
+    if "Zynq-7000" not in w.dash._hero_board.text(): bad("switching board should update the hero identity")
+# board-aware Unlock panel: SmartFusion2 posture toggle → its lock model appears
+sf2 = next((i for i in range(w.board_sel.count()) if w.board_sel.itemData(i) == "smartfusion2"), None)
+if sf2 is not None:
+    w.board_sel.setCurrentIndex(sf2)
+    upx = w.stack.widget(1)
+    if not any("debug" in b.text() for b in upx._posture_btns):
+        bad("SmartFusion2 should offer an 'M3 debug locked' posture toggle")
+    tog = next(b for b in upx._posture_btns if "debug" in b.text()); tog.setChecked(True)
+    if not any("M3 debug lock" in k for k in upx._cards):
+        bad("asserting SF2 debug-locked should surface the M3 debug lock card")
+    # the Attack-Surface tab should FOLLOW the board + asserted posture (board-aware)
+    if getattr(w.dash, "_as_soc", "zynqmp") != "smartfusion2":
+        bad("Attack Surface should follow the active board (smartfusion2)")
+    if not any(f[3] == "sf2-security-policy-flash" for f in w.dash._as_findings):
+        bad("board-aware Attack Surface should surface the SF2 design-primitive hypothesis")
+    # board-generic DASHBOARD: Posture/Registers tabs + hero tiles follow the board (not ZynqMP)
+    if getattr(w.dash, "_board_soc", "") != "smartfusion2":
+        bad("dashboard should track the active board soc")
+    if w._dap_badge.text() == "● DAP OPEN":
+        bad("non-ZynqMP DAP badge should read UNKNOWN, not OPEN")
+    if getattr(w.reports, "_soc", "") != "smartfusion2":
+        bad("Reports Generate should target the active board soc")
+    if w.dash._center_tabs.tabText(1) != "▦  Registers":
+        bad("non-ZynqMP Registers tab should be the honest generic view (no §-sweep count)")
+    _tiles = dict((t[0], t[1]) for t in w.dash._tile_data())
+    if _tiles["POSTURE"] != "?" or _tiles["CAPABILITIES"] == "0":
+        bad("non-ZynqMP hero tiles should read POSTURE=? and a nonzero lock-mechanism count")
+    # the security-model view is built from the unlock engine's lock model for this soc
+    from jtagx.unlock import security_model as _sm
+    if not _sm("smartfusion2"):
+        bad("security_model should return the SF2 lock mechanisms for the generic Posture view")
+    # switching BACK to the home board restores the real ZCU102 capture (register count returns)
+    zb = next(i for i in range(w.board_sel.count()) if w.board_sel.itemData(i) == "zynqmp")
+    w.board_sel.setCurrentIndex(zb); app.processEvents()
+    if w.dash._board_soc != "zynqmp" or "Registers (" not in w.dash._center_tabs.tabText(1):
+        bad("switching back to ZynqMP should restore the real §1–16 register capture")
+
+w.dash.stop()
+print("  gui end-to-end OK (5 pages, hero real, tabs filled, nav flow, memory selector, unlock plans)")
+PY
+
+echo "PASS: gui-smoketest (offscreen end-to-end)"

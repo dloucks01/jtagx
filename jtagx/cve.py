@@ -32,6 +32,15 @@ DB = [
     dict(id="Kinetis-MDM-erase", chips=["kinetis"], when={}, sev="MED",
          title="Kinetis MDM-AP secured-part recovery is a mass-erase; FSEC mis-config can leave debug open",
          ref="NXP AN; docs/15"),
+    # --- Microsemi/Microchip SmartFusion2 / IGLOO2 (Actel lineage) ---
+    dict(id="Actel-JTAG-backdoor", chips=["smartfusion2", "igloo2"], when={}, sev="HIGH",
+         title="Actel/Microsemi silicon JTAG backdoor + DPA pass-key extraction — recover FlashLock/AES key, "
+               "then authorized readback (applies to the ProASIC3/SmartFusion lineage)",
+         ref="Skorobogatov & Woods, 'Breakthrough silicon scanning' CHES 2012"),
+    dict(id="SF2-M3-open-dump", chips=["smartfusion2"], when={"debug_locked": False}, sev="HIGH",
+         title="SmartFusion2 Cortex-M3 debug NOT security-locked → OpenOCD cortex_m mem-AP dumps eNVM/eSRAM "
+               "with a standard probe (J-Link/CMSIS-DAP), no FlashPro",
+         ref="profiles/smartfusion2.json; openocd cortex_m"),
     # --- ESP32 — flash-encryption / secure-boot fault injection ---
     dict(id="CVE-2019-15894", chips=["esp32"], when={}, sev="HIGH",
          title="ESP32 fault-injection bypass of secure boot + flash encryption (UART DL mode)",

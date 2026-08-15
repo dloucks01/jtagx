@@ -64,4 +64,45 @@ PYEOF
 python3 tools/oe-key-extract.py /tmp/oke-smoke.bin | grep -q "000102030405060708090a0b0c0d0e0f" \
     || fail "oe-key-extract should recover the planted AES-128 key from a stored schedule"
 
-echo "PASS: unlock-engine (+ bsdl-scan + oe-key-extract) — unlock plan/BSDL parse+decode/AES-key recovery"
+# 5. SmartFusion2 (Paradigm-B M3 target): debug-lock + FlashLock model + the M3-dump extraction lever
+OUT=$($UE --soc smartfusion2 --debug-locked --flashlock)
+echo "$OUT" | grep -q "M3 debug lock"        || fail "SF2 should classify the M3 debug lock"
+echo "$OUT" | grep -q "FlashLock"            || fail "SF2 should classify FlashLock/eNVM readback"
+echo "$OUT" | grep -q "Skorobogatov"         || fail "SF2 should offer the DPA pass-key recovery (Skorobogatov/Woods)"
+echo "$OUT" | grep -q "M3 mem-AP dump"        || fail "SF2 should offer the Cortex-M mem-AP extraction path"
+python3 tools/cve-match.py --soc smartfusion2 | grep -q "Actel-JTAG-backdoor" \
+    || fail "cve-match should surface the Actel/Microsemi JTAG-backdoor for SmartFusion2"
+
+# 6. IGLOO2 (fabric-only sibling): FlashLock model with NO M3 mem-AP lever (no Cortex-M)
+OUT=$($UE --soc igloo2 --flashlock)
+echo "$OUT" | grep -q "IGLOO2 FlashLock"      || fail "IGLOO2 should classify FlashLock/readback protection"
+echo "$OUT" | grep -q "Skorobogatov"          || fail "IGLOO2 should offer the DPA pass-key recovery"
+echo "$OUT" | grep -q "M3 mem-AP" && fail "IGLOO2 (no Cortex-M) must NOT offer an M3 mem-AP dump lever" || true
+
+# 7. implementation-review misuse layer (research findings, distinct from CVEs)
+python3 - <<'PY' || fail "weakness/misuse layer broken"
+from jtagx.weakness import misuse_findings
+# ZynqMP open DAP → the trust-assumption + thesis fire (implementation observations, not CVEs)
+z = [h for _,_,_,h,_ in misuse_findings("zynqmp", {"jtag_open": True, "aes_encrypt": True})]
+assert "axi-master-trust" in z and "open-dap-thesis" in z and "bbram-volatile-key" in z, z
+# SmartFusion2 debug-locked → the security-policy-flash design-primitive fires
+s = [h for _,_,_,h,_ in misuse_findings("smartfusion2", {"debug_locked": True})]
+assert "sf2-security-policy-flash" in s, s
+# board-broadening sweep: each non-ZynqMP family surfaces its OWN inherent design-primitive hypotheses
+assert "nrf-ctrlap-takeover" in [h for _,_,_,h,_ in misuse_findings("nrf52", {"approtect_locked": True})]
+assert "riscv-dm-unauth" in [h for _,_,_,h,_ in misuse_findings("riscv", {})]
+assert "microsemi-preprovision-open" in [h for _,_,_,h,_ in misuse_findings("igloo2", {})]
+# inherent silicon-fact hypotheses fire regardless of posture (they describe the part, not a lock);
+# the universal JTAG-IDCODE recon point applies to every chip
+st = [h for _,_,_,h,_ in misuse_findings("stm32f4", {})]
+assert "stm32-erase-takeover" in st and "jtag-idcode-recon" in st, st
+# but posture-GATED hypotheses stay silent without their trigger (no spurious fire)
+assert "esp32-dl-mode-oracle" not in [h for _,_,_,h,_ in misuse_findings("esp32", {})], "gated finding must not fire"
+assert "microsemi-preprovision-open" not in [h for _,_,_,h,_ in misuse_findings("igloo2", {"flashlock": True})], \
+    "a provisioned FlashLock board closes the preprovision-open surface"
+print("  misuse layer OK (trust-assumption/thesis/volatile-secret/design-primitive + board-broadening sweep)")
+PY
+python3 tools/cve-match.py --soc zynqmp --jtag-open | grep -q "implementation-review misuse" \
+    || fail "cve-match should print the implementation-review misuse section"
+
+echo "PASS: unlock-engine (+ SmartFusion2 + IGLOO2 + implementation-misuse layer) — full coverage"

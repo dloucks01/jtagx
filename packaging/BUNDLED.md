@@ -25,8 +25,10 @@ linuxdeploy --appdir dist/JTAGx.AppDir --plugin qt --output appimage
 The `qt` plugin gathers `libQt6*.so` + the `platforms/`/`imageformats/` plugins that a manual copy misses.
 
 ## Notes
-- Writable data: the app reads `reports/`, `dumps/` relative to its tree. In a read-only AppImage,
-  point those at a working dir (run the AppImage from the engagement dir, or set a data-dir env) —
-  a small follow-up in `jtagx_app.py`/`AppRun` if fully-portable data handling is wanted.
+- Writable data (DONE, P4): `jtagx/paths.py` splits the read-only code root from a writable data-dir.
+  `AppRun` exports `JTAGX_ROOT` (code mount), `JTAGX_PACKAGED=1`, and `JTAGX_DATA`
+  (default `~/.local/share/jtagx`, override with the env var). The GUI writes `dumps/`+`reports/`
+  there, and `paths.localize()` rewrites those tokens in every capability command so nothing tries to
+  write to the squashfs mount. In a dev checkout `JTAGX_DATA` is unset → data stays in-tree (unchanged).
 - The host-python variant is the one validated in-repo (`make-gui-appimage.sh` assembles the AppDir and
   the bundled app builds from it offscreen).

@@ -66,6 +66,8 @@ def main():
     ap.add_argument("--efuse-jtag-dis", action="store_true")
     ap.add_argument("--secure-boot", choices=["on", "off", "encrypt-only"]); ap.add_argument("--aes-encrypt", action="store_true")
     ap.add_argument("--rdp", type=int); ap.add_argument("--approtect-open", action="store_true")
+    ap.add_argument("--debug-locked", action="store_true", help="SmartFusion2: M3 debug security-locked")
+    ap.add_argument("--flashlock", action="store_true", help="SmartFusion2: FlashLock/eNVM readback on")
     ap.add_argument("-o", "--out")
     a = ap.parse_args()
 
@@ -84,6 +86,8 @@ def main():
     if a.aes_encrypt: P["aes_encrypt"] = True
     if a.rdp is not None: P["rdp_level"] = a.rdp
     if a.approtect_open: P["approtect_open"] = True
+    if a.debug_locked: P["debug_locked"] = True
+    if a.flashlock: P["flashlock"] = True
 
     prof = load_profile(a.soc)
     L = []
@@ -154,6 +158,19 @@ def main():
     for kind, sev, msg in cm.posture_findings(a.soc, P):
         L.append(f"- **[posture]** {sev} — {msg}")
     L.append("")
+
+    # implementation-review misuse (NOT CVEs — the project's own research layer)
+    try:
+        from jtagx.weakness import misuse_findings
+        mf = misuse_findings(a.soc, P)
+    except Exception:
+        mf = []
+    if mf:
+        L.append("### Implementation-review misuse (research — not a CVE)")
+        L.append("_Where the implementation could be misused, from reading the design (not a published CVE)._")
+        for cls, sev, msg, hid, _probe in mf:
+            L.append(f"- **[{cls}]** {sev} `{hid}` — {msg}")
+        L.append("")
 
     # --- 5. Unlock plan (Phase-2b) — how to defeat the locks that are engaged ---
     L.append("## 5. Unlock plan — defeating the locks (Phase-2b)")

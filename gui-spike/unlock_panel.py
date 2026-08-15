@@ -8,23 +8,34 @@ mission): verdict + posture in → "here's what's locked, how it's enforced, and
 defeat it," AUTO software levers first.
 
 Run:  pip install PySide6  &&  python3 gui-spike/unlock_panel.py
-It shells `python3 tools/unlock-engine.py <args> --json` (the GUI drives the real tool). The scenario
-buttons across the top swap the posture so you can see the same closed DAP produce a software-lever
-plan (register-gated) vs a hardware-only plan (eFuse-sealed). "Run"/"Copy"/"Guide" are demo actions —
-in the real app the AUTO levers execute reopen-debug.tcl and re-read the access verdict.
-
-Note: live JTAG actions stay operator-driven — "Run" here logs the exact command rather than touching
-the board (matches the project's hands-on model).
+It shells `python3 tools/unlock-engine.py --from-capture <newest raw-*.json> --json` (the GUI drives
+the real tool) and renders the plan for the LIVE board's posture. AUTO software levers run for real —
+they execute reopen-debug.tcl and re-read the access verdict (the guided reopen→verify workflow),
+marking each lock defeated / resisted. Live JTAG stays operator-driven.
 """
 import json, os, subprocess, sys
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QFrame, QPushButton, QVBoxLayout,
-    QHBoxLayout, QScrollArea, QPlainTextEdit, QSizePolicy,
+    QHBoxLayout, QScrollArea, QPlainTextEdit, QSizePolicy, QMessageBox,
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UE = os.path.join(ROOT, "tools", "unlock-engine.py")
+sys.path.insert(0, ROOT)                                          # repo root (for jtagx)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # gui-spike/ (for proc_runner)
+from proc_runner import ProcRunner
+from console_bus import BUS
+try:
+    from jtagx.paths import reports_dir as _reports_dir          # writable captures dir (P4)
+except Exception:
+    _reports_dir = lambda: os.path.join(ROOT, "reports")
+try:
+    from jtagx.unlock import (verify_cmd, parse_access_verdict, parse_reopen_result,
+                              classify_reopen, WF_STATUS)                # guided reopen→verify workflow
+except Exception:
+    verify_cmd = parse_access_verdict = parse_reopen_result = classify_reopen = None
+    WF_STATUS = {}
 
 KIND_TAG = {"software-lever": "AUTO", "misconfig": "AUTO", "alternate-path": "SCRIPT",
             "physical-offline": "MANUAL", "firmware-attack": "OFFLINE",
@@ -35,14 +46,22 @@ ACTION = {"software-lever": "▶ Run", "misconfig": "▶ Run", "alternate-path":
           "firmware-attack": "⧉ Copy", "physical-offline": "≡ Guide",
           "fault-injection": "≡ Guide", "side-channel": "≡ Guide"}
 
-SCENARIOS = [  # (label, unlock-engine args)
-    ("Open (from capture)", None),   # filled at runtime with the newest raw-*.json
-    ("Register-gated", ["--soc", "zynqmp", "--jtag-locked", "--no-efuse-jtag-dis"]),
-    ("eFuse-sealed", ["--soc", "zynqmp", "--jtag-locked", "--efuse-jtag-dis"]),
-    ("Hardened", ["--soc", "zynqmp", "--jtag-locked", "--efuse-jtag-dis",
-                  "--secure-boot", "on", "--aes-encrypt", "--dap-ns-locked"]),
-    ("nRF52 APPROTECT", ["--soc", "nrf52", "--approtect-locked"]),
-]
+# operator-asserted posture toggles per board (the GUI equivalent of unlock-engine's CLI flags — these
+# are OBSERVED facts the operator read on the board, not synthetic scenarios). Each = (arg-fragment, label).
+POSTURE_OPTIONS = {
+    "zynqmp":       [("--jtag-locked --no-efuse-jtag-dis", "DAP locked (reg)"),
+                     ("--jtag-locked --efuse-jtag-dis", "eFuse-sealed"),
+                     ("--secure-boot on", "Secure boot"), ("--aes-encrypt", "AES boot")],
+    "zynq7000":     [("--jtag-locked --no-efuse-jtag-dis", "DAP locked"),
+                     ("--secure-boot on", "Secure boot"), ("--aes-encrypt", "AES")],
+    "smartfusion2": [("--debug-locked", "M3 debug locked"), ("--flashlock", "FlashLock")],
+    "igloo2":       [("--flashlock", "FlashLock")],
+    "nrf52":        [("--approtect-locked", "APPROTECT")],
+    "stm32f4":      [("--rdp 1", "RDP1"), ("--rdp 2", "RDP2")],
+    "stm32f1":      [("--rdp 1", "RDP1")],
+    "stm32l4":      [("--rdp 1", "RDP1"), ("--rdp 2", "RDP2")],
+    "esp32":        [("--flash-encrypted", "Flash encrypted")],
+}
 
 
 def enf_color(enf):
@@ -138,6 +157,8 @@ class StrategyRow(QFrame):
 class LockCard(QFrame):
     def __init__(self, lock, on_action):
         super().__init__()
+        self.lock = lock
+        self.status_key = None          # guided-workflow outcome: DEFEATED/PARTIAL/RESISTED/…
         self.setProperty("cls", "card")
         v = QVBoxLayout(self); v.setContentsMargins(14, 12, 14, 12); v.setSpacing(8)
         head = QHBoxLayout(); head.setSpacing(10)
@@ -145,14 +166,28 @@ class LockCard(QFrame):
         pill = _lbl(lock["state"], cls="statepill")
         pcol = "#f2685f" if lock["state"] in ("LOCKED", "ENABLED") else "#3ecf8e"
         pill.setStyleSheet(f"color:#0d1017; background:{pcol}; border-radius:10px; padding:2px 9px; font-weight:700;")
-        head.addWidget(pill); head.addStretch(1)
+        head.addWidget(pill)
+        # guided-workflow status pill (engaged → defeated/partial/resisted after Try & Verify)
+        self.wf_pill = _lbl("", cls="statepill"); self.wf_pill.hide()
+        head.addWidget(self.wf_pill)
+        head.addStretch(1)
         v.addLayout(head)
         v.addWidget(_lbl(f"enforcement:  {lock['enforcement']}", cls="enf", color=enf_color(lock["enforcement"])))
         for s in lock["strategies"]:
-            v.addWidget(StrategyRow(s, on_action))
+            v.addWidget(StrategyRow(s, lambda st, lk=lock: on_action(st, lk)))
+
+    def set_status(self, status_key):
+        self.status_key = status_key
+        label, color, _ = WF_STATUS.get(status_key, (status_key.lower(), "#98a6b8", ""))
+        self.wf_pill.setText(f"▸ {label}")
+        self.wf_pill.setStyleSheet(f"color:#0d1017; background:{color}; border-radius:10px; "
+                                   "padding:2px 9px; font-weight:700;")
+        self.wf_pill.show()
 
 
 class UnlockPanel(QWidget):
+    posture_changed = Signal(str, dict)   # (soc, observed posture P) — feeds the Attack-Surface layer
+
     def __init__(self):
         super().__init__()
         self.setObjectName("root")
@@ -164,15 +199,20 @@ class UnlockPanel(QWidget):
         t.addWidget(_lbl("🔓 Reopen / Unlock", obj="title"))
         t.addWidget(_lbl("— Phase-2b: defeat the locks to regain access", obj="sub"))
         t.addStretch(1)
+        self.src_note = _lbl("", obj="sub"); t.addWidget(self.src_note)
+        self.btn_refresh = QPushButton("↻  Refresh"); self.btn_refresh.setProperty("cls", "scn")
+        self.btn_refresh.setToolTip("Re-derive the unlock plan from the newest capture")
+        self.btn_refresh.setCursor(Qt.PointingHandCursor)
+        self.btn_refresh.clicked.connect(self.reload)
+        t.addWidget(self.btn_refresh)
         bh.addLayout(t)
-        scn = QHBoxLayout(); scn.setSpacing(6)
-        self._btns = []
-        for i, (label, _) in enumerate(SCENARIOS):
-            b = QPushButton(label); b.setProperty("cls", "scn"); b.setCheckable(True)
-            b.clicked.connect(lambda _, idx=i: self.load(idx))
-            scn.addWidget(b); self._btns.append(b)
-        scn.addStretch(1)
-        bh.addLayout(scn)
+        # operator-asserted posture toggles for the active board (populated by set_board)
+        self._posture_row = QHBoxLayout(); self._posture_row.setSpacing(6)
+        self._posture_hint = _lbl("observed posture:", obj="sub")
+        self._posture_row.addWidget(self._posture_hint)
+        self._posture_btns = []
+        self._posture_row.addStretch(1)
+        bh.addLayout(self._posture_row)
         outer.addWidget(bar)
         self.summary = _lbl("", obj="summary"); self.summary.setWordWrap(True)
         outer.addWidget(self.summary)
@@ -182,28 +222,55 @@ class UnlockPanel(QWidget):
         self.cards.setContentsMargins(16, 4, 16, 12); self.cards.setSpacing(12); self.cards.addStretch(1)
         self.scroll.setWidget(self.host)
         outer.addWidget(self.scroll, 1)
-        # action log
-        self.log = QPlainTextEdit(); self.log.setObjectName("log"); self.log.setReadOnly(True)
-        self.log.setFixedHeight(96)
-        self.log.setPlainText("›  pick a scenario above to render its unlock plan")
-        wrap = QWidget(); wl = QVBoxLayout(wrap); wl.setContentsMargins(16, 0, 16, 14)
-        wl.addWidget(self.log)
-        outer.addWidget(wrap)
-        self.load(1)  # start on the register-gated case (the interesting one)
+        # levers + verify stream to the ONE shell console (console_bus), not a local log
+        self.runner = ProcRunner(self)
+        self.runner.line.connect(self._on_line)
+        self.runner.done.connect(self._on_done)
+        self._soc = "zynqmp"
+        self._cards = {}                      # lock name -> LockCard (for status updates)
+        self._wf = None                       # active guided reopen→verify flow, or None
+        self.set_board("zynqmp")
 
-    def load(self, idx):
-        for i, b in enumerate(self._btns):
-            b.setChecked(i == idx)
-        label, args = SCENARIOS[idx]
-        if args is None:  # "from capture" — newest raw-*.json
-            import glob
-            caps = sorted(glob.glob(os.path.join(ROOT, "reports", "raw-*.json")), key=os.path.getmtime)
-            if not caps:
-                self._clear(); self.summary.setText("No reports/raw-*.json capture found — run enumerate first.")
+    def set_board(self, soc):
+        """Retarget to a board: rebuild its observed-posture toggles + derive the plan."""
+        self._soc = soc
+        # clear old toggles
+        for b in self._posture_btns:
+            b.setParent(None)
+        self._posture_btns = []
+        for frag, label in POSTURE_OPTIONS.get(soc, []):
+            b = QPushButton(label); b.setProperty("cls", "scn"); b.setCheckable(True)
+            b.setCursor(Qt.PointingHandCursor); b._frag = frag
+            b.toggled.connect(self._derive)
+            self._posture_row.insertWidget(self._posture_row.count() - 1, b)   # before the stretch
+            self._posture_btns.append(b)
+        self._posture_hint.setText("observed posture:" if self._posture_btns else "")
+        self._derive()
+
+    def load(self):
+        self._derive()
+
+    def reload(self):
+        self._derive()
+
+    def _derive(self, *_):
+        """Derive the plan for the active board: from a real capture (zynqmp, no toggles) or from the
+        operator-asserted posture toggles (observed facts) → the real unlock engine."""
+        import glob
+        flags = [f for b in self._posture_btns if b.isChecked() for f in b._frag.split()]
+        if not flags:
+            # no asserted posture → for a board WITH a capture, derive from it; else show the open state
+            caps = sorted(glob.glob(os.path.join(_reports_dir(), "raw-*.json")),
+                          key=os.path.getmtime) if self._soc == "zynqmp" else []
+            if caps:
+                self.src_note.setText(f"↳ {os.path.basename(caps[-1])}")
+                self._render(run_unlock(["--from-capture", caps[-1]]), "From capture")
                 return
-            args = ["--from-capture", caps[-1]]
-        plan = run_unlock(args)
-        self._render(plan, label)
+            self.src_note.setText(f"↳ {self._soc}")
+            self._render(run_unlock(["--soc", self._soc]), self._soc)
+            return
+        self.src_note.setText(f"↳ {self._soc}  (asserted)")
+        self._render(run_unlock(["--soc", self._soc, *flags]), f"{self._soc} (observed)")
 
     def _clear(self):
         while self.cards.count() > 1:
@@ -215,32 +282,116 @@ class UnlockPanel(QWidget):
 
     def _render(self, plan, label):
         self._clear()
+        self._cards = {}
+        self._wf = None
+        self._soc = plan.get("soc", "zynqmp")
+        self._label = label
+        self.posture_changed.emit(self._soc, plan.get("posture", {}) or {})   # → Attack-Surface layer
         if plan.get("error"):
             self.summary.setText(f"error: {plan['error']}"); return
         engaged = [L for L in plan.get("locks", []) if L["state"] in ("LOCKED", "ENABLED")]
-        auto = sum(1 for L in engaged for s in L["strategies"] if s["kind"] in ("software-lever", "misconfig"))
+        self._engaged_total = len(engaged)
         if not engaged:
             self.summary.setText(f"<b>{label}:</b> board is OPEN — nothing to unlock. Proceed to extraction. "
                                  "<i>(On a real target this panel is where the work is.)</i>")
         else:
-            self.summary.setText(
-                f"<b>{label}:</b> {len(engaged)} lock(s) engaged &nbsp;·&nbsp; "
-                f"<span style='color:#3ecf8e'>{auto} AUTO software lever(s)</span> — try first. "
-                "Ranked cheapest/safest → hardest.")
+            self._update_progress()
         for L in engaged:
-            self.cards.insertWidget(self.cards.count() - 1, LockCard(L, self._action))
+            card = LockCard(L, self._action)
+            self._cards[L["name"]] = card
+            self.cards.insertWidget(self.cards.count() - 1, card)
 
-    def _action(self, strat):
+    def _update_progress(self):
+        """Summary banner: how many locks are defeated so far (drives the LOCKED → OPEN story)."""
+        total = getattr(self, "_engaged_total", 0)
+        if not total:
+            return
+        done = sum(1 for c in self._cards.values() if c.status_key in ("DEFEATED", "PARTIAL"))
+        auto = sum(1 for c in self._cards.values() if any(s.get("cmd") for s in c.lock["strategies"]))
+        tail = (" — <span style='color:#3ecf8e'>all defeated ✓</span>" if done == total and total
+                else f" — <span style='color:#3ecf8e'>{done}/{total} defeated</span>")
+        self.summary.setText(
+            f"<b>{getattr(self, '_label', '')}:</b> {total} lock(s) engaged &nbsp;·&nbsp; "
+            f"{auto} AUTO lever(s) — click <b>▶ Run</b> to try &amp; verify each.{tail}")
+
+    # -- guided reopen→verify flow (the locked-board core loop) --------------------------------
+    def _run_guided(self, lock, strat):
+        if self.runner.busy():
+            self._log("busy — a lever is already running"); return
+        vcmd = verify_cmd(self._soc) if verify_cmd else ""
+        self._wf = {"lock": lock, "strat": strat, "phase": "lever", "buf": "", "outcome": None, "vcmd": vcmd}
+        if lock["name"] in self._cards:
+            self._cards[lock["name"]].set_status("ENGAGED")
+        self._log(f"▶ [1/2] LEVER: {strat['title']}\n   $ {strat['cmd']}")
+        self.runner.run_shell(strat["cmd"], cwd=ROOT)
+
+    def _log(self, text, kind="d"):
+        """Emit to the ONE shell console (multi-line safe)."""
+        for ln in str(text).split("\n"):
+            BUS.line.emit(kind, ln)
+
+    def _on_line(self, t):
+        self._log(t)
+        if self._wf is not None:
+            self._wf["buf"] += t + "\n"
+
+    def _on_done(self, code):
+        wf = self._wf
+        if wf is None:                          # a plain (non-guided) lever/copy run
+            self._log(f"— exited ({code})"); return
+        if wf["phase"] == "lever":
+            wf["outcome"] = parse_reopen_result(wf["buf"]) if parse_reopen_result else "UNKNOWN"
+            self._log(f"   ↳ lever outcome: {wf['outcome']}")
+            if wf["vcmd"]:
+                wf["phase"] = "verify"; wf["buf"] = ""
+                self._log(f"▶ [2/2] VERIFY: re-reading the access verdict\n   $ {wf['vcmd']}")
+                self.runner.run_shell(wf["vcmd"], cwd=ROOT); return
+            self._finish_guided(classify_reopen(wf["outcome"], "UNKNOWN"))
+        else:                                   # verify phase
+            verdict = parse_access_verdict(wf["buf"]) if parse_access_verdict else "UNKNOWN"
+            self._log(f"   ↳ access verdict: {verdict}")
+            self._finish_guided(classify_reopen(wf["outcome"], verdict))
+
+    def _finish_guided(self, result):
+        status, msg = result
+        wf = self._wf
+        icon = {"DEFEATED": "✓", "PARTIAL": "◐", "RESISTED": "✗"}.get(status, "•")
+        self._log(f"   {icon} {status}: {msg}")
+        if wf and wf["lock"]["name"] in self._cards:
+            self._cards[wf["lock"]["name"]].set_status(status)
+        self._wf = None
+        self._update_progress()
+
+    def _action(self, strat, lock=None):
         tag = KIND_TAG.get(strat["kind"], "?")
-        if tag == "AUTO":
-            msg = (f"▶ EXECUTE (software lever): {strat['title']}\n   {strat['how']}\n"
-                   "   (real app: runs the reopen-debug lever, then re-reads the access verdict)")
+        cmd = strat.get("cmd", "")
+        # DESTRUCTIVE levers (nRF52 ERASEALL, STM32 RDP1→0) re-open debug by MASS-ERASING flash.
+        # Never auto-run one — confirm first, and make the consequence explicit.
+        if cmd and strat.get("destructive"):
+            r = QMessageBox.warning(
+                self, "Destructive lever — mass-erase",
+                f"“{strat['title']}” re-opens debug by ERASING all flash.\n\n"
+                "You will get DEBUG ACCESS but LOSE the current firmware image. This cannot be undone.\n\n"
+                "Proceed with the mass-erase?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel)
+            if r != QMessageBox.StandardButton.Yes:
+                self._log(f"✗ cancelled destructive lever: {strat['title']}"); return
+        # AUTO lever with a verify → run the guided two-phase reopen→verify flow (marks the lock)
+        if tag == "AUTO" and cmd and strat.get("verify") == "access-check" and lock and classify_reopen:
+            self._run_guided(lock, strat); return
+        if tag == "AUTO" and cmd:
+            if self.runner.busy():
+                self._log("busy — a lever is already running"); return
+            self._log(f"▶ RUN (software lever): {strat['title']}\n   $ {cmd}")
+            self.runner.run_shell(cmd, cwd=ROOT)       # operator-driven; streams into the log
+        elif tag == "AUTO":
+            self._log(f"▶ {strat['title']} — no direct command wired; apply manually:\n   {strat['how']}")
         elif ACTION.get(strat["kind"], "").startswith("⧉"):
             QApplication.clipboard().setText(strat["how"])
-            msg = f"⧉ copied to clipboard: {strat['title']}"
+            self._log(f"⧉ copied to clipboard: {strat['title']}")
         else:
-            msg = f"≡ GUIDE: {strat['title']}\n   {strat['how']}"
-        self.log.appendPlainText(msg)
+            self._log(f"≡ GUIDE: {strat['title']}\n   {strat['how']}")
 
 
 if __name__ == "__main__":

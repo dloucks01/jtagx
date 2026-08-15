@@ -11,8 +11,9 @@
   "name": "Microchip SmartFusion2 (M2S) — Cortex-M3 MSS",
   "soc": "smartfusion2",
   "paradigm": "B",
-  "status": "stub",
+  "status": "partial",
   "auto_match": false,
+  "_security_model": "jtagx.unlock lock_sf2_debug/lock_sf2_flashlock + jtagx.cve Actel-JTAG-backdoor/SF2-M3-open-dump (2026-08-14). Strategy/CVE model DONE (knowledge-grounded: Skorobogatov/Woods CHES-2012 DPA, boundary-scan, M3 mem-AP extraction). Still HW-UNVALIDATED: needs a real SmartFusion2 + J-Link/CMSIS-DAP to confirm the cortex_m eNVM/eSRAM dump and the debug-lock behaviour.",
 
   "match": { "family": "microsemi", "part_ids": [], "min_taps": 1 },
 

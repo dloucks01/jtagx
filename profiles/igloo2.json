@@ -17,8 +17,9 @@
   "name": "Microchip IGLOO2 (M2GL)",
   "soc": "igloo2",
   "paradigm": "D",
-  "status": "stub",
+  "status": "partial",
   "auto_match": false,
+  "_security_model": "jtagx.unlock lock_igloo2 + jtagx.cve Actel-JTAG-backdoor (2026-08-14). FlashLock/eNVM+fabric readback model DONE (no Cortex-M → mem-AP dump is BLOCKED by design). FABRIC-PATH extraction now wired + mock-rehearsed (2026-08-14): microsemi-access-check.tcl (provisioning verdict) -> microsemi-readback.tcl (SVF/DirectC readback of an UNPROVISIONED device over a plain FTDI, no FlashPro) via openocd/microsemi-fpga.cfg. Guided flow: unprovisioned -> OPEN -> readback DEFEATED (non-destructive); provisioned -> LOCKED -> RESISTED (escalate DPA pass-key Skorobogatov-Woods / FlashPro Inspect). Bench-tunable: security-status IR opcode (MSS_SECIR/MSS_SECLEN). A provisioned device stays vendor/SCA-only.",
 
   "match": { "family": "microsemi", "part_ids": [], "min_taps": 1 },
 

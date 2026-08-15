@@ -8,6 +8,21 @@ wrapper) and the GUI ("Reopen / Unlock" panel) import the same logic. Given a ch
 Ranking (cheapest/safest/most-reliable first):
   software-lever → misconfig → alternate-path → physical-offline → firmware-attack → fault-injection → side-channel
 """
+import os
+
+# the openocd binary the generated lever/verify commands invoke — overridable ($OPENOCD) so a mock
+# (tools/mock-openocd-locked.py) can stand in and the whole reopen→verify loop is rehearsable offline.
+_OPENOCD = os.environ.get("OPENOCD", "openocd")
+
+# Cortex-M boards reachable by a standard probe → their per-family OpenOCD cfg (real files in openocd/).
+# Drives the board-aware verify command (cortexm-access-check.tcl) and the runnable recovery levers.
+_CM_CFG = {
+    "nrf52": "cortexm-nrf52.cfg",
+    "stm32f4": "cortexm-stm32f4.cfg",
+    "stm32f1": "cortexm-stm32f1.cfg",
+    "stm32l4": "cortexm-stm32l4.cfg",
+    "smartfusion2": "cortexm.cfg",
+}
 
 # strategy kinds, ranked (lower = try first). Drives ordering + the GUI's "auto-try then guide" flow.
 KIND_RANK = {
@@ -26,9 +41,12 @@ KIND_TAG = {
 }
 
 
-def strat(kind, title, how, confidence="med", destructive=False, prereq="", ref=""):
+def strat(kind, title, how, confidence="med", destructive=False, prereq="", ref="", cmd="", verify=""):
+    # cmd (optional): a directly-runnable command for AUTO levers (the GUI can execute it).
+    # verify (optional): how to confirm the lever WORKED — "access-check" re-runs the DAP verdict
+    # after the lever so the guided workflow can mark the lock DEFEATED / RESISTED (not just "ran").
     return dict(kind=kind, title=title, how=how, confidence=confidence,
-                destructive=destructive, prereq=prereq, ref=ref)
+                destructive=destructive, prereq=prereq, ref=ref, cmd=cmd, verify=verify)
 
 
 # ---- lock knowledge base: each function returns a Lock dict (or None if not engaged / N/A) ----------
@@ -44,11 +62,16 @@ def lock_dap(soc, P):
     efuse = P.get("efuse_jtag_dis")   # True=sealed, False=register-gated, None=unknown
     S = []
     if efuse is not True:
+        _cfg = {"zynqmp": "zcu102.cfg", "zynq7000": "zynq7000.cfg"}.get(soc)
+        _scr = {"zynqmp": "reopen-debug.tcl", "zynq7000": "zynq7000-reopen-debug.tcl"}.get(soc)
+        _cmd = (f'{_OPENOCD} -f openocd/{_cfg} -c "init; source openocd/{_scr}; shutdown"'
+                if _cfg and _scr else "")
         S.append(strat("software-lever", "Write the debug-enable gate open",
             "openocd/reopen-debug.tcl (ZynqMP CSU JTAG_SEC / JTAG_DAP_CFG / debug-enable; Zynq-7000: "
             "devcfg.CTRL DAP_EN+DBGEN) then read back. Works UNLESS an eFuse froze it.",
             confidence="high" if efuse is False else "med", destructive=False,
-            prereq="gate is register-writable (SEC_CTRL.jtag_dis == 0)"))
+            prereq="gate is register-writable (SEC_CTRL.jtag_dis == 0)", cmd=_cmd,
+            verify="access-check" if _cmd else ""))
     S.append(strat("alternate-path", "Reach the PMU via its BSCAN TAP (alternate master)",
         "openocd/open-pmu-tap.tcl opens JTAG_SEC.SSSS_PMU_SEC (writable ⇒ unsealed); pair zcu102-3tap.cfg "
         "to insert the MicroBlaze BSCAN TAP → a master that reaches ROM/bus the DAP can't.",
@@ -161,29 +184,38 @@ def lock_runtime(soc, P):
 def lock_nrf(soc, P):
     if soc != "nrf52" or not P.get("approtect_locked"):
         return None
+    _cmd = (f'{_OPENOCD} -f openocd/cortexm-nrf52.cfg '
+            f'-c "init; source openocd/nrf52-recover.tcl; shutdown"')
     return dict(name="nRF52 APPROTECT (AHB-AP blocked)", state="LOCKED", enforcement="UICR (flash) — glitchable",
                 strategies=[
+                    strat("misconfig", "CTRL-AP mass-erase (recovers debug, WIPES flash)",
+                        "if you only need debug (not the current flash): CTRL-AP ERASEALL clears APPROTECT and "
+                        "re-opens the AHB-AP. Runnable + verified here (the guided loop re-reads the debug "
+                        "verdict after). Secure-APPROTECT (nRF52840 ACL) can still block this.",
+                        confidence="high", destructive=True, cmd=_cmd, verify="access-check"),
                     strat("fault-injection", "Single voltage glitch at boot re-enables debug",
                         "the classic nRF52 APPROTECT bypass: one well-timed VCC glitch during the boot "
-                        "APPROTECT read → AHB-AP open → dump flash. (ChipWhisperer.)",
-                        confidence="high", destructive=False, ref="LimitedResults 2020"),
-                    strat("misconfig", "CTRL-AP mass-erase (recovers debug, WIPES flash)",
-                        "if you only need debug (not the current flash): CTRL-AP ERASEALL clears APPROTECT.",
-                        confidence="high", destructive=True)])
+                        "APPROTECT read → AHB-AP open → dump flash WITHOUT erasing. (ChipWhisperer.)",
+                        confidence="high", destructive=False, ref="LimitedResults 2020")])
 
 
 def lock_stm(soc, P):
     if soc not in ("stm32f4", "stm32f1", "stm32l4") or P.get("rdp_level") in (None, 0):
         return None
     lvl = P.get("rdp_level")
+    _cfg = _CM_CFG.get(soc)
+    _cmd = (f'{_OPENOCD} -f openocd/{_cfg} -c "init; source openocd/stm32-rdp-downgrade.tcl; shutdown"'
+            if _cfg else "")
     S = []
     if lvl == 1:
-        S += [strat("fault-injection", "RDP1 read-out bypass by glitch / cold-boot",
+        S += [strat("misconfig", "RDP1→0 downgrade (mass-erase, WIPES flash)",
+                  "recovers debug + write, destroys current flash — only if you don't need the contents. "
+                  "Runnable + verified here: writes RDP=0 to the option bytes, the chip mass-erases, and the "
+                  "guided loop re-reads the debug verdict to confirm the DAP re-opened.",
+                  confidence="high", destructive=True, cmd=_cmd, verify="access-check"),
+              strat("fault-injection", "RDP1 read-out bypass by glitch / cold-boot (keeps flash)",
                   "family-dependent FI (e.g. glitch the RDP check on a flash read) to read protected flash "
-                  "without the RDP1→0 mass-erase.", confidence="med", ref="Obermaier/Tatschner; Johnson"),
-              strat("misconfig", "RDP1→0 downgrade (mass-erase, WIPES flash)",
-                  "recovers debug + write, destroys current flash — only if you don't need the contents.",
-                  confidence="high", destructive=True)]
+                  "without the RDP1→0 mass-erase.", confidence="med", ref="Obermaier/Tatschner; Johnson")]
     if lvl == 2:
         S.append(strat("fault-injection", "RDP2 is FI-only",
             "RDP2 permanently disables debug + boundary options; published attacks are all fault-injection.",
@@ -202,8 +234,92 @@ def lock_esp(soc, P):
                     confidence="med", ref="LimitedResults / Espressif")])
 
 
+def lock_sf2_debug(soc, P):
+    if soc != "smartfusion2" or not P.get("debug_locked"):
+        return None
+    return dict(name="SmartFusion2 M3 debug lock (security policy)", state="LOCKED",
+        enforcement="security-policy flash-cell set at programming — NOT runtime-reopenable "
+                    "(re-program via FlashPro, or permanent if one-time-locked)",
+        strategies=[
+            strat("alternate-path", "Boundary-scan the pins (DAP shut ≠ 1149.1 shut)",
+                "the M3 CoreSight DAP is gated but IEEE-1149.1 boundary-scan/IDCODE usually still answer — parse "
+                "the part BSDL (`tools/bsdl-scan.py`) to read straps/pins/bus. Maps the surface; won't dump eNVM.",
+                confidence="low", ref="tools/bsdl-scan.py"),
+            strat("physical-offline", "FlashPro 'Inspect Device' for the security state",
+                "FlashPro Express → Inspect Device reads the device security status (what's locked / readback "
+                "gating). Confirms whether DPA or chip-off is the required next lever.",
+                confidence="med", prereq="FlashPro + physical access"),
+            strat("side-channel", "DPA pass-key recovery (Skorobogatov/Woods) → authorized readback",
+                "the classic Actel/Microsemi result: differential power analysis of the JTAG security check "
+                "recovers the FlashLock/AES pass-key; FlashPro readback of eNVM is then authorized. SCA rig.",
+                confidence="med", ref="Skorobogatov & Woods, CHES 2012"),
+            strat("fault-injection", "Glitch the System-Controller security decision at boot",
+                "voltage/EM glitch the SC security-policy check so the M3 DAP re-enables — SmartFusion2 SC boot "
+                "is the target. Hardware; not integrated.", confidence="low", ref="docs/13"),
+            strat("firmware-attack", "Re-program a policy that leaves M3 debug open (needs FlashPro)",
+                "if re-programmable (not permanently locked), write a security policy with M3 debug enabled — "
+                "erases the current image.", confidence="high", destructive=True,
+                prereq="FlashPro + policy not permanently locked")])
+
+
+def lock_sf2_flashlock(soc, P):
+    if soc != "smartfusion2" or not P.get("flashlock"):
+        return None
+    return dict(name="SmartFusion2 FlashLock / eNVM readback protection", state="ENABLED",
+        enforcement="pass-key + optional AES (flash security)",
+        strategies=[
+            strat("alternate-path", "M3 mem-AP dump — IF debug is not locked",
+                "if the M3 debug lock is NOT set, the Cortex-M mem-AP reads eNVM/eSRAM directly (openocd cortex_m) "
+                "with a standard probe — no FlashPro, no pass-key. Check the debug lock first.",
+                confidence="high", prereq="M3 debug not locked", ref="openocd/cortexm-dump.tcl"),
+            strat("side-channel", "DPA pass-key recovery → authorized eNVM readback",
+                "same DPA lever — recover the pass-key, then FlashPro/Libero eNVM readback is authorized.",
+                confidence="med", ref="Skorobogatov & Woods, CHES 2012"),
+            strat("physical-offline", "Chip-off eNVM (decap + microprobe)",
+                "when readback is fully gated, physically extract eNVM. Slow, high skill, destructive to package.",
+                confidence="low", destructive=True)])
+
+
+def lock_igloo2(soc, P):
+    # IGLOO2 = SmartFusion2's FABRIC-ONLY sibling: a Microsemi programming TAP, NO Cortex-M, so there is
+    # NO mem-AP dump shortcut — readback is vendor-tool (FlashPro/Libero) gated by FlashLock.
+    if soc != "igloo2" or not P.get("flashlock"):
+        return None
+    _rbcmd = (f'{_OPENOCD} -f openocd/microsemi-fpga.cfg '
+              f'-c "init; source openocd/microsemi-readback.tcl; shutdown"')
+    return dict(name="IGLOO2 FlashLock / eNVM+fabric readback protection", state="ENABLED",
+        enforcement="pass-key + optional AES (flash security); NO Cortex-M — programming-TAP readback",
+        strategies=[
+            strat("misconfig", "SVF/DirectC readback of an UNPROVISIONED device (no FlashPro)",
+                "if FlashLock/pass-key/AES was never provisioned, the standard programming TAP reads eNVM "
+                "+ fabric bitstream via SVF/DirectC over a plain FTDI — no FlashPro, no pass-key. The guided "
+                "flow checks provisioning (microsemi-access-check) then reads back if OPEN. This is the "
+                "common real-world state: security is opt-in and frequently left off.",
+                confidence="high", destructive=False, cmd=_rbcmd, verify="access-check",
+                ref="openocd/microsemi-readback.tcl"),
+            strat("physical-offline", "FlashPro 'Inspect Device' for the security state",
+                "FlashPro Express → Inspect Device reads IDCODE + device/security status. If FlashLock/"
+                "pass-key/AES is NOT provisioned, eNVM + fabric bitstream readback may be possible here.",
+                confidence="high", prereq="FlashPro / Libero"),
+            strat("side-channel", "DPA pass-key recovery (Skorobogatov/Woods) → authorized readback",
+                "the classic Actel/Microsemi result: DPA of the JTAG security check recovers the FlashLock/"
+                "AES pass-key; FlashPro/Libero readback of eNVM/bitstream is then authorized. SCA rig.",
+                confidence="med", ref="Skorobogatov & Woods, CHES 2012"),
+            strat("firmware-attack", "Re-program a device with security open (DESTRUCTIVE, FlashPro)",
+                "if re-programmable (not permanently locked), program a bitstream/eNVM with security off — "
+                "destroys the current image; only useful if you don't need the contents.",
+                confidence="med", destructive=True, prereq="FlashPro; policy not permanently locked"),
+            strat("alternate-path", "Boundary-scan the pins (SVF/STAPL + BSDL over generic FTDI)",
+                "no CPU/mem bus, but IEEE-1149.1 EXTEST/SAMPLE over a raw FTDI reads/drives pins; play "
+                "Microsemi SVF/STAPL to (re)program. `tools/bsdl-scan.py`.",
+                confidence="low", ref="tools/bsdl-scan.py"),
+            strat("physical-offline", "Chip-off eNVM (decap + microprobe)",
+                "when readback is fully gated, physically extract eNVM. Slow, high skill, destructive.",
+                confidence="low", destructive=True)])
+
+
 LOCK_FUNCS = [lock_dap, lock_dap_ns, lock_secureboot, lock_aes, lock_pmu, lock_runtime,
-              lock_nrf, lock_stm, lock_esp]
+              lock_nrf, lock_stm, lock_esp, lock_sf2_debug, lock_sf2_flashlock, lock_igloo2]
 
 
 def build_plan(soc, P):
@@ -214,6 +330,30 @@ def build_plan(soc, P):
             L["strategies"] = sorted(L.get("strategies", []), key=lambda s: KIND_RANK.get(s["kind"], 9))
             locks.append(L)
     return locks
+
+
+# A representative "everything provisioned" posture per SoC — used to enumerate the lock mechanisms a
+# silicon CAN present (its security MODEL) when we have no live capture yet (e.g. a board just selected
+# in the GUI, posture still UNKNOWN). This is NOT a claim the board is locked — it answers "what stands
+# between an attacker and extraction on this part, and is each mechanism reversible or hardware-sealed?".
+_ENGAGE_POSTURE = {
+    "zynqmp":       {"jtag_locked": True, "secure_boot": True, "aes_encrypt": True, "pmu_sec_locked": True},
+    "zynq7000":     {"jtag_locked": True, "secure_boot": True, "aes_encrypt": True},
+    "smartfusion2": {"debug_locked": True, "flashlock": True},
+    "igloo2":       {"flashlock": True},
+    "nrf52":        {"approtect_locked": True},
+    "stm32f4":      {"rdp_level": 1},
+    "stm32f1":      {"rdp_level": 1},
+    "stm32l4":      {"rdp_level": 1},
+    "esp32":        {"secure_boot": True, "flash_encrypted": True},
+}
+
+
+def security_model(soc):
+    """The lock mechanisms this silicon CAN present (posture-independent), each with its enforcement
+    class + ranked defeat strategies. Empty for parts we haven't modeled a lock for (open-debug SoCs).
+    Feeds the GUI's board-generic Posture view when there is no live capture yet."""
+    return build_plan(soc, _ENGAGE_POSTURE.get(soc, {}))
 
 
 def render_md(soc, P, locks):
@@ -242,3 +382,110 @@ def render_md(soc, P, locks):
     out.append("---\nRanking: software-lever → misconfig → alternate-path → physical-offline → "
                "firmware-attack → fault-injection → side-channel (cheapest/safest first).")
     return "\n".join(out)
+
+
+# ============================================================================================
+# Guided-workflow engine: run a lever → VERIFY it worked → mark the lock defeated / resisted.
+# The lever writes registers; the verify RE-READS the access verdict. These parsers + the
+# classifier turn "the command ran" into "the lock is actually open", which is the whole point
+# of a locked-board engagement. Pure functions — the GUI/CLI run the commands, this reads results.
+# ============================================================================================
+import re as _re
+
+_VERDICT_RE = _re.compile(r"ACCESS VERDICT:\s*([A-Z][A-Z-]*)")
+# reopen-debug.tcl outcome markers, most-specific first
+_REOPEN_MARKERS = [
+    (r"all JTAG_SEC gates now OPEN", "REOPENED"),
+    (r"DAP_SEC opened", "PARTIAL-EFUSE"),      # core debug back; PMU field eFuse-locked (usually fine)
+    (r"DAP_SEC did NOT stick", "SEALED"),      # eFuse / write-protected — not reversible by register write
+    (r"write FAULTED|no AXI-AP", "NO-WRITE-PATH"),
+    # Cortex-M mass-erase recoveries (nRF52 CTRL-AP ERASEALL, STM32 RDP1→0): debug re-opened, flash WIPED.
+    (r"APPROTECT cleared|ERASEALL complete|RDP downgraded to level 0", "ERASED-OPEN"),
+    # Microsemi fabric (IGLOO2) readback of an unprovisioned device — eNVM/bitstream extractable.
+    (r"fabric readback complete|readback path is OPEN|fabric readback available", "READBACK-OPEN"),
+    (r"readback FAILED|erase FAILED|RDP2 is permanent|debug still (locked|disabled)", "SEALED"),
+]
+
+
+def parse_access_verdict(text):
+    """Extract the ACCESS VERDICT (OPEN/RESTRICTED/LOCKED/NO-DAP/NO-CHAIN/UNKNOWN) from access-check output."""
+    m = _VERDICT_RE.search(text or "")
+    return m.group(1) if m else "UNKNOWN"
+
+
+def parse_reopen_result(text):
+    """Classify reopen-debug.tcl output: REOPENED / PARTIAL-EFUSE / SEALED / NO-WRITE-PATH / UNKNOWN."""
+    t = text or ""
+    for pat, outcome in _REOPEN_MARKERS:
+        if _re.search(pat, t):
+            return outcome
+    return "UNKNOWN"
+
+
+# workflow status for a lock after a lever+verify attempt
+WF_STATUS = {
+    "ENGAGED":  ("engaged",   "#e7b04b", "not tried yet"),
+    "DEFEATED": ("defeated",  "#3ecf8e", "gate re-opened — access restored"),
+    "PARTIAL":  ("partial",   "#5aa9e6", "core debug re-opened; a PMU/eFuse field stayed locked (usually fine)"),
+    "RESISTED": ("resisted",  "#f2685f", "eFuse-sealed / no write path — escalate (glitch / offline / code-exec)"),
+    "MANUAL":   ("manual",    "#b58bff", "no auto lever — follow the ranked strategies"),
+}
+
+
+def classify_reopen(reopen_outcome, verdict_after):
+    """(status, message) from a lever's reopen-outcome + the post-lever access verdict.
+    The authoritative signal is the verdict; the reopen-outcome adds the 'why'."""
+    if reopen_outcome == "ERASED-OPEN":
+        return "DEFEATED", ("debug re-enabled via mass-erase (flash CONTENTS ERASED — you have debug "
+                            "access, not the original image)")
+    if reopen_outcome == "READBACK-OPEN":
+        return "DEFEATED", ("unprovisioned fabric — eNVM + bitstream read back via SVF/DirectC over a "
+                            "plain FTDI (no FlashPro, no pass-key)")
+    if verdict_after == "OPEN":
+        return "DEFEATED", "access verdict flipped to OPEN — lock defeated"
+    if reopen_outcome == "REOPENED":
+        return "DEFEATED", "all JTAG_SEC gates report OPEN (re-run enumerate to confirm)"
+    if reopen_outcome == "PARTIAL-EFUSE":
+        return "PARTIAL", WF_STATUS["PARTIAL"][2]
+    if reopen_outcome in ("SEALED", "NO-WRITE-PATH"):
+        return "RESISTED", WF_STATUS["RESISTED"][2]
+    if verdict_after in ("LOCKED", "RESTRICTED", "NO-DAP"):
+        return "RESISTED", f"verdict still {verdict_after} after the lever — escalate"
+    return "ENGAGED", "inconclusive — re-read the verdict"
+
+
+def verify_cmd(soc, openocd=None):
+    """The command that RE-READS the access verdict after a lever (for verify='access-check' strats).
+    ZynqMP/Zynq-7000 use jtag-access-check.tcl; Cortex-M boards (nRF/STM32/SF2) use the generic
+    cortexm-access-check.tcl (AHB-AP reachable? → OPEN/LOCKED). Board-aware so the guided reopen→verify
+    loop works for every board with a runnable lever, not just ZynqMP."""
+    oc = openocd or _OPENOCD
+    cfg = {"zynqmp": "zcu102.cfg", "zynq7000": "zynq7000.cfg"}.get(soc)
+    if cfg:
+        return f'{oc} -f openocd/{cfg} -c "init; source openocd/jtag-access-check.tcl; shutdown"'
+    cmcfg = _CM_CFG.get(soc)
+    if cmcfg:
+        return f'{oc} -f openocd/{cmcfg} -c "init; source openocd/cortexm-access-check.tcl; shutdown"'
+    if soc == "igloo2":     # fabric part: "access" = is the eNVM/bitstream readback path open (unprovisioned)?
+        return f'{oc} -f openocd/microsemi-fpga.cfg -c "init; source openocd/microsemi-access-check.tcl; shutdown"'
+    return ""
+
+
+def workflow_steps(soc, locks):
+    """Turn a plan into an ORDERED guided workflow: engaged locks (cheapest-first), each with its
+    primary auto lever (if any), a verify command, and the fallback strategies. The GUI walks this."""
+    steps = []
+    engaged = [L for L in locks if L["state"] in ("LOCKED", "ENABLED")]
+    for L in engaged:
+        strats = L.get("strategies", [])
+        auto = next((s for s in strats if s.get("cmd")), None)
+        vcmd = verify_cmd(soc) if (auto and auto.get("verify") == "access-check") else ""
+        steps.append({
+            "lock": L["name"],
+            "enforcement": L["enforcement"],
+            "status": "ENGAGED" if auto else "MANUAL",
+            "lever": auto,                       # the runnable strategy (or None → MANUAL)
+            "verify_cmd": vcmd,
+            "fallbacks": [s for s in strats if s is not auto],
+        })
+    return steps

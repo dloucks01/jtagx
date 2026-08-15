@@ -23,13 +23,22 @@ class HexModel(QAbstractTableModel):
         super().__init__()
         self._d = b""
         self._rows = 0
+        self._hl = None            # (start, end) byte range to highlight (a find match)
         self.set_data(data)
 
     def set_data(self, data):
         self.beginResetModel()
         self._d = data
         self._rows = (len(data) + 15) // 16
+        self._hl = None
         self.endResetModel()
+
+    def set_highlight(self, start, length):
+        self._hl = (start, start + length) if length else None
+        # repaint the affected rows
+        if self._rows:
+            top = self.index(0, 0); bot = self.index(self._rows - 1, 16)
+            self.dataChanged.emit(top, bot, [Qt.BackgroundRole])
 
     def rowCount(self, parent=QModelIndex()):
         return self._rows
@@ -50,8 +59,18 @@ class HexModel(QAbstractTableModel):
             return "".join(chr(b) if 32 <= b < 127 else "." for b in chunk)
         if role == Qt.TextAlignmentRole and c < 16:
             return int(Qt.AlignCenter)
+        if role == Qt.BackgroundRole and self._hl:
+            if c < 16:
+                i = base + c
+                if self._hl[0] <= i < self._hl[1]:
+                    return QColor("#3b5a2a")   # green wash over the matched hex bytes
+            else:   # ASCII column — wash the whole cell if the row intersects the match
+                if base < self._hl[1] and self._hl[0] < base + 16:
+                    return QColor("#26361c")
         if role == Qt.ForegroundRole and c < 16:
             i = base + c
+            if self._hl and self._hl[0] <= i < self._hl[1]:
+                return QColor("#eaffea")   # brighten the matched bytes
             if i < len(self._d) and self._d[i] == 0:
                 return QColor("#3a4453")   # dim the zeros so real data stands out
         return None
@@ -74,6 +93,19 @@ class HexView(QWidget):
         self.file_lbl = QLabel("(no file loaded)")
         self.file_lbl.setStyleSheet("color:#98a6b8; font-size:12px;")
         bar.addWidget(self.file_lbl); bar.addStretch(1)
+        _fld = ("background:#141922; color:#e7ecf3; border:1px solid #232c39;"
+                "border-radius:7px; padding:4px 8px;")
+        _btn = ("background:#1a2230; color:#cdd7e4; border:1px solid #2c3644;"
+                "border-radius:7px; padding:4px 12px;")
+        # find: hex bytes ("de ad be ef") or an ASCII string ('PRIVATE KEY)
+        lf = QLabel("find:"); lf.setStyleSheet("color:#98a6b8;"); bar.addWidget(lf)
+        self.find = QLineEdit(); self.find.setFixedWidth(200)
+        self.find.setPlaceholderText("hex bytes or 'ascii")
+        self.find.setStyleSheet(_fld)
+        self.find.returnPressed.connect(self._find_next); bar.addWidget(self.find)
+        fb = QPushButton("Next"); fb.clicked.connect(self._find_next); fb.setStyleSheet(_btn)
+        bar.addWidget(fb)
+        self._find_pos = 0
         lo = QLabel("go to offset:"); lo.setStyleSheet("color:#98a6b8;")
         bar.addWidget(lo)
         self.goto = QLineEdit(); self.goto.setFixedWidth(130); self.goto.setPlaceholderText("0x1000")
@@ -126,11 +158,49 @@ class HexView(QWidget):
             off = int(t, 0)
         except ValueError:
             return
-        off = max(0, off - self._base)
+        self._jump(max(0, off - self._base))
+
+    def _jump(self, off, select=True):
         row = off // 16
         idx = self.model.index(row, 0)
         self.table.scrollTo(idx, QAbstractItemView.PositionAtTop)
-        self.table.selectRow(row)
+        if select:
+            self.table.selectRow(row)
+
+    @staticmethod
+    def _parse_needle(q):
+        """A find query → bytes. `'text` (leading quote) or non-hex → ASCII; else hex bytes."""
+        q = q.strip()
+        if q.startswith("'"):
+            return q[1:].encode("utf-8", "replace")
+        compact = q.replace(" ", "")
+        if compact and all(c in "0123456789abcdefABCDEF" for c in compact) and len(compact) % 2 == 0:
+            try:
+                return bytes.fromhex(compact)
+            except ValueError:
+                pass
+        return q.encode("utf-8", "replace")
+
+    def _find_next(self):
+        q = self.find.text()
+        if not q:
+            return
+        needle = self._parse_needle(q)
+        data = self.model._d
+        if not needle or not data:
+            return
+        pos = data.find(needle, self._find_pos)
+        if pos < 0 and self._find_pos > 0:      # wrap around to the top
+            pos = data.find(needle)
+        if pos < 0:
+            self.file_lbl.setText(f"find: {q!r} — not found")
+            self._find_pos = 0
+            return
+        self._find_pos = pos + 1
+        self.model.set_highlight(pos, len(needle))     # green-wash the matched bytes
+        self.table.clearSelection()                    # so the green match shows (not a row highlight)
+        self._jump(pos, select=False)
+        self.file_lbl.setText(f"find: {q!r} → offset 0x{pos + self._base:X}  ({len(needle)} bytes)")
 
 
 if __name__ == "__main__":   # standalone: python3 hex_view.py <file>

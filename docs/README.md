@@ -48,6 +48,7 @@ Volume 3 What Enumeration Reveals, and the lab-setup companion).
 | **[22](22-multiboard-capability-matrix.md)–[26](26-unknown-board-walkthrough.md)** | Multi-board engine: capability matrix, engagement runbook, per-chip attribute catalogs (Zynq-7000, Cortex-M/Pi), unknown-board walkthrough. |
 | **[27-roadmap.md](27-roadmap.md)** | **Capability roadmap** — what's done / next / blocked across the find→understand→observe→modify→persist→report pipeline; phase status; structural limits; board-handling lessons. Start here for "where is the project." |
 | **[guides/operator-quick-reference.md](guides/operator-quick-reference.md)** | One-page operator cheat-sheet |
+| **[guides/gui-quick-reference.md](guides/gui-quick-reference.md)** | One-page GUI operator reference (pages, console, cross-links, shortcuts) |
 
 Appendices:
 

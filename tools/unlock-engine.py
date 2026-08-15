@@ -56,6 +56,8 @@ def main():
     ap.add_argument("--rdp", type=int)
     ap.add_argument("--approtect-locked", action="store_true")
     ap.add_argument("--flash-encrypted", action="store_true")
+    ap.add_argument("--debug-locked", action="store_true", help="SmartFusion2: M3 debug is security-locked")
+    ap.add_argument("--flashlock", action="store_true", help="SmartFusion2: FlashLock/eNVM readback protection on")
     ap.add_argument("--json", action="store_true", help="emit structured JSON (for the GUI)")
     ap.add_argument("-o", "--out", help="write to file instead of stdout")
     a = ap.parse_args()
@@ -90,6 +92,8 @@ def main():
     if a.rdp is not None: P["rdp_level"] = a.rdp
     if a.approtect_locked: P["approtect_locked"] = True
     if a.flash_encrypted: P["flash_encrypted"] = True
+    if a.debug_locked: P["debug_locked"] = True
+    if a.flashlock: P["flashlock"] = True
 
     locks = build_plan(a.soc, P)
     if a.json:

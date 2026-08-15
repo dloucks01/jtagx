@@ -5,5 +5,11 @@
 # opt/jtagx. Per-engagement outputs (reports/, dumps/) come from the working dir, not the read-only image.
 HERE="$(dirname "$(readlink -f "$0")")"
 export JTAGX_HOME="$HERE/opt/jtagx"
+export JTAGX_ROOT="$JTAGX_HOME"          # code root (read-only mount) for jtagx.paths
+export JTAGX_PACKAGED=1                   # -> outputs go to a writable data-dir, not the image
+# Writable outputs (reports/, dumps/): default to XDG (~/.local/share/jtagx); override with JTAGX_DATA.
+export JTAGX_DATA="${JTAGX_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/jtagx}"
+mkdir -p "$JTAGX_DATA/dumps" "$JTAGX_DATA/reports" 2>/dev/null || true
 export PYTHONPATH="$JTAGX_HOME:$JTAGX_HOME/tools:${PYTHONPATH:-}"
+echo "jtagx: code=$JTAGX_ROOT  data=$JTAGX_DATA" >&2
 exec python3 "$JTAGX_HOME/gui-spike/jtagx_app.py" "$@"
