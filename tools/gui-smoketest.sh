@@ -105,6 +105,39 @@ if not any("FlashPro Express" in x or "ftdi_sio" in x for x in _tclabels):
     bad("troubleshoot result should show the concrete fix, not just the blocker id")
 w.chain._tc_input.setText(""); w.chain._run_troubleshoot()   # restore (empty query clears results)
 
+# 9d. CoreSight topology panel (jtagx.coresight parsed from captured dap-info text). The real ROOT's
+# reports/ dir is mutable (whatever was last captured live), so only assert well-formedness there —
+# the deterministic behavior is tested against an isolated synthetic capture below.
+_real_comps = qt_spike.load_coresight_components(qt_spike.ROOT)
+if not isinstance(_real_comps, list): bad("load_coresight_components should always return a list")
+import tempfile as _tf, os as _os, json as _json
+# deterministic empty case: a thin dap-info (matches the golden's "No ROM table present" shape)
+_tmpempty = _tf.mkdtemp()
+_os.makedirs(_os.path.join(_tmpempty, "reports"))
+_thincap = {"coresight": {"ap_info": {"0": "AP # 0x0\nMEM-AP BASE 0xfeff0002\n\t\tNo ROM table present\n",
+                                      "1": "JTAG-DP STICKY ERROR\n"}}}
+with open(_os.path.join(_tmpempty, "reports", "raw-1.json"), "w") as _fh:
+    _json.dump(_thincap, _fh)
+if qt_spike.load_coresight_components(_tmpempty) != []:
+    bad("a thin/no-ROM-table dap-info should parse to zero components")
+_sh_mod = __import__("shutil"); _sh_mod.rmtree(_tmpempty, ignore_errors=True)
+# deterministic rich case
+_tmproot = _tf.mkdtemp()
+_os.makedirs(_os.path.join(_tmproot, "reports"))
+_richcap = {
+    "coresight": {"ap_info": {"0":
+        "AP # 0x0\nMEM-AP BASE 0xfe800000\n"
+        "\t[0x000] Component base 0xfe810000  Cortex-A53 Debug  Part is 0xd03\n"
+        "\t[0x001] Component base 0xfe820000  CoreSight CTI (Cross Trigger)\n"
+    }}
+}
+with open(_os.path.join(_tmproot, "reports", "raw-99999.json"), "w") as _fh:
+    _json.dump(_richcap, _fh)
+_rich = qt_spike.load_coresight_components(_tmproot)
+if len(_rich) != 2: bad(f"rich capture should parse 2 components, got {len(_rich)}")
+if not any("Cortex-A53 Debug" in c.name for c in _rich): bad("should identify the Cortex-A53 Debug component")
+import shutil as _sh; _sh.rmtree(_tmproot, ignore_errors=True)
+
 # 10. deepened console: §-section parsing, warn-flagging, filters, save format
 c = w.console            # the ONE shell-level interactive console (fed via console_bus)
 c.clear()   # step 8's copy-path already logged a line; start clean

@@ -248,6 +248,28 @@ def load_a53_state(root):
         return {}
 
 
+def load_coresight_components(root):
+    """Newest raw-*.json -> [Component, ...] parsed from the captured `dap info` text per AP
+    (jtagx.coresight.parse_dap_info). Empty list if no capture, no jtagx.coresight, or the captured
+    text has no identifiable ROM-table tree (e.g. 'No ROM table present' / sticky-error APs — honest
+    on the mock; a real hardened board's DAP would populate this)."""
+    try:
+        if root not in sys.path:
+            sys.path.insert(0, root)
+        from jtagx.posture import newest_capture
+        from jtagx import coresight as _cs
+        p = newest_capture(root)
+        if not p:
+            return []
+        ap_info = json.load(open(p)).get("coresight", {}).get("ap_info", {})
+        comps = []
+        for _ap, text in ap_info.items():
+            comps.extend(_cs.parse_dap_info(text or ""))
+        return comps
+    except Exception:
+        return []
+
+
 def _dumps_dir():
     if jtagx_paths is not None:
         try:
@@ -1529,6 +1551,9 @@ class Dashboard(QWidget):
                 on_click=self.start_enumerate)
         self._regs = regs
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(2, 4, 2, 2); v.setSpacing(6)
+        cs_panel = self._coresight_panel()
+        if cs_panel is not None:
+            v.addWidget(cs_panel)
         # search + security filter
         bar = QHBoxLayout(); bar.setSpacing(8)
         self._reg_search = QLineEdit(); self._reg_search.setPlaceholderText("filter registers — name / block / address / value…")
@@ -1575,6 +1600,37 @@ class Dashboard(QWidget):
         v.addWidget(self._reg_detail)
         self._filter_registers()
         return w
+
+    def _coresight_panel(self):
+        """Debug topology: components identified in the captured `dap info` text (jtagx.coresight),
+        above the raw register sweep. Always shown (even empty) so the operator knows the feature
+        exists and why it's empty on this capture — not silently omitted."""
+        comps = load_coresight_components(ROOT)
+        pf = QFrame(); pf.setProperty("cls", "panel")
+        v = QVBoxLayout(pf); v.setContentsMargins(12, 9, 12, 9); v.setSpacing(5)
+        hdr = QLabel(f"🧬  DEBUG TOPOLOGY (CoreSight)  ·  {len(comps)} component(s) identified")
+        hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700;")
+        v.addWidget(hdr)
+        if not comps:
+            note = QLabel("No ROM-table components parsed from this capture's `dap info` text — either "
+                          "no AP exposes a walkable ROM table here, or the capture predates the "
+                          "CoreSight walker (re-run enumerate.tcl §10). A hardened/production board's "
+                          "DAP typically populates this.")
+            note.setWordWrap(True); note.setStyleSheet("color:#5e6b7c; font-size:10.5px;")
+            v.addWidget(note)
+            return pf
+        cap = comps[:12]
+        for c in cap:
+            d = c.as_dict()
+            row = QLabel(f"{d['base']}  ·  {d['kind']:<10}  {d['name']}" +
+                        (f"  ({d.get('part')})" if d.get("part") else ""))
+            row.setStyleSheet("color:#33d6c4; font-size:10.5px; font-family:monospace;")
+            v.addWidget(row)
+        if len(comps) > 12:
+            more = QLabel(f"… +{len(comps) - 12} more")
+            more.setStyleSheet("color:#5e6b7c; font-size:10px;")
+            v.addWidget(more)
+        return pf
 
     def _filter_registers(self, *_):
         q = self._reg_search.text().strip().lower()
