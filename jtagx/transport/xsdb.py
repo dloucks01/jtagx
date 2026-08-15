@@ -61,7 +61,7 @@ class XsdbTransport(Transport):
 
     # ---- interface --------------------------------------------------------------
     def capabilities(self) -> Capabilities:
-        return Capabilities(scan=True, mem_read=True, mem_write=True, halt=True, run=True,
+        return Capabilities(scan=True, boundary_scan=True, mem_read=True, mem_write=True, halt=True, run=True,
                             max_tier="e", needs_vendor_sw=True,
                             notes="Native SmartLynq2 / Platform-Cable path via hw_server; full DAP access on an open board.")
 

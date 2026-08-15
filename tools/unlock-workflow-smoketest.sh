@@ -86,6 +86,11 @@ run_cm nrf52   '{"approtect_locked": true}' approtect-sealed RESISTED
 run_cm stm32f4 '{"rdp_level": 1}'           register-gated   DEFEATED
 run_cm stm32f4 '{"rdp_level": 1}'           rdp2-sealed      RESISTED
 run_cm stm32l4 '{"rdp_level": 1}'           register-gated   DEFEATED
+# Kinetis MDM-AP mass-erase + SAMD DSU chip-erase — debug-mailbox recoveries (NOT glitch), destructive.
+run_cm kinetis '{"flash_secured": true}'    register-gated   DEFEATED
+run_cm kinetis '{"flash_secured": true}'    meen-disabled    RESISTED
+run_cm samd5x  '{"debug_protected": true}'  register-gated   DEFEATED
+run_cm samd5x  '{"debug_protected": true}'  dsu-sealed       RESISTED
 
 # 4. IGLOO2 (fabric, NO CPU): the "access" verdict is provisioning state, not a reopenable debug port.
 #    An UNPROVISIONED device reads OPEN and the SVF readback lever extracts it (DEFEATED, non-destructive);

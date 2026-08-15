@@ -55,6 +55,14 @@ def main():
     ap.add_argument("--runtime-lock", action="store_true")
     ap.add_argument("--rdp", type=int)
     ap.add_argument("--approtect-locked", action="store_true")
+    ap.add_argument("--flash-secured", action="store_true", help="Kinetis: FTFE flash security (FSEC.SEC) set")
+    ap.add_argument("--meen-disabled", action="store_true",
+                    help="Kinetis: FSEC.MEEN disables mass-erase (permanently locked)")
+    ap.add_argument("--debug-protected", action="store_true",
+                    help="SAM D5x/E5x: DSU debug protection (NVMCTRL security) on")
+    ap.add_argument("--debug-auth", choices=["none", "present", "provisioned"],
+                    help="authenticated-debug state (SDC-600/RISC-V): none=on/off gate, "
+                         "present=capable but cert NOT enrolled, provisioned=cert enforced")
     ap.add_argument("--flash-encrypted", action="store_true")
     ap.add_argument("--debug-locked", action="store_true", help="SmartFusion2: M3 debug is security-locked")
     ap.add_argument("--flashlock", action="store_true", help="SmartFusion2: FlashLock/eNVM readback protection on")
@@ -91,6 +99,10 @@ def main():
     if a.runtime_lock: P["runtime_lock"] = True
     if a.rdp is not None: P["rdp_level"] = a.rdp
     if a.approtect_locked: P["approtect_locked"] = True
+    if a.flash_secured: P["flash_secured"] = True
+    if a.meen_disabled: P["meen_disabled"] = True
+    if a.debug_protected: P["debug_protected"] = True
+    if a.debug_auth: P["debug_auth"] = a.debug_auth
     if a.flash_encrypted: P["flash_encrypted"] = True
     if a.debug_locked: P["debug_locked"] = True
     if a.flashlock: P["flashlock"] = True

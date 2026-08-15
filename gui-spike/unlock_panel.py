@@ -60,6 +60,9 @@ POSTURE_OPTIONS = {
     "stm32f4":      [("--rdp 1", "RDP1"), ("--rdp 2", "RDP2")],
     "stm32f1":      [("--rdp 1", "RDP1")],
     "stm32l4":      [("--rdp 1", "RDP1"), ("--rdp 2", "RDP2")],
+    "kinetis":      [("--flash-secured", "FSEC secured"),
+                     ("--flash-secured --meen-disabled", "FSEC + MEEN-off (permanent)")],
+    "samd5x":       [("--debug-protected", "DSU protected")],
     "esp32":        [("--flash-encrypted", "Flash encrypted")],
 }
 

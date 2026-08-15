@@ -105,6 +105,42 @@ def decode(d, value):
     return "\n".join(L)
 
 
+def capture_cmd(d, tap="tap0", openocd="openocd", cfg=""):
+    """The single runnable command that captures the live boundary register via openocd/boundary-scan.tcl,
+    with BS_SAMPLE/BS_LEN filled in from the parsed BSDL. Turns the plan into a one-shot capture (the
+    operator runs it; per the hands-on model we only emit the command). Returns '' if no SAMPLE/length."""
+    op = d["opcodes"].get("SAMPLE") or d["opcodes"].get("PRELOAD")
+    n = d.get("boundary_length")
+    if not op or not n:
+        return ""
+    ophex = f"0x{int(op, 2):X}"
+    fpart = f"-f {cfg} " if cfg else ""
+    return (f'BS_TAP={tap} BS_SAMPLE={ophex} BS_LEN={n} '
+            f'{openocd} {fpart}-c "init; source openocd/boundary-scan.tcl; shutdown"')
+
+
+def parse_capture(output):
+    """Pull the captured value out of boundary-scan.tcl's `BOUNDARY_CAPTURE=0x<hex>` line. Returns an
+    int, or None (also None on the ERR sentinel)."""
+    m = re.search(r"BOUNDARY_CAPTURE=0x([0-9A-Fa-f]+)", output or "")
+    if not m:
+        return None
+    try:
+        return int(m.group(1), 16)
+    except ValueError:
+        return None
+
+
+def capture_decode(d, output):
+    """End-to-end: parse a boundary-scan.tcl run's output and decode it to per-pin states. `output` is
+    the captured stdout (or just the BOUNDARY_CAPTURE line). Returns the decode text, or an error note."""
+    v = parse_capture(output)
+    if v is None:
+        return ("no BOUNDARY_CAPTURE in the output — did boundary-scan.tcl run, and is BS_TAP the right "
+                "chain TAP? (see 'BOUNDARY_CAPTURE=ERR ...' for the reason)")
+    return decode(d, v)
+
+
 def pin_lookup(d, name):
     hits = [c for c in d["cells"] if c["port"].upper() == name.upper()]
     if not hits:

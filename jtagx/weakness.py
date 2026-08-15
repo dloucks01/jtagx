@@ -251,6 +251,14 @@ HYPOTHESES = [
        "halt/mem/reg take-over primitive — debug security depends on an omitted optional block.", "MED",
        ref="RISC-V Debug Spec §3.12 (authentication optional)"),
 
+    _h("stm32-clone-rdp-gap", "asymmetric-protection", ["gd32", "gd32f1", "gd32f4", "apm32", "ch32"],
+       lambda P: True,
+       "STM32-compatible clones (GD32, APM32, CH32) copy the RDP option-byte INTERFACE but not the "
+       "genuine part's read-out hardening.",
+       "the clone's readout protection has repeatedly fallen to reset-timing / partial-access quirks the "
+       "authentic STM32 resists (protected flash dumped without the RDP1→0 mass-erase). Treat clone RDP as "
+       "weaker than the datasheet's STM32-equivalent claim.", "HIGH", ref="PT SWARM 2024 (GD32)"),
+
     _h("jtag-idcode-recon", "asymmetric-protection", _ALL,
        lambda P: True,
        "Even a fully LOCKED chip answers IDCODE / BYPASS on the JTAG chain — the TAP state machine is "
@@ -259,6 +267,34 @@ HYPOTHESES = [
        "so an attacker triages and picks the right lever before spending any effort. No posture removes "
        "this short of blowing the JTAG-disable fuse entirely.", "LOW",
        probe='openocd -f openocd/zcu102.cfg -c "init; source openocd/discover.tcl; shutdown"'),
+
+    # ---- the authenticated-debug frontier (2026): hardened parts move from an on/off debug GATE to
+    # challenge-response AUTHENTICATION (ARM CoreSight SDC-600 / RISC-V External Debug Security, ratified
+    # 2025). posture key `debug_auth` ∈ {none (on/off gate), present (capable, cert NOT provisioned),
+    # provisioned (cert/key enforced)}. These model the new trust boundary above "is the DAP shut?". ----
+    _h("auth-debug-unprovisioned", "design-primitive", _ALL,
+       lambda P: P.get("debug_auth") == "present",
+       "The device implements authenticated debug (ARM SDC-600 secure debug channel / RISC-V debug-auth) "
+       "but the debug certificate/key is NOT provisioned — authentication is opt-in and left off.",
+       "an unprovisioned authenticated-debug device grants full invasive debug to anyone who connects — "
+       "the exact failure mode as an unprovisioned FlashLock. The gate is decorative until a cert is "
+       "actually enrolled.", "HIGH", ref="ARM SDC-600; RISC-V Ext Debug Security (ratified 2025)"),
+
+    _h("debug-cert-trust", "trust-assumption", _ALL,
+       lambda P: P.get("debug_auth") == "provisioned",
+       "Authenticated debug (SDC-600 / debug certificates) trusts a debug credential signed by a vendor/"
+       "fleet key.",
+       "possession or leak of the debug signing key re-opens invasive debug across EVERY device that "
+       "trusts it — security collapses to debug-key management, a fleet-wide single point of failure "
+       "(and an insider/HSM-compromise target).", "MED", ref="ARM SDC-600 authenticated debug"),
+
+    _h("secure-debug-noninvasive-leak", "asymmetric-protection", _ALL,
+       lambda P: P.get("debug_auth") in ("present", "provisioned"),
+       "Authenticated debug gates INVASIVE debug, but IDCODE / boundary-scan and often non-invasive debug "
+       "(NIDEN / trace) remain answerable below the authenticated channel.",
+       "recon (exact part + lock state) and trace/non-invasive leakage survive SDC-600 — the authenticated "
+       "gate is not a full blackout, so fingerprinting and some observation continue unauthenticated.",
+       "LOW", ref="ADIv6 / SDC-600 scope"),
 
     _h("open-dap-thesis", "thesis", _ALL,
        lambda P: P.get("jtag_open") and not P.get("efuse_jtag_dis"),

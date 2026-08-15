@@ -31,7 +31,7 @@ class LiberoTransport(Transport):
 
     def capabilities(self) -> Capabilities:
         # FlashPro reaches device-ID + security/eNVM readout (policy permitting), NOT general run-control.
-        return Capabilities(scan=True, mem_read=False, mem_write=False, halt=False, run=False,
+        return Capabilities(scan=True, boundary_scan=True, mem_read=False, mem_write=False, halt=False, run=False,
                             max_tier="b", needs_vendor_sw=True,
                             notes="FlashPro = program/verify/security-status engine, not a debugger. "
                                   "For SmartFusion2 M3 run-control + RAM, use a CoreSight adapter "

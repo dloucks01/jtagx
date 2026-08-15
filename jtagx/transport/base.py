@@ -46,6 +46,7 @@ def _q(s: str) -> str:
 class Capabilities:
     """What a (backend, target) pair can actually do, and how far up the access ladder it reaches."""
     scan: bool = False
+    boundary_scan: bool = False   # IEEE 1149.1 EXTEST/SAMPLE — the DAP-gated fallback (needs a BSDL)
     mem_read: bool = False
     mem_write: bool = False
     halt: bool = False

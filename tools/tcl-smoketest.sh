@@ -236,6 +236,13 @@ if ! bash tools/capability-matrix-smoketest.sh; then
 fi
 
 echo ""
+echo "Running secure-boot analyzer checks (generic MCUboot/wolfBoot/FIT auth-structure findings)..."
+if ! bash tools/secureboot-analyze-smoketest.sh; then
+    echo "FAIL: secureboot-analyze smoketest"
+    exit 1
+fi
+
+echo ""
 echo "Running unlock-workflow checks (guided reopen→verify loop; core locked-board mission)..."
 if ! bash tools/unlock-workflow-smoketest.sh; then
     echo "FAIL: unlock-workflow smoketest"

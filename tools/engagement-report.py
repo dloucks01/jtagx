@@ -132,13 +132,19 @@ def main():
 
     # --- 3. Findings (deep: run the analyzers) ---
     if a.deep and bins:
-        L.append("## 3. Analysis (dram-secrets + dump-triage)")
+        L.append("## 3. Analysis (dump-triage + secure-boot + dram-secrets)")
         for f in bins[:6]:
             p = os.path.join(ddir, f)
             L.append(f"### {f}")
             tri = run(["python3", os.path.join(HERE, "dump-triage.py"), p])
             verdict = [ln.strip() for ln in tri.splitlines() if "->" in ln or "verdict" in ln.lower()][:4]
             L.append("```\n" + ("\n".join(verdict) or "(triage produced no verdict)") + "\n```")
+            # secure-boot structure: is this a signed/unsigned boot container, and where's the auth check?
+            sb = run(["python3", os.path.join(HERE, "secureboot-analyze.py"), p])
+            sbl = [ln.rstrip() for ln in sb.splitlines()
+                   if ln.startswith("format:") or re.search(r"\[(HIGH|INFO|LOW)\s*\]", ln)][:5]
+            if sbl and "UNRECOGNIZED" not in sbl[0]:
+                L.append("secure-boot:\n```\n" + "\n".join(sbl) + "\n```")
             sec = run(["python3", os.path.join(HERE, "dram-secrets.py"), p])
             hits = [ln for ln in sec.splitlines() if re.search(r"CRIT|HIGH|aes-key|pw=|PRIVATE KEY|token", ln)][:8]
             if hits:

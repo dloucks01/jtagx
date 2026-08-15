@@ -32,6 +32,17 @@ DB = [
     dict(id="Kinetis-MDM-erase", chips=["kinetis"], when={}, sev="MED",
          title="Kinetis MDM-AP secured-part recovery is a mass-erase; FSEC mis-config can leave debug open",
          ref="NXP AN; docs/15"),
+    dict(id="SAMD-DSU-erase", chips=["samd5x"], when={}, sev="MED",
+         title="SAM D5x/E5x DSU chip-erase clears NVMCTRL debug protection (mass-erase recovery over SWD)",
+         ref="SAM D5x/E5x DS (DSU)"),
+    # --- newer targets (2024–2026 published research) ---
+    dict(id="GD32-RDP-bypass", chips=["gd32", "gd32f1", "gd32f4"], when={}, sev="HIGH",
+         title="GigaDevice GD32 readout-protection bypass — STM32-clone RDP defeated by reset-timing / "
+               "partial-access quirks the genuine STM32 isn't (dump protected flash)",
+         ref="PT SWARM 2024 'GigaVulnerability'"),
+    dict(id="nRF54-EMFI", chips=["nrf54", "nrf54l", "nrf54l15"], when={}, sev="HIGH",
+         title="nRF54L15 electromagnetic fault injection — EMFI defeats the APPROTECT-successor debug gate",
+         ref="SySS 2025"),
     # --- Microsemi/Microchip SmartFusion2 / IGLOO2 (Actel lineage) ---
     dict(id="Actel-JTAG-backdoor", chips=["smartfusion2", "igloo2"], when={}, sev="HIGH",
          title="Actel/Microsemi silicon JTAG backdoor + DPA pass-key extraction — recover FlashLock/AES key, "

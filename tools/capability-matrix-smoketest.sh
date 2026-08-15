@@ -53,6 +53,11 @@ for op in ("mem_read", "mem_write", "halt", "run"):
 for r in capability_matrix(ig):
     if r["ops"]["mem_read"] or r["ops"]["halt"]:
         bad(f"igloo2 adapter {r['adapter']} wrongly credited with mem/run-control")
+# ...but boundary-scan (tier b) IS igloo2's real capability — the DAP-gated fallback
+if plan["boundary_scan"][0] is None:
+    bad("igloo2 boundary-scan should be routable (tier-b, the fabric part's real capability)")
+if not all(r["ops"]["boundary_scan"] for r in capability_matrix(ig)):
+    bad("every igloo2 adapter should support boundary-scan (all reach tier b)")
 
 print("  matrix OK (zynqmp full, SF2 M3-vs-FlashPro split, IGLOO2 mem/run honestly BLOCKED)")
 PY

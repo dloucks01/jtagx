@@ -136,6 +136,28 @@ def stm_rdp_downgrade(out):
     _set("open")
 
 
+def kinetis_recover(out):
+    out.append(" Kinetis MDM-AP mass-erase recovery (clears FTFE flash security)")
+    if SCENARIO == "meen-disabled":
+        out.append("    MDM-AP status = 0x00000004")
+        out.append("    -> mass-erase DISABLED (FSEC.MEEN): debug still locked (permanent)")
+        return
+    out.append("    MDM-AP status = 0x00000024")
+    out.append(">> MDM-AP Flash-Mass-Erase = 1 ... polling")
+    out.append("    Kinetis MDM-AP mass-erase complete — flash security cleared, debug re-enabled (FLASH ERASED)")
+    _set("open")
+
+
+def samd_recover(out):
+    out.append(" SAM D5x/E5x DSU chip-erase recovery (clears NVMCTRL debug protection)")
+    if SCENARIO == "dsu-sealed":
+        out.append("    -> chip-erase FAILED: DSU did not complete (debug still locked)")
+        return
+    out.append("    DSU.STATUSB.PROT (before) = 1")
+    out.append("    SAMD DSU chip-erase complete — NVMCTRL security cleared, debug re-enabled (FLASH ERASED)")
+    _set("open")
+
+
 # ---- Microsemi fabric scenarios (IGLOO2): provisioning check + unprovisioned SVF readback ----
 def ms_access_check(out):
     prov = SCENARIO == "provisioned"
@@ -169,6 +191,10 @@ def run_source(out, script):
         nrf_recover(out)
     elif "stm32-rdp-downgrade.tcl" in script:
         stm_rdp_downgrade(out)
+    elif "kinetis-recover.tcl" in script:
+        kinetis_recover(out)
+    elif "samd-recover.tcl" in script:
+        samd_recover(out)
     elif "reopen-debug.tcl" in script:
         reopen_debug(out)
     elif "enumerate.tcl" in script:

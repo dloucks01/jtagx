@@ -47,6 +47,11 @@ $BS               | grep -q "readable pins" || fail "bsdl summary should list re
 $BS --decode 0x2a | grep -qE "RESETN[[:space:]]+input[[:space:]]+= 1"   || fail "decode 0x2a: RESETN should be 1"
 $BS --decode 0x2a | grep -qE "BOOTMODE[[:space:]]+input[[:space:]]+= 0" || fail "decode 0x2a: BOOTMODE should be 0"
 $BS --pin RESETN  | grep -q "boundary bit 1" || fail "pin RESETN should be boundary bit 1"
+# end-to-end: --capture-cmd emits a runnable one-shot, --decode-output round-trips the captured hex
+$BS --capture-cmd --tap tap0 | grep -qE "BS_SAMPLE=0x1 BS_LEN=6 .*boundary-scan.tcl" \
+    || fail "bsdl --capture-cmd should emit the SAMPLE/LEN-filled boundary-scan command"
+printf 'BOUNDARY_CAPTURE=0x2a\n' | $BS --decode-output - | grep -qE "RESETN[[:space:]]+input[[:space:]]+= 1" \
+    || fail "bsdl --decode-output should decode a captured BOUNDARY_CAPTURE to pin states"
 $BS --sample-plan | grep -q "irscan"          || fail "sample-plan should emit an irscan sequence"
 
 # --- oe-key-extract (crypto-break: AES key-schedule recovery) ---
@@ -92,6 +97,14 @@ assert "sf2-security-policy-flash" in s, s
 assert "nrf-ctrlap-takeover" in [h for _,_,_,h,_ in misuse_findings("nrf52", {"approtect_locked": True})]
 assert "riscv-dm-unauth" in [h for _,_,_,h,_ in misuse_findings("riscv", {})]
 assert "microsemi-preprovision-open" in [h for _,_,_,h,_ in misuse_findings("igloo2", {})]
+# authenticated-debug frontier (SDC-600 / RISC-V debug-auth): the 3-state debug_auth key drives it
+a_present = [h for _,_,_,h,_ in misuse_findings("zynqmp", {"debug_auth": "present"})]
+a_prov    = [h for _,_,_,h,_ in misuse_findings("zynqmp", {"debug_auth": "provisioned"})]
+a_none    = [h for _,_,_,h,_ in misuse_findings("zynqmp", {"debug_auth": "none"})]
+assert "auth-debug-unprovisioned" in a_present, a_present   # capable-but-unprovisioned = HIGH
+assert "debug-cert-trust" in a_prov, a_prov                 # provisioned = debug-key SPOF
+assert "auth-debug-unprovisioned" not in a_prov, a_prov     # provisioned closes the unprovisioned finding
+assert not any("auth-debug" in h or h == "debug-cert-trust" for h in a_none), a_none  # on/off gate = no frontier
 # inherent silicon-fact hypotheses fire regardless of posture (they describe the part, not a lock);
 # the universal JTAG-IDCODE recon point applies to every chip
 st = [h for _,_,_,h,_ in misuse_findings("stm32f4", {})]

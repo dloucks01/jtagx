@@ -28,7 +28,7 @@ class OpenOCDTransport(Transport):
 
     def capabilities(self) -> Capabilities:
         # On an OPEN DAP this reaches exploitation; on a locked board OpenOCD still scans (tier a/b).
-        return Capabilities(scan=True, mem_read=True, mem_write=True, halt=True, run=True,
+        return Capabilities(scan=True, boundary_scan=True, mem_read=True, mem_write=True, halt=True, run=True,
                             max_tier="e", needs_vendor_sw=False,
                             notes="Full mem-AP + run-control when the DAP is open; scan/bscan only when locked.")
 

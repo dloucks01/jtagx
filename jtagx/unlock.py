@@ -21,6 +21,8 @@ _CM_CFG = {
     "stm32f4": "cortexm-stm32f4.cfg",
     "stm32f1": "cortexm-stm32f1.cfg",
     "stm32l4": "cortexm-stm32l4.cfg",
+    "kinetis": "cortexm-kinetis.cfg",
+    "samd5x": "cortexm-samd5x.cfg",
     "smartfusion2": "cortexm.cfg",
 }
 
@@ -224,6 +226,57 @@ def lock_stm(soc, P):
                 enforcement="option bytes (RDP1 downgradable; RDP2 sealed)", strategies=S)
 
 
+def lock_kinetis(soc, P):
+    # NXP Kinetis FTFE flash security: FSEC.SEC gates the debug port; the MDM-AP mass-erase command
+    # clears it (destructive) — a debug-mailbox recovery, NOT a glitch. Unless FSEC.MEEN disables it.
+    if soc != "kinetis" or not P.get("flash_secured"):
+        return None
+    meen_off = P.get("meen_disabled")
+    _cmd = (f'{_OPENOCD} -f openocd/cortexm-kinetis.cfg '
+            f'-c "init; source openocd/kinetis-recover.tcl; shutdown"')
+    S = []
+    if not meen_off:
+        S.append(strat("misconfig", "MDM-AP mass-erase (recovers debug, WIPES flash)",
+            "FTFE flash-security (FSEC.SEC) blocks the SWD/JTAG debug port, but the Kinetis MDM-AP "
+            "mass-erase command clears the security bit and re-opens debug — no glitch. Runnable + verified "
+            "here (the guided loop re-reads the debug verdict). Only when FSEC.MEEN doesn't disable it.",
+            confidence="high", destructive=True, cmd=_cmd, verify="access-check",
+            ref="K64 RM FTFE_FSEC + MDM-AP mass-erase"))
+    else:
+        S.append(strat("physical-offline", "Mass-erase DISABLED (FSEC.MEEN) — permanently locked",
+            "FSEC.MEEN=0b10 disables the MDM-AP mass-erase, so there is no destructive OR non-destructive "
+            "debug recovery over JTAG. Escalate: chip-off, or fault-injection on the security check (deferred).",
+            confidence="low", destructive=False, prereq="chip-off / FI rig"))
+    S.append(strat("physical-offline", "Dump external boot flash directly (bypass JTAG)",
+        "SOIC clip + flashrom on any EXTERNAL flash; on-die secured flash still needs erase/FI.",
+        confidence="med", destructive=False, prereq="external flash present"))
+    return dict(name="Kinetis FTFE flash security (FSEC)", state="LOCKED",
+        enforcement=("flash-security register — MDM-AP mass-erase recovers debug (destructive)"
+                     if not meen_off else
+                     "flash-security + FSEC.MEEN mass-erase-disable (PERMANENT — no JTAG recovery)"),
+        strategies=S)
+
+
+def lock_samd(soc, P):
+    # Microchip SAM D5x/E5x: the NVMCTRL security bit sets DSU.STATUSB.PROT, gating debug; the DSU
+    # chip-erase (CE) command clears it (destructive). Debug-mailbox recovery, NOT a glitch.
+    if soc != "samd5x" or not P.get("debug_protected"):
+        return None
+    _cmd = (f'{_OPENOCD} -f openocd/cortexm-samd5x.cfg '
+            f'-c "init; source openocd/samd-recover.tcl; shutdown"')
+    return dict(name="SAM D5x/E5x DSU debug protection (NVMCTRL security)", state="LOCKED",
+        enforcement="NVMCTRL security bit (DSU.STATUSB.PROT) — DSU chip-erase recovers debug (destructive)",
+        strategies=[
+            strat("misconfig", "DSU chip-erase (recovers debug, WIPES flash)",
+                "the NVMCTRL security bit gates the debug port (DSU.STATUSB.PROT=1), but the DSU chip-erase "
+                "(CE) command clears it and re-opens SWD — no glitch. Runnable + verified here.",
+                confidence="high", destructive=True, cmd=_cmd, verify="access-check",
+                ref="SAM D5x/E5x DS — DSU/NVMCTRL"),
+            strat("physical-offline", "Chip-off (decap + microprobe)",
+                "SAMD5x flash is on-die; chip-off is slow, high-skill, destructive to the package.",
+                confidence="low", destructive=True)])
+
+
 def lock_esp(soc, P):
     if soc != "esp32" or not (P.get("secure_boot") or P.get("flash_encrypted")):
         return None
@@ -319,7 +372,8 @@ def lock_igloo2(soc, P):
 
 
 LOCK_FUNCS = [lock_dap, lock_dap_ns, lock_secureboot, lock_aes, lock_pmu, lock_runtime,
-              lock_nrf, lock_stm, lock_esp, lock_sf2_debug, lock_sf2_flashlock, lock_igloo2]
+              lock_nrf, lock_stm, lock_kinetis, lock_samd, lock_esp,
+              lock_sf2_debug, lock_sf2_flashlock, lock_igloo2]
 
 
 def build_plan(soc, P):
@@ -345,6 +399,8 @@ _ENGAGE_POSTURE = {
     "stm32f4":      {"rdp_level": 1},
     "stm32f1":      {"rdp_level": 1},
     "stm32l4":      {"rdp_level": 1},
+    "kinetis":      {"flash_secured": True},
+    "samd5x":       {"debug_protected": True},
     "esp32":        {"secure_boot": True, "flash_encrypted": True},
 }
 
@@ -399,8 +455,10 @@ _REOPEN_MARKERS = [
     (r"DAP_SEC opened", "PARTIAL-EFUSE"),      # core debug back; PMU field eFuse-locked (usually fine)
     (r"DAP_SEC did NOT stick", "SEALED"),      # eFuse / write-protected — not reversible by register write
     (r"write FAULTED|no AXI-AP", "NO-WRITE-PATH"),
-    # Cortex-M mass-erase recoveries (nRF52 CTRL-AP ERASEALL, STM32 RDP1→0): debug re-opened, flash WIPED.
-    (r"APPROTECT cleared|ERASEALL complete|RDP downgraded to level 0", "ERASED-OPEN"),
+    # Cortex-M mass-erase recoveries (nRF CTRL-AP ERASEALL, STM32 RDP1→0, Kinetis MDM-AP mass-erase,
+    # SAMD DSU chip-erase): debug re-opened, flash WIPED.
+    (r"APPROTECT cleared|ERASEALL complete|RDP downgraded to level 0|mass-erase complete|chip-erase complete",
+     "ERASED-OPEN"),
     # Microsemi fabric (IGLOO2) readback of an unprovisioned device — eNVM/bitstream extractable.
     (r"fabric readback complete|readback path is OPEN|fabric readback available", "READBACK-OPEN"),
     (r"readback FAILED|erase FAILED|RDP2 is permanent|debug still (locked|disabled)", "SEALED"),

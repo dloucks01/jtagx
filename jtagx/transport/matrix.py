@@ -20,16 +20,17 @@ from __future__ import annotations
 # so import them lazily (inside functions) to avoid a circular import at package-load time.
 
 # the JTAG primitives we route, in access-ladder order (scan is the floor, run-control the ceiling)
-OPS = ["scan", "mem_read", "mem_write", "halt", "run"]
-OP_LABEL = {"scan": "scan/IDCODE", "mem_read": "mem read", "mem_write": "mem write",
-            "halt": "halt", "run": "run/resume"}
+OPS = ["scan", "boundary_scan", "mem_read", "mem_write", "halt", "run"]
+OP_LABEL = {"scan": "scan/IDCODE", "boundary_scan": "bscan", "mem_read": "mem read",
+            "mem_write": "mem write", "halt": "halt", "run": "run/resume"}
 # access tiers (mirrors base.Capabilities.max_tier): a=IDCODE b=bscan c=mem-AP d=run-control e=exploit
 TIER_LABEL = {"a": "IDCODE", "b": "boundary-scan", "c": "mem-AP", "d": "run-control", "e": "exploitation"}
 _TIER_RANK = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4}
 # the minimum reach an op needs — so a boundary-scan-only adapter (FlashPro on IGLOO2, tier b) is
 # honestly shown as scan-only, NOT crediting it with the generic backend's mem/run-control verbs.
 # This is what makes the matrix correct for fabric-only parts (no CPU ⇒ no halt/mem, whatever the probe).
-OP_MIN_TIER = {"scan": "a", "mem_read": "c", "mem_write": "c", "halt": "d", "run": "d"}
+OP_MIN_TIER = {"scan": "a", "boundary_scan": "b", "mem_read": "c", "mem_write": "c",
+               "halt": "d", "run": "d"}
 
 
 def _rank(tier):

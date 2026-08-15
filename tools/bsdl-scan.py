@@ -16,7 +16,8 @@ Offline; it plans + decodes. The operator runs the JTAG (OpenOCD/UrJTAG) per the
 """
 import argparse, os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repo root — for jtagx
-from jtagx.bsdl import parse_bsdl, summary, sample_plan, decode, pin_lookup
+from jtagx.bsdl import (parse_bsdl, summary, sample_plan, decode, pin_lookup,
+                        capture_cmd, capture_decode)
 
 
 def main():
@@ -26,6 +27,11 @@ def main():
     ap.add_argument("--decode", metavar="HEX", help="decode a captured boundary-register value into pin states")
     ap.add_argument("--pin", metavar="NAME", help="show which boundary bit(s) a named pin uses")
     ap.add_argument("--tap", default="tap0", help="TAP name for the emitted plan (default tap0)")
+    ap.add_argument("--cfg", default="", help="chain cfg for --capture-cmd (e.g. openocd/microsemi-fpga.cfg)")
+    ap.add_argument("--capture-cmd", action="store_true",
+                    help="emit the ONE runnable openocd command that captures the boundary register")
+    ap.add_argument("--decode-output", metavar="FILE",
+                    help="read boundary-scan.tcl output (- for stdin) and decode BOUNDARY_CAPTURE to pins")
     a = ap.parse_args()
     try:
         d = parse_bsdl(open(a.bsdl, encoding="utf-8", errors="replace").read())
@@ -34,6 +40,13 @@ def main():
 
     if a.decode:
         print(decode(d, int(a.decode, 0)))
+    elif a.capture_cmd:
+        cmd = capture_cmd(d, a.tap, os.environ.get("OPENOCD", "openocd"), a.cfg)
+        print(cmd or "(no SAMPLE opcode / boundary length — cannot capture)")
+    elif a.decode_output is not None:
+        src = sys.stdin.read() if a.decode_output == "-" else open(a.decode_output, encoding="utf-8",
+                                                                    errors="replace").read()
+        print(capture_decode(d, src))
     elif a.sample_plan:
         print(sample_plan(d, a.tap))
     elif a.pin:
