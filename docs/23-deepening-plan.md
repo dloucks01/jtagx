@@ -85,7 +85,7 @@ a new smoketest; debug-auth decoder golden test for the 4-signal matrix.
 
 ---
 
-## Phase 3 — Adapters & transport  *(THE engagement blocker — highest practical value)*
+## Phase 3 — Adapters & transport  *(THE engagement blocker — highest practical value)*  — ✅ DONE 2026-08-15
 
 Root cause from the field: the toolkit only speaks OpenOCD, and FlashPro (and some vendor
 cables) are **not OpenOCD-drivable**. Fix = an honest multi-backend abstraction + a preflight

@@ -202,6 +202,13 @@ if ! python3 tests/debugauth-classify.py; then
 fi
 
 echo ""
+echo "Running first-contact troubleshooting test (blocker KB + symptom routing)..."
+if ! python3 tests/first-contact.py; then
+    echo "FAIL: first-contact test"
+    exit 1
+fi
+
+echo ""
 echo "Running boot-image parser + PHT-walk test..."
 if ! bash tests/test-bootimage.sh; then
     echo "FAIL: boot-image test"

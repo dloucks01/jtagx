@@ -13,6 +13,10 @@ try:
     from .extraction import ROM_LOADER
 except Exception:
     ROM_LOADER = {}
+try:
+    from . import firstcontact as _fc
+except Exception:
+    _fc = None
 
 GO, BLOCK, WARN, INFO = "GO", "BLOCKED", "WARN", "info"
 
@@ -101,4 +105,35 @@ def preflight(prof, present):
         else:
             checks.append((INFO, "ROM-loader extraction",
                            f"{loader} available" + (f" ({have})" if have else "") + " as a no-debug fallback."))
+
+    # Physical first-contact blockers can't be auto-detected offline — surface them as a
+    # confirm-checklist so the operator isn't blindsided at the bench (the Phase-3 gap).
+    checks.append((INFO, "physical: target Vref",
+                   "confirm VTREF is present and matches the target I/O rail (1.8/2.5/3.3 V). "
+                   "Non-Vref-sensing adapters happily drive 3.3 V into a 1.8 V part."))
+    checks.append((INFO, "physical: connector/pinout",
+                   "confirm the header pinout (Arm 20-pin 0.1\" / Cortex 10-pin 1.27mm / Xilinx 14-pin PL / "
+                   "TI 14/20-pin) and TCK/TMS/TDI/TDO/GND orientation."))
+    checks.append((INFO, "physical: reset config",
+                   "if the target wedges once firmware runs or re-locks each power cycle, use "
+                   "connect-under-reset (reset_config srst_only connect_assert_srst)."))
+    # If any FTDI adapter is present, warn about the ttyUSB / ftdi_sio claim conflict.
+    if any("ftdi" in (a.get("driver") or "").lower() or "ftdi" in (a.get("name") or "").lower()
+           for a in present):
+        checks.append((INFO, "host: ftdi_sio",
+                       "FTDI adapter present — if OpenOCD reports it busy, unbind ftdi_sio "
+                       "(it may have claimed the channel as /dev/ttyUSB*). See docs/24."))
+    checks.append((INFO, "troubleshooting",
+                   "stuck at first contact? `python3 tools/first-contact.py \"<symptom>\"` "
+                   "or docs/24-first-contact-troubleshooting.md."))
     return GO, checks
+
+
+def first_contact_hint(symptom: str) -> list:
+    """Route a free-text symptom to the ranked first-contact blockers (or [] if the
+    firstcontact KB is unavailable). Thin bridge so the GUI/CLI can offer a way out
+    from a preflight BLOCK without importing firstcontact directly."""
+    if _fc is None:
+        return []
+    return [{"id": b["id"], "stage": b["stage"], "fix": b["fix"]}
+            for _s, b in _fc.diagnose(symptom or "", limit=3)]
