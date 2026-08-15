@@ -45,6 +45,11 @@ ROM_LOADER = {
                "on-die readout protection to defeat.",
                "BOOTSEL strap; USB", True,
                "picotool save -a flash.bin"),
+    "esp32c3": ("Espressif UART download mode (esptool)",
+               "hold GPIO9 low → download mode; esptool read_flash dumps SPI flash (plaintext if flash-enc "
+               "OFF). Same model as ESP32; the C3's built-in USB-JTAG may also be usable if not fused off.",
+               "download-mode strap; Secure-Download-Mode NOT fused for plaintext", True,
+               "esptool.py --chip esp32c3 -p /dev/ttyUSB0 -b 460800 read_flash 0 0x400000 flash.bin"),
     "bcm":    ("Broadcom bootloader / SD image",
                "Pi-class parts boot from SD/eMMC — pull the card or dump eMMC directly; the VPU boot "
                "chain has no readout gate on the application flash.",

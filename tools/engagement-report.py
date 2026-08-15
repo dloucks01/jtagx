@@ -203,15 +203,21 @@ def main():
 
     # implementation-review misuse (NOT CVEs — the project's own research layer)
     try:
-        from jtagx.weakness import misuse_findings
+        from jtagx.weakness import misuse_findings, finding_states
         mf = misuse_findings(a.soc, P)
+        _fs = finding_states(a.soc, P, source="capture" if a.from_capture else "asserted")
     except Exception:
-        mf = []
+        mf, _fs = [], {}
     if mf:
         L.append("### Implementation-review misuse (research — not a CVE)")
-        L.append("_Where the implementation could be misused, from reading the design (not a published CVE)._")
+        L.append("_Where the implementation could be misused, from reading the design (not a published CVE). "
+                 "**CONFIRMED** = the posture was read from a live capture; **asserted** = predicted from the "
+                 "supplied flags (verify on HW)._")
         for cls, sev, msg, hid, _probe in mf:
-            L.append(f"- **[{cls}]** {sev} `{hid}` — {msg}")
+            s = _fs.get(hid, {})
+            st = "**CONFIRMED**" if s.get("state") == "confirmed" else "asserted"
+            pr = " · ▶probe" if s.get("probe") else ""
+            L.append(f"- **[{cls}]** {sev} `{hid}` ({st}{pr}) — {msg}")
         L.append("")
 
     # --- 5. Unlock plan (Phase-2b) — how to defeat the locks that are engaged ---

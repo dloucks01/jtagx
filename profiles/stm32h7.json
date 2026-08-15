@@ -1,0 +1,35 @@
+// STMicro STM32H7 (Cortex-M7, dual-bank flash) — Paradigm B. New 2026-08-15.
+// auto_match:false — select with --profile stm32h7. Gate = RDP option bytes (same interface as F4/L4);
+// RDP1→0 downgrade mass-erases + re-opens debug. Dual-bank means per-bank RDP quirks on some parts.
+// HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "STMicro STM32H7 (Cortex-M7)",
+  "soc": "stm32h7",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+  "openocd_cfg": "openocd/cortexm-stm32h7.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/stm32h7-flash.bin",
+               "note": "2 MB dual-bank flash (0x08000000) + AXI SRAM via the mem-AP. If RDP blocks it, RDP1->0 downgrade (mass-erase).", "env": {} }
+  },
+  "reopen": [],
+  "absent": { "reopen": "RDP-1→0 downgrade mass-erases both banks and re-opens debug (destructive)." },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "stm32h7.cpu", "PATCH_AXI": "stm32h7.cpu", "PATCH_DAP": "stm32h7.dap" } },
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/stm32h7-flash-patched.bin" },
+               "note": "Reflash via OpenOCD's stm32h7x driver. DESTRUCTIVE; RDP-0." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto",
+  "adapters": [
+    { "id": "stlink",    "name": "ST-Link",                 "backend": "openocd", "driver": "stlink",    "transports": ["swd"],        "usb_ids": ["0483:374e", "0483:3748", "0483:374b"], "tier": "e", "vendor_sw": false, "note": "Onboard on Nucleo/Disco H7 boards." },
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd", "jtag"], "usb_ids": ["1366:0101"], "tier": "e", "vendor_sw": false, "note": "SWD or JTAG." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd", "jtag"], "usb_ids": [],            "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe." }
+  ]
+}

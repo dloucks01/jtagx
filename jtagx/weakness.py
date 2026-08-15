@@ -308,6 +308,28 @@ def applies(h, soc):
     return h["socs"] is None or soc in h["socs"]
 
 
+def finding_states(soc, P=None, source="asserted"):
+    """{hid: {"state": "confirmed"|"asserted", "probe": bool}} for the hypotheses that FIRE for (soc, P).
+
+    The verification honesty layer: `state` = 'confirmed' when the posture came from a LIVE capture
+    (source='capture', or P carries _source='capture') — the silicon actually reads this way — vs
+    'asserted' when it's a prediction from operator-supplied flags (verify on hardware). `probe` flags
+    the hypotheses that carry a runnable investigation command to gather more evidence."""
+    P = P or {}
+    src = "confirmed" if (source == "capture" or P.get("_source") == "capture") else "asserted"
+    out = {}
+    for h in HYPOTHESES:
+        if not applies(h, soc):
+            continue
+        try:
+            fired = bool(h["observe"](P))
+        except Exception:
+            fired = False
+        if fired:
+            out[h["id"]] = {"state": src, "probe": bool(h.get("probe"))}
+    return out
+
+
 def misuse_findings(soc, P):
     """[(cls, sev, text, id, probe)] — implementation-review misuse hypotheses that fire for (soc, P).
     `probe` (may be '') is a command/script to investigate the hypothesis on a live target."""

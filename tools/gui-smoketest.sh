@@ -287,6 +287,12 @@ d.set_board_posture("zynqmp", {"jtag_open": True})
 if "5/5" not in d._kc_reach.text(): bad(f"zynqmp OPEN kill-chain should reach 5/5 (got {d._kc_reach.text()})")
 d.set_board_posture("igloo2", {"flashlock": True})
 if "4/5" not in d._kc_reach.text(): bad(f"igloo2 kill-chain should reach 4/5 via readback (got {d._kc_reach.text()})")
+# 21d. the Kill Chain tab lists the extraction avenues (jtagx.extraction) — incl. no-debug ROM loaders
+d.set_board_posture("imx6", {"jtag_locked": True})
+from PySide6.QtWidgets import QLabel as _QL2
+_kclabels = [l.text() for l in d._kc_host.findChildren(_QL2)]
+if not any("EXTRACTION AVENUES" in x for x in _kclabels): bad("Kill Chain should list extraction avenues")
+if not any("SDP" in x for x in _kclabels): bad("imx6 extraction should show the SDP ROM-loader avenue")
 d.set_board_posture("zynqmp", None)   # restore
 
 # 24. chain-panel cores → backend-scoped console commands

@@ -23,6 +23,7 @@ _CM_CFG = {
     "stm32f1": "cortexm-stm32f1.cfg",
     "stm32l4": "cortexm-stm32l4.cfg",
     "gd32": "cortexm-gd32.cfg",
+    "stm32h7": "cortexm-stm32h7.cfg",
     "kinetis": "cortexm-kinetis.cfg",
     "samd5x": "cortexm-samd5x.cfg",
     "smartfusion2": "cortexm.cfg",
@@ -205,7 +206,7 @@ def lock_nrf(soc, P):
 
 
 def lock_stm(soc, P):
-    if soc not in ("stm32f4", "stm32f1", "stm32l4", "gd32") or P.get("rdp_level") in (None, 0):
+    if soc not in ("stm32f4", "stm32f1", "stm32l4", "gd32", "stm32h7") or P.get("rdp_level") in (None, 0):
         return None
     lvl = P.get("rdp_level")
     _cfg = _CM_CFG.get(soc)
@@ -281,7 +282,7 @@ def lock_samd(soc, P):
 
 
 def lock_esp(soc, P):
-    if soc != "esp32" or not (P.get("secure_boot") or P.get("flash_encrypted")):
+    if soc not in ("esp32", "esp32c3") or not (P.get("secure_boot") or P.get("flash_encrypted")):
         return None
     return dict(name="ESP32 secure-boot / flash-encryption", state="ENABLED", enforcement="eFuse (glitchable v1)",
                 strategies=[strat("fault-injection", "CVE-2019-15894 — FI bypass via UART download mode",
@@ -401,12 +402,14 @@ _ENGAGE_POSTURE = {
     "nrf52":        {"approtect_locked": True},
     "nrf53":        {"approtect_locked": True},
     "gd32":         {"rdp_level": 1},
+    "stm32h7":      {"rdp_level": 1},
     "stm32f4":      {"rdp_level": 1},
     "stm32f1":      {"rdp_level": 1},
     "stm32l4":      {"rdp_level": 1},
     "kinetis":      {"flash_secured": True},
     "samd5x":       {"debug_protected": True},
     "esp32":        {"secure_boot": True, "flash_encrypted": True},
+    "esp32c3":      {"secure_boot": True, "flash_encrypted": True},
 }
 
 

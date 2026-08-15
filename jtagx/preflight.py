@@ -32,7 +32,7 @@ BACKEND_FIX = {
 # soc → vendor ROM-loader extraction tool(s) that make the no-debug avenue usable (informational)
 LOADER_TOOLS = {
     "imx6": ["imx_usb", "uuu"], "sama5": ["sam-ba", "bossac"], "esp32": ["esptool.py", "esptool"],
-    "rp2040": ["picotool"], "am335x": [], "bcm": [],
+    "rp2040": ["picotool"], "am335x": [], "bcm": [], "esp32c3": ["esptool.py", "esptool"],
 }
 
 

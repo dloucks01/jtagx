@@ -113,7 +113,17 @@ assert "stm32-erase-takeover" in st and "jtag-idcode-recon" in st, st
 assert "esp32-dl-mode-oracle" not in [h for _,_,_,h,_ in misuse_findings("esp32", {})], "gated finding must not fire"
 assert "microsemi-preprovision-open" not in [h for _,_,_,h,_ in misuse_findings("igloo2", {"flashlock": True})], \
     "a provisioned FlashLock board closes the preprovision-open surface"
-print("  misuse layer OK (trust-assumption/thesis/volatile-secret/design-primitive + board-broadening sweep)")
+# verification depth: finding_states tags provenance (confirmed-from-capture vs asserted) + probe-availability
+from jtagx.weakness import finding_states
+_asrt = finding_states("zynqmp", {"jtag_open": True}, "asserted")
+_conf = finding_states("zynqmp", {"jtag_open": True}, "capture")
+assert _asrt and all(v["state"] == "asserted" for v in _asrt.values()), "operator-flag posture → asserted"
+assert _conf and all(v["state"] == "confirmed" for v in _conf.values()), "live-capture posture → confirmed"
+assert _conf.get("_source") is None  # not a finding id
+assert any(v["probe"] for v in _asrt.values()), "some hypotheses should carry a runnable probe"
+# _source in the posture also marks confirmed (the GUI/capture path)
+assert all(v["state"] == "confirmed" for v in finding_states("zynqmp", {"jtag_open": True, "_source": "capture"}).values())
+print("  misuse layer OK (trust-assumption/thesis/volatile-secret/design-primitive + board-broadening sweep + finding-states)")
 PY
 O=$((python3 tools/cve-match.py --soc zynqmp --jtag-open) 2>/dev/null); grep -q "implementation-review misuse" <<<"$O" \
     || fail "cve-match should print the implementation-review misuse section"

@@ -40,8 +40,10 @@ except Exception:
     _security_model = None
 try:
     from jtagx import attackgraph as _attackgraph                  # kill-chain planner (Kill Chain tab)
+    from jtagx.extraction import extraction_plan as _extraction_plan
 except Exception:
     _attackgraph = None
+    _extraction_plan = None
 
 # capabilities that are OpenOCD-Tcl-specific (no xsdb/hw_server equivalent wired) — gated by backend
 OPENOCD_ONLY_CAPS = {"Break & capture", "Live-patch VA→PA", "Dump BootROM", "Dump PMU ROM"}
@@ -989,12 +991,14 @@ class Dashboard(QWidget):
         """Derive the posture dict (jtag_open/secure_boot/aes/efuse) from the real capture rows — honest,
         so the Attack-Surface layer reflects the ACTUAL board, not a hardcoded baseline."""
         P = {}
-        for _impl, _loc, val, state in (load_real_posture(ROOT) or POSTURE):
+        real = load_real_posture(ROOT)
+        for _impl, _loc, val, state in (real or POSTURE):
             v = val.lower()
             if "dbgen" in v:        P["jtag_open"] = (state == "open")
             elif "jtag_dis" in v:   P["efuse_jtag_dis"] = (state == "hardened")
             elif "rsa_en" in v:     P["secure_boot"] = (state == "hardened")
             elif "boot_enc" in v:   P["aes_encrypt"] = (state == "hardened")
+        if real:                    P["_source"] = "capture"   # posture READ from silicon → findings CONFIRMED
         return P
 
     def _attack_surface_tab(self):
@@ -1247,6 +1251,36 @@ class Dashboard(QWidget):
                 why.setStyleSheet("color:#98a6b8; font-size:11px;")
                 cv.addWidget(why)
             self._kc_v.addWidget(card)
+        # extraction avenues — every real way to get memory/flash off this board, with runnable commands
+        if _extraction_plan is not None:
+            try:
+                ex = _extraction_plan(soc, P, self._load_profile(soc))
+            except Exception:
+                ex = []
+            if ex:
+                lbl = QLabel("EXTRACTION AVENUES  ·  best-first  ·  ▶ drops the command in the console")
+                lbl.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700; padding-top:8px;")
+                self._kc_v.addWidget(lbl)
+                for m in ex:
+                    row = QFrame(); row.setProperty("cls", "cap")
+                    rv = QVBoxLayout(row); rv.setContentsMargins(11, 7, 11, 7); rv.setSpacing(2)
+                    top = QHBoxLayout()
+                    gate = m["access"] if m["access"] != "jtag" else "debug-port"
+                    top.addWidget(tag(m["method"], cls="capTitle"))
+                    gcol = {"jtag": "#5bb6f0", "rom-loader": "#3ecf8e", "readback": "#e7b04b",
+                            "chip-off": "#f2685f"}.get(m["access"], "#8a97a8")
+                    gl = QLabel(gate + ("  ⚠" if not m["non_destructive"] else ""))
+                    gl.setStyleSheet(f"color:{gcol}; font-weight:700; font-size:10px;")
+                    top.addStretch(1); top.addWidget(gl)
+                    if m.get("cmd") and not m["cmd"].lstrip().startswith("#"):
+                        pb = QPushButton("▶ run"); pb.setProperty("cls", "cbtn"); pb.setCursor(Qt.PointingHandCursor)
+                        pb.setToolTip(m["cmd"])
+                        pb.clicked.connect(lambda _=False, c=m["cmd"]: self.run_in_console.emit(c))
+                        top.addWidget(pb)
+                    rv.addLayout(top)
+                    hy = QLabel(m["how"]); hy.setWordWrap(True); hy.setStyleSheet("color:#98a6b8; font-size:10.5px;")
+                    rv.addWidget(hy)
+                    self._kc_v.addWidget(row)
         self._kc_v.addStretch(1)
         if hasattr(self, "_kc_hdr"):
             self._kc_hdr.setText(f"KILL CHAIN · {soc.upper()} — the ordered objective ladder for this "
@@ -1266,10 +1300,11 @@ class Dashboard(QWidget):
         if P is None:
             P = self._misuse_posture() if soc == "zynqmp" else {}
         try:
-            from jtagx.weakness import misuse_findings
+            from jtagx.weakness import misuse_findings, finding_states
             findings = misuse_findings(soc, P)
+            states = finding_states(soc, P)   # honors P["_source"]=="capture" → confirmed
         except Exception:
-            findings = []
+            findings, states = [], {}
         self._as_findings = findings
         shown = 0
         for cls, sev, txt, hid, probe in findings:
@@ -1286,7 +1321,15 @@ class Dashboard(QWidget):
             head.addWidget(tag(hid, cls="capTitle"))
             sv = QLabel(sev); sv.setStyleSheet(
                 f"color:{'#f2685f' if sev == 'HIGH' else '#e7b04b'}; font-weight:700; font-size:11px;")
-            head.addWidget(sv); head.addStretch(1)
+            head.addWidget(sv)
+            confirmed = states.get(hid, {}).get("state") == "confirmed"
+            stp = QLabel("confirmed" if confirmed else "asserted")
+            stp.setToolTip("posture READ from a live capture" if confirmed
+                           else "predicted from the supplied/derived posture — verify on hardware")
+            stp.setStyleSheet(
+                ("color:#0d1017; background:#5cc98f;" if confirmed else "color:#8fa0b4; border:1px solid #33404f;")
+                + " border-radius:6px; padding:1px 7px; font-size:9px; font-weight:700; margin-left:5px;")
+            head.addWidget(stp); head.addStretch(1)
             if probe:
                 pb = QPushButton("▶ probe"); pb.setProperty("cls", "cbtn"); pb.setCursor(Qt.PointingHandCursor)
                 pb.setToolTip(probe); pb.clicked.connect(lambda _=False, c=probe: self.run_in_console.emit(c))

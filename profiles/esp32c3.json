@@ -1,0 +1,32 @@
+// Espressif ESP32-C3 (single-core RISC-V RV32IMC, BLE/Wi-Fi) — Paradigm E. New 2026-08-15.
+// auto_match:false — select with --profile esp32c3. Same security model as ESP32: eFuse flash-encryption
+// + secure-boot v2 (RSA-PSS), extraction via esptool download mode; the bypass is fault-injection
+// (deferred) or DL-mode read if Secure-Download-Mode isn't fused. HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "Espressif ESP32-C3 (RISC-V)",
+  "soc": "esp32c3",
+  "paradigm": "E",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "riscv", "part_ids": [], "min_taps": 1 },
+  "openocd_cfg": "openocd/esp32c3.cfg",
+  "access_check": null,
+  "enumerate": null,
+  "dump": {
+    "dram": { "script": "openocd/dump-os-ddr.tcl", "out": "dumps/esp32c3-ram.bin", "note": "SRAM via the RISC-V DM (if JTAG enabled).", "env": {} },
+    "flash": null
+  },
+  "reopen": [],
+  "absent": { "reopen": "no JTAG reopen — if JTAG is eFuse-disabled or flash-enc is on, use esptool download mode; the secure-boot/flash-enc bypass is fault-injection (deferred)." },
+  "patch": null,
+  "reflash": { "repack": false, "script": null, "env": {}, "note": "reflash via esptool write_flash (DL mode)." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto",
+  "vendor": { "tool": "esptool.py / espefuse.py", "cmd": "esptool.py -p /dev/ttyUSB0 read_flash 0 0x400000 flash.bin",
+              "note": "esptool download mode is the primary extraction path; espefuse.py summary reads the security fuses." },
+  "adapters": [
+    { "id": "usb-jtag",  "name": "ESP32-C3 built-in USB-JTAG", "backend": "openocd", "driver": "esp_usb_jtag", "transports": ["jtag"], "usb_ids": ["303a:1001"], "tier": "e", "vendor_sw": false, "note": "The C3 has a built-in USB-JTAG bridge (if not eFuse-disabled)." },
+    { "id": "ftdi",      "name": "Generic FTDI (external JTAG)", "backend": "openocd", "driver": "ftdi", "transports": ["jtag"], "usb_ids": ["0403:6010"], "tier": "e", "vendor_sw": false, "note": "External JTAG to the C3 pads." }
+  ]
+}
