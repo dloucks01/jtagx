@@ -216,6 +216,13 @@ if ! bash tools/report-html-smoketest.sh; then
 fi
 
 echo ""
+echo "Running jtag-to-shell planner test (live-patch/catch-in-flight/cold-boot/persist)..."
+if ! python3 tests/jtagtoshell-plan.py; then
+    echo "FAIL: jtagtoshell-plan test"
+    exit 1
+fi
+
+echo ""
 echo "Running boot-image parser + PHT-walk test..."
 if ! bash tests/test-bootimage.sh; then
     echo "FAIL: boot-image test"
