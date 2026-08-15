@@ -28,6 +28,22 @@ say "copying toolkit (openocd scripts / operational tools / profiles / boards / 
 rsync -a --exclude='__pycache__' --exclude='lib/mock-openocd.tcl' "$ROOT/openocd/" "$OUT/openocd/"
 rsync -a --exclude='__pycache__' "$ROOT/profiles/" "$OUT/profiles/"
 rsync -a --exclude='__pycache__' "$ROOT/boards/" "$OUT/boards/"
+# jtagx: the Python ENGINE PACKAGE — transport/unlock/extraction/coresight/debugauth/firstcontact/
+# jtagtoshell/weakness/cve/attackgraph/preflight/posture/paths. 16+ of the operational tools/*.py
+# scripts (preflight, cve-match, engagement-report, unlock-engine, jtag-to-shell, first-contact,
+# attack-graph, extract-plan, capability-matrix, bench-validate, transport-probe, report-html,
+# gen-coverage-chart, bsdl-scan, ...) `from jtagx import ...` at MODULE LOAD, not lazily — omitting
+# this directory was found (2026-08-15) to make every one of them crash with ModuleNotFoundError on
+# first cold run from a built kit, even though interpret.py's OWN jtagx import degrades gracefully
+# (it's wrapped in try/except) and so never surfaced the gap. See tools/cli-adversarial-smoketest.sh
+# for the CLI-level regression test and the kit-build-smoketest.sh for the packaging-level one.
+rsync -a --exclude='__pycache__' "$ROOT/jtagx/" "$OUT/jtagx/"
+# the small CoreSight PIDR->name lookup jtagx/coresight.py reads at runtime — NOT the bulk vendor-PDF
+# reference material gated behind WITH_PDFS (this one file is a few KB of our own curated data, and
+# skipping it only degrades identification quality — see the graceful _load_parts() fallback — but
+# there's no reason to leave it out of the default kit when it's this small).
+mkdir -p "$OUT/references"
+cp "$ROOT/references/coresight-parts.json" "$OUT/references/coresight-parts.json"
 # payloads: the runnable .bin (loaded by inject.tcl / dump-bootrom) + the README; drop build scaffolding
 # (.S/.o/.elf/.lds/Makefile — can't rebuild on the target anyway, no cross-toolchains there)
 rsync -a --exclude='*.o' --exclude='*.elf' --exclude='*.S' --exclude='*.lds' --exclude='Makefile' \
@@ -142,6 +158,20 @@ echo "== engine (board-runner) =="
 python3 tools/board-runner.py --validate >/dev/null || fail "board-runner --validate"
 python3 tools/board-runner.py --list | sed 's/^/   /'
 python3 tools/board-runner.py --profile stm32f4 >/dev/null || fail "board-runner --profile (plan generation)"
+echo "== jtagx engine package (transport/unlock/extraction/cve/attackgraph/...) =="
+python3 -c "import jtagx" || fail "jtagx package not importable — the kit is missing jtagx/ (packaging bug)"
+# actually RUN two of the many tools/*.py that import jtagx at module load (not just ast.parse the
+# syntax below, which never executes an import and would NOT have caught this): a missing jtagx/
+# broke preflight.py, cve-match.py, engagement-report.py, unlock-engine.py, jtag-to-shell.py,
+# first-contact.py, attack-graph.py, extract-plan.py, capability-matrix.py, bench-validate.py,
+# transport-probe.py, report-html.py, gen-coverage-chart.py, bsdl-scan.py, and mock-xsdb.py — every
+# one of them, cold, with ModuleNotFoundError — while this exact check block reported "OK" (this IS
+# the fix for that: 2026-08-15, see the packaging comment on the jtagx rsync above).
+# preflight.py legitimately exits 1 with no adapter plugged in (this IS that environment) — check
+# for the ABSENCE of a crash/traceback, not the exit code, or a correct BLOCKED verdict false-fails.
+PF_OUT=$(python3 tools/preflight.py --soc zynqmp 2>&1)
+if grep -q "Traceback (most recent call last)" <<<"$PF_OUT"; then fail "preflight.py --soc zynqmp crashed (jtagx import?): $(head -1 <<<"$PF_OUT")"; fi
+python3 tools/cve-match.py --soc zynqmp --jtag-open >/dev/null || fail "cve-match.py --soc zynqmp (jtagx import)"
 echo "== analyzers parse =="
 for m in board-runner dram-secrets dump-triage ghidra-loadspec parse-bootimage interpret; do
     python3 -c "import ast; ast.parse(open('tools/$m.py').read())" || fail "tools/$m.py syntax"
