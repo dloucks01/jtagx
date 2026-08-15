@@ -1,0 +1,38 @@
+// NXP LPC176x (Cortex-M3) — Paradigm B (Cortex-M). Phase-4 "more families" 2026-08-15. auto_match:false -> --profile lpc.
+// Code-Read-Protection (CRP) is a flash word at 0x000002FC (CRP1/CRP2/CRP3/NO_ISP). CRP1 is partially
+// bypassable (RAM exec / partial reads); ISP serial-bootloader mass-erase recovers debug (DESTRUCTIVE).
+// CRP3 with the ISP entry disabled = no lever. HW-UNVALIDATED. See cve.py LPC-CRP1-bypass.
+{
+  "schema_version": 1,
+  "name": "NXP LPC176x (Cortex-M3)",
+  "soc": "lpc",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-lpc.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/cortexm-flash.bin",
+               "note": "Internal flash + SRAM via the mem-AP (readable at CRP0; CRP1 blocks the debug read of code).", "env": {} }
+  },
+  "reopen": [],
+  "absent": { "reopen": "no non-destructive reopen — CRP is cleared by an ISP serial-bootloader mass-erase (WIPES flash); CRP3 with NO_ISP set = no recovery" },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "lpc.cpu", "PATCH_AXI": "lpc.cpu", "PATCH_DAP": "lpc.dap" } },
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/cortexm-flash-patched.bin" },
+               "note": "Reflash internal flash via OpenOCD's LPC driver, or the ISP bootloader (lpc21isp / flashmagic). DESTRUCTIVE; CRP must be 0." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto",
+
+  // --- per-board adapter allowlist. Cortex-M3 (SWD+JTAG). tier e if CRP0; CRP1+ blocks the code read. ---
+  "adapters": [
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd", "jtag"], "usb_ids": ["1366:0101"], "tier": "e", "vendor_sw": false, "note": "Full mem-AP + run-control." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / LPC-Link", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd", "jtag"], "usb_ids": [],            "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe (LPC-Link2 on NXP boards)." },
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent", "backend": "openocd", "driver": "ftdi",      "transports": ["jtag", "swd"], "usb_ids": ["0403:6010"], "tier": "e", "vendor_sw": false, "note": "MPSSE JTAG; SWD via OpenOCD. Also drives the ISP UART for mass-erase." }
+  ]
+}

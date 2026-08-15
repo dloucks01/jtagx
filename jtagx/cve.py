@@ -35,6 +35,15 @@ DB = [
     dict(id="SAMD-DSU-erase", chips=["samd5x"], when={}, sev="MED",
          title="SAM D5x/E5x DSU chip-erase clears NVMCTRL debug protection (mass-erase recovery over SWD)",
          ref="SAM D5x/E5x DS (DSU)"),
+    dict(id="iMX-HAB-bypass", chips=["imx6", "imx7", "imx8"], when={}, sev="HIGH",
+         title="NXP i.MX HAB (High-Assurance Boot) secure-boot bypasses — flaws in the BootROM's image "
+               "parsing/DCD handling let a forged image authenticate on a CLOSED device; the SDP BootROM "
+               "loader is the delivery path (extract/execute without the debug port)",
+         ref="Quarkslab 2017 (HAB); NXP ERR010872"),
+    dict(id="LPC-CRP1-bypass", chips=["lpc", "lpc17xx", "lpc11xx"], when={}, sev="MED",
+         title="NXP LPC Code-Read-Protection CRP1 partial bypass — CRP1 still allows RAM exec / partial "
+               "reads; ISP mass-erase recovers debug (destructive). CRP3 with no ISP entry = no lever",
+         ref="LPC user manuals; published CRP1 research"),
     # --- newer targets (2024–2026 published research) ---
     dict(id="GD32-RDP-bypass", chips=["gd32", "gd32f1", "gd32f4"], when={}, sev="HIGH",
          title="GigaDevice GD32 readout-protection bypass — STM32-clone RDP defeated by reset-timing / "

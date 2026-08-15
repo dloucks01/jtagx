@@ -50,6 +50,12 @@ ROM_LOADER = {
                "OFF). Same model as ESP32; the C3's built-in USB-JTAG may also be usable if not fused off.",
                "download-mode strap; Secure-Download-Mode NOT fused for plaintext", True,
                "esptool.py --chip esp32c3 -p /dev/ttyUSB0 -b 460800 read_flash 0 0x400000 flash.bin"),
+    "lpc":    ("NXP LPC ISP serial bootloader",
+               "hold ISP entry (P2.10 low) at reset → the on-chip ISP bootloader speaks a UART protocol; "
+               "read internal flash IF CRP permits (CRP1 blocks the read command but allows a mass-erase; "
+               "CRP0 reads freely). No debug port needed.",
+               "ISP entry strap; CRP0 for a read (CRP1+ → mass-erase only)", True,
+               "lpc21isp -control -read flash.bin 0 0x80000 /dev/ttyUSB0 115200 12000  # or FlashMagic read"),
     "bcm":    ("Broadcom bootloader / SD image",
                "Pi-class parts boot from SD/eMMC — pull the card or dump eMMC directly; the VPU boot "
                "chain has no readout gate on the application flash.",
@@ -95,6 +101,21 @@ def extraction_plan(soc, P=None, profile=None):
                         "debug OPEN", "jtag", True,
                         cmd=f"openocd -f {profile.get('openocd_cfg','<cfg>')} -c \"init; source "
                             f"{d.get('script')}; shutdown\""))
+
+    # 2b. RISC-V System Bus Access — the DM reads memory with NO hart involvement
+    # (the RISC-V equivalent of a mem-AP dump). Available whenever the Debug Module
+    # is reachable and authenticated (DMSTATUS.authenticated); SBA (sbcs/sbaddress/
+    # sbdata) then streams memory even while the core runs or is held.
+    _RISCV = {"riscv", "esp32c3"}
+    if soc in _RISCV or (profile.get("arch") or "").lower() in ("riscv", "risc-v"):
+        m.append(_m("RISC-V System Bus Access (SBA) dump",
+                    "Debug Module SBA (sbcs/sbaddress0/sbdata0) reads system memory directly — no hart, "
+                    "works even when the core is running; the DM must be authenticated "
+                    "(DMSTATUS.authenticated=1, else it's behind the debug-auth challenge).",
+                    "DM reachable + authenticated (SBA implemented: sbcs.sbaccess supported)",
+                    "jtag", True,
+                    cmd='SBA_ADDR=0x80000000 SBA_LEN=0x100000 openocd -f openocd/riscv.cfg '
+                        '-c "init; source openocd/riscv-sba-dump.tcl; shutdown"'))
 
     # 3. vendor BootROM loader — extracts WITHOUT the debug DAP (the second avenue).
     if soc in ROM_LOADER:

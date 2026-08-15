@@ -37,6 +37,21 @@ for soc, key in (("imx6","SDP"),("sama5","SAM-BA"),("esp32","esptool"),("rp2040"
 if "read_flash" not in [m["cmd"] for m in extraction_plan("esp32",{},prof("esp32")) if m["access"]=="rom-loader"][0]:
     bad("esp32 ROM-loader command should be an esptool read_flash")
 
+# Phase-4: RISC-V System Bus Access is a debug-port mem dump (needs the DM authenticated).
+for soc in ("riscv","esp32c3"):
+    sba = [m for m in extraction_plan(soc,{"jtag_open":True},prof(soc)) if "SBA" in m["method"]]
+    if not sba: bad(f"{soc}: RISC-V SBA extraction path missing")
+    if sba[0]["access"]!="jtag": bad(f"{soc}: SBA should be a jtag/debug-port avenue")
+    if "sbcs" not in sba[0]["how"] and "System Bus" not in sba[0]["method"]: bad(f"{soc}: SBA should describe the DM system bus")
+    if "riscv-sba-dump.tcl" not in sba[0].get("cmd",""): bad(f"{soc}: SBA should carry the runnable dump command")
+# a non-RISC-V board must NOT sprout an SBA path
+if any("SBA" in m["method"] for m in extraction_plan("zynqmp",{"jtag_open":True},prof("zynqmp"))):
+    bad("zynqmp (Arm) must not offer a RISC-V SBA path")
+# Phase-4: LPC ISP serial bootloader is a no-debug ROM-loader avenue
+lpc_rl = [m for m in extraction_plan("lpc",{},prof("lpc")) if m["access"]=="rom-loader"]
+if not lpc_rl or "ISP" not in lpc_rl[0]["method"]: bad("lpc: ISP serial-bootloader extraction path missing")
+if lpc_rl[0]["needs_debug"]: bad("lpc: ISP loader must NOT need the debug port")
+
 # best_cable: when debug is CLOSED, a ROM-loader board still has a cable path (SDP); zynqmp (no loader) doesn't
 if best_cable(extraction_plan("imx6",{},prof("imx6")), debug_open=False) is None:
     bad("imx6 should have a cable extraction path (SDP) even with debug closed")

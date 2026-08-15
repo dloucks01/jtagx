@@ -129,7 +129,7 @@ OpenOCD-drivable ✗ rows route to the right backend.
 
 ---
 
-## Phase 4 — Board-family unlock/extraction depth  *(the "rest"; reuses our lever pattern)*
+## Phase 4 — Board-family unlock/extraction depth  *(the "rest"; reuses our lever pattern)*  — ✅ DONE 2026-08-15
 
 Promote thin families with **real** register-level levers (destructive mass-erase = debug, not
 the image — the honest gating we already do). One consolidated pass; the board-families research
