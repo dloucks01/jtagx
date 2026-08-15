@@ -1,0 +1,40 @@
+// WCH CH32V307 (QingKe V4F, RISC-V RV32) — Paradigm E. Phase-5 breadth 2026-08-15. --profile ch32v.
+// A cheap, ubiquitous RISC-V MCU. Debug is the standard RISC-V Debug Module (DMI) but WCH uses a
+// 2-wire variant and a VENDOR OpenOCD fork (the WCH-Link probe speaks it) — stock OpenOCD often can't
+// drive a WCH-Link (a first-contact 'proprietary-adapter' case; see jtagx.firstcontact). Read-out
+// protection is weak/optional (RDPR option byte); memory read via the DM (SBA where implemented).
+// HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "WCH CH32V307 (QingKe V4F, RISC-V)",
+  "soc": "ch32v",
+  "paradigm": "E",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "riscv", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/riscv.cfg",
+  "access_check": null,
+  "enumerate": null,
+  "dump": {
+    "dram": { "script": "openocd/dump-os-ddr.tcl", "addr": "0x20000000", "size": "0x00010000",
+              "sparse": false, "out": "dumps/ch32v-sram.bin" },
+    "flash": null
+  },
+  "reopen": [],
+  "absent": {
+    "enumerate": "RISC-V DM (DMI) enumeration not wired for the WCH 2-wire variant",
+    "flash": "code flash at 0x08000000 is read via the DM if RDPR is unset; WCH's wlink/minichlink is the vendor path",
+    "reopen": "RDPR read-out protection clears via a full chip-erase (destructive); no register lever"
+  },
+  "patch": null,
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "dram" } ],
+  "ghidra": "auto",
+
+  // WCH-Link is the native probe but needs WCH's OpenOCD fork / minichlink; generic FTDI works only for
+  // the standard 4-wire JTAG parts. tier e (debug DM present), gated by the vendor-adapter caveat above.
+  "adapters": [
+    { "id": "wch-link",  "name": "WCH-Link / WCH-LinkE",     "backend": "openocd", "driver": "cmsis-dap", "transports": ["jtag"], "usb_ids": ["1a86:8010", "1a86:8012"], "tier": "e", "vendor_sw": true,  "note": "Native probe. Needs WCH's OpenOCD fork or minichlink/wlink — stock OpenOCD may not drive it (first-contact: proprietary-adapter)." },
+    { "id": "ftdi",      "name": "Generic FTDI / Digilent",  "backend": "openocd", "driver": "ftdi",      "transports": ["jtag"], "usb_ids": ["0403:6010", "0403:6014"], "tier": "e", "vendor_sw": false, "note": "Only for CH32V parts brought out on standard 4-wire JTAG." }
+  ]
+}

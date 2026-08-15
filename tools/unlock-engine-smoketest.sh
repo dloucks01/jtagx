@@ -97,6 +97,8 @@ assert "sf2-security-policy-flash" in s, s
 assert "nrf-ctrlap-takeover" in [h for _,_,_,h,_ in misuse_findings("nrf52", {"approtect_locked": True})]
 assert "riscv-dm-unauth" in [h for _,_,_,h,_ in misuse_findings("riscv", {})]
 assert "microsemi-preprovision-open" in [h for _,_,_,h,_ in misuse_findings("igloo2", {})]
+# Phase-5 breadth: nRF54L surfaces its ADAC/lifecycle authenticated-debug frontier by default
+assert "nrf54-adac-lifecycle" in [h for _,_,_,h,_ in misuse_findings("nrf54", {})]
 # authenticated-debug frontier (SDC-600 / RISC-V debug-auth): the 3-state debug_auth key drives it
 a_present = [h for _,_,_,h,_ in misuse_findings("zynqmp", {"debug_auth": "present"})]
 a_prov    = [h for _,_,_,h,_ in misuse_findings("zynqmp", {"debug_auth": "provisioned"})]

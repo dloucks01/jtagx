@@ -280,6 +280,17 @@ HYPOTHESES = [
        "the exact failure mode as an unprovisioned FlashLock. The gate is decorative until a cert is "
        "actually enrolled.", "HIGH", ref="ARM SDC-600; RISC-V Ext Debug Security (ratified 2025)"),
 
+    _h("nrf54-adac-lifecycle", "design-primitive", ["nrf54", "nrf54l", "nrf54l15"],
+       lambda P: True,
+       "The nRF54L generation replaces the nRF52/53 APPROTECT on/off register with Arm ADAC "
+       "(Authenticated Debug Access Control) gated by device LIFECYCLE state — a challenge-response "
+       "debug boundary, not a bit. Debug availability depends on the lifecycle state the part shipped in.",
+       "if the part is left in a development/unlocked lifecycle state (or ADAC credentials are not "
+       "enrolled), debug is open to anyone who connects — the same opt-in failure as unprovisioned "
+       "SDC-600. Once locked, recovery is a destructive ERASEALL/lifecycle transition, and the only "
+       "researched read-out bypass is EMFI (deferred). Read the lifecycle/ADAC state first.",
+       "HIGH", ref="Nordic nRF54L ADAC + lifecycle; SySS 2025 EMFI (cve nRF54-EMFI)"),
+
     _h("debug-cert-trust", "trust-assumption", _ALL,
        lambda P: P.get("debug_auth") == "provisioned",
        "Authenticated debug (SDC-600 / debug certificates) trusts a debug credential signed by a vendor/"

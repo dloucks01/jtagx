@@ -1,0 +1,42 @@
+// Nordic nRF54L15 (Cortex-M33, TrustZone-M) — Paradigm B. Phase-5 breadth 2026-08-15. --profile nrf54.
+// The nRF54L generation replaces the nRF52/53 APPROTECT register with Arm ADAC (Authenticated Debug
+// Access Control) + device lifecycle states (a challenge-response debug gate, not an on/off bit) — this
+// is the authenticated-debug frontier (jtagx.debugauth AUTHENTICATED). Recovery is an ERASEALL/lifecycle
+// transition (destructive), not a register poke. FI bypass = SySS 2025 EMFI (cve nRF54-EMFI), DEFERRED.
+// HW-UNVALIDATED.
+{
+  "schema_version": 1,
+  "name": "Nordic nRF54L15 (Cortex-M33, ADAC)",
+  "soc": "nrf54",
+  "paradigm": "B",
+  "status": "partial",
+  "auto_match": false,
+  "match": { "family": "arm", "part_ids": [], "min_taps": 1 },
+
+  "openocd_cfg": "openocd/cortexm-nrf54.cfg",
+  "access_check": null,
+  "enumerate": { "script": "openocd/cortexm-protect.tcl", "interpret": false },
+
+  "dump": {
+    "dram": null,
+    "flash": { "script": "openocd/cortexm-dump.tcl", "out": "dumps/nrf54-flash.bin",
+               "note": "Application RRAM (0x0) + SRAM via the mem-AP — only if ADAC has granted debug (lifecycle state permits).", "env": {} }
+  },
+
+  "reopen": [],
+  "absent": { "reopen": "no non-destructive reopen — ADAC is challenge-response (AUTHENTICATED), not an on/off bit; recovery is a destructive ERASEALL / lifecycle transition. FI (EMFI) is the researched bypass and is DEFERRED." },
+  "patch": { "script": "openocd/probe-phys-patch.tcl", "pa_math": "linear", "kva_lo": "0x00000000",
+             "env": { "PATCH_CORE": "nrf54.cpu", "PATCH_AXI": "nrf54.cpu", "PATCH_DAP": "nrf54.dap" } },
+
+  "reflash": { "repack": false, "script": "openocd/cortexm-flash.tcl",
+               "env": { "CMF_FILE": "dumps/nrf54-flash-patched.bin" },
+               "note": "Reflash via OpenOCD's nrf5/RRAM driver. DESTRUCTIVE; requires a debug-granted lifecycle state." },
+  "analysis": [ { "tool": "tools/dram-secrets.py", "on": "flash" } ],
+  "ghidra": "auto",
+
+  // nRF54L is SWD-only, TrustZone-M. tier e only if ADAC has granted debug (else the gate is a challenge, not a lever).
+  "adapters": [
+    { "id": "jlink",     "name": "SEGGER J-Link",           "backend": "openocd", "driver": "jlink",     "transports": ["swd"], "usb_ids": ["1366:0101"], "tier": "e", "vendor_sw": false, "note": "nRF54L15-DK onboard J-Link; SWD-only. ADAC gate governs actual access." },
+    { "id": "cmsis-dap", "name": "ARM CMSIS-DAP / DAPLink", "backend": "openocd", "driver": "cmsis-dap", "transports": ["swd"], "usb_ids": [],            "tier": "e", "vendor_sw": false, "note": "Any CMSIS-DAP probe over SWD." }
+  ]
+}

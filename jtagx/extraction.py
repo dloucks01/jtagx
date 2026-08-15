@@ -106,8 +106,9 @@ def extraction_plan(soc, P=None, profile=None):
     # (the RISC-V equivalent of a mem-AP dump). Available whenever the Debug Module
     # is reachable and authenticated (DMSTATUS.authenticated); SBA (sbcs/sbaddress/
     # sbdata) then streams memory even while the core runs or is held.
-    _RISCV = {"riscv", "esp32c3"}
-    if soc in _RISCV or (profile.get("arch") or "").lower() in ("riscv", "risc-v"):
+    _RISCV = {"riscv", "esp32c3", "ch32v"}
+    if soc in _RISCV or (profile.get("arch") or "").lower() in ("riscv", "risc-v") \
+            or (profile.get("match") or {}).get("family") == "riscv":
         m.append(_m("RISC-V System Bus Access (SBA) dump",
                     "Debug Module SBA (sbcs/sbaddress0/sbdata0) reads system memory directly — no hart, "
                     "works even when the core is running; the DM must be authenticated "
