@@ -84,6 +84,31 @@ if [ ! -f "$KIT/references/coresight-parts.json" ]; then
     fail "references/coresight-parts.json was not bundled (CoreSight identification degrades to raw hex)"
 fi
 
+# 5. adapter udev rules + installer shipped at BOTH the kit root (alongside the other entry points)
+# and tools/ (the wholesale rsync source), and the rules file itself is syntactically valid.
+if [ ! -f "$KIT/install-udev-rules.sh" ]; then
+    fail "install-udev-rules.sh was not bundled at the kit root"
+elif [ ! -x "$KIT/install-udev-rules.sh" ]; then
+    fail "install-udev-rules.sh is bundled but not executable"
+fi
+if [ ! -f "$KIT/openocd/adapters/99-jtagx-kit.rules" ]; then
+    fail "openocd/adapters/99-jtagx-kit.rules was not bundled"
+elif command -v udevadm >/dev/null 2>&1; then
+    if ! udevadm verify "$KIT/openocd/adapters/99-jtagx-kit.rules" >/tmp/udev-verify.log 2>&1; then
+        tail -10 /tmp/udev-verify.log
+        fail "99-jtagx-kit.rules failed udevadm verify"
+    fi
+fi
+# the non-root safety gate must exit cleanly with no changes when NOT run as root (this whole check
+# runs as the build user, never root, so this exercises the real guard path every time)
+UDEV_OUT=$(cd "$KIT" && cold bash install-udev-rules.sh 2>&1); UDEV_RC=$?
+if [ "$UDEV_RC" -eq 0 ]; then
+    fail "install-udev-rules.sh should refuse to run without root, but exited 0"
+fi
+if grep -q "Traceback (most recent call last)" <<<"$UDEV_OUT"; then
+    fail "install-udev-rules.sh crashed instead of cleanly refusing: $(head -1 <<<"$UDEV_OUT")"
+fi
+
 if [ "$FAILS" -eq 0 ]; then
     echo "PASS: kit-build (real kit built + selftest.sh + 11 jtagx-dependent tools run cold, clean env)"
     exit 0

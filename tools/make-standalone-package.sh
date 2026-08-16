@@ -107,6 +107,11 @@ fi
 
 # ---- 5. environment + entry points ----
 say "writing env.sh / engage.sh / install-offline.sh / selftest.sh"
+# install-udev-rules.sh is a real file (tools/), already bundled into $OUT/tools/ by the rsync above;
+# also copy it to the kit root so it sits alongside the other entry points (env.sh/engage.sh/
+# install-offline.sh/selftest.sh) instead of being the one operator-run script buried in tools/.
+cp "$ROOT/tools/install-udev-rules.sh" "$OUT/install-udev-rules.sh"
+chmod +x "$OUT/install-udev-rules.sh"
 cat > "$OUT/env.sh" <<'ENV'
 # source this to use the bundled tools:  . ./env.sh
 KIT="$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)"
@@ -178,6 +183,22 @@ for m in board-runner dram-secrets dump-triage ghidra-loadspec parse-bootimage i
 done
 python3 -c "import capstone" 2>/dev/null && echo "   capstone OK (ghidra-loadspec arch-detect available)" \
     || echo "   capstone not importable (ghidra-loadspec degrades gracefully)"
+echo "== vendor backend software (NOT bundled -- proprietary; see README-KIT.md 3b) =="
+command -v openocd >/dev/null 2>&1 && echo "   openocd:    bundled (vendor/openocd) + $(command -v openocd)" \
+    || echo "   openocd:    bundled (vendor/openocd/bin) -- no system copy on PATH, that's fine"
+if command -v xsdb >/dev/null 2>&1 || command -v hw_server >/dev/null 2>&1; then
+    echo "   hw_server/xsdb: found on PATH -- SmartLynq2/Platform Cable USB II are usable"
+else
+    echo "   hw_server/xsdb: NOT found -- SmartLynq2/Platform Cable need AMD Vitis Lab Tools/Vivado"
+    echo "                   Lab Edition installed separately (README-KIT.md 3b), or bridge via XVC"
+fi
+if command -v FPExpress >/dev/null 2>&1 || command -v FlashProExpress >/dev/null 2>&1 || command -v libero >/dev/null 2>&1; then
+    echo "   Libero/FlashPro Express: found on PATH -- FlashPro4/5 are usable"
+else
+    echo "   Libero/FlashPro Express: NOT found -- FlashPro4/5 need Microchip Libero/FlashPro Express"
+    echo "                   installed separately (README-KIT.md 3b), or the ftdi_sio-unbind path"
+    echo "                   for generic-cable enumeration-only work (openocd/adapters/flashpro-notes.md)"
+fi
 echo "kit selftest: OK — the bundle runs on this machine."
 TST
 chmod +x "$OUT/selftest.sh"
@@ -211,12 +232,34 @@ Should end `kit selftest: OK` and list the supported boards. If it says *"bundle
 ```
 
 **3. Hardware:**
-- Plug in your JTAG/SWD adapter (FT2232H, J-Link, ST-Link…).
+- Plug in your JTAG/SWD adapter (FT2232H, J-Link, ST-Link, CMSIS-DAP, SmartLynq2, FlashPro…).
 - **If this Kali is in a VM, enable USB passthrough** for the adapter.
 - Check the OS sees it: `lsusb` (e.g. `0403:6010` for an FTDI).
-- OpenOCD needs USB access — the usual fresh-box gotcha. Easiest is to run the LIVE commands with `sudo`
-  using the bundled binary (its wrapper sets its own library path, so sudo is fine):
-  `sudo vendor/openocd/bin/openocd …`  (or add a udev rule for your adapter to avoid sudo).
+- OpenOCD needs USB access — the usual fresh-box gotcha. One-time fix (recommended, no more `sudo`
+  for every run after this): `sudo bash install-udev-rules.sh` — installs
+  `openocd/adapters/99-jtagx-kit.rules` (every adapter this kit's board profiles know about — FTDI
+  family, J-Link, ST-Link, CMSIS-DAP/DAPLink, Altera Blaster, Atmel-ICE, WCH-Link, RP2040 Debug Probe,
+  plus AMD Platform Cable/SmartLynq2 and Microsemi FlashPro4/5 for their hw_server/Libero backends)
+  and adds you to the `plugdev` group. Unplug/replug the adapter afterward. Skip this and just prefix
+  live commands with `sudo vendor/openocd/bin/openocd …` if you'd rather not touch system udev rules.
+
+**3b. Vendor backend software — NOT bundled (know this before you're mid-engagement):**
+This kit bundles OpenOCD (open-source, GPL) and everything it needs. It does **not**, and legally
+cannot, bundle the proprietary vendor software two of the adapters above route through —
+`jtagx.transport` picks the right one automatically, but only if it's actually installed:
+- **AMD SmartLynq / SmartLynq2, Platform Cable USB II** → need `xsdb` + `hw_server`, which ship with
+  **AMD Vitis Lab Tools** (or Vivado Lab Edition — same install, smaller than full Vivado but still a
+  multi-GB download, free AMD account required: https://www.xilinx.com/support/download.html).
+  Alternative that avoids installing it at all: bridge the adapter to OpenOCD over **XVC** (hw_server
+  can expose an XVC server; OpenOCD's `xvc` driver speaks to it over TCP, keeping the existing
+  OpenOCD-Tcl scripts working) — see the Chain page's XVC hint in the GUI, or `docs/22-multi-board-engine.md`.
+- **Microsemi/Microchip FlashPro4/5** → need **Libero SoC** or the smaller standalone **FlashPro
+  Express** (Microchip account required). See `openocd/adapters/flashpro-notes.md` for the
+  `ftdi_sio`-unbind path that lets a *generic* FTDI cable do enumeration-only work on these targets
+  without any Microchip software at all.
+- Check what's actually usable on THIS box right now, for a specific target, before you rely on it:
+  `python3 tools/preflight.py --soc <soc>` — gives a live GO/BLOCKED verdict + the exact fix if the
+  backend software for your adapter isn't found on PATH.
 
 **4. First contact — scan the chain for IDCODEs** (point JTAG_IFACE at your adapter; interface cfgs live in
 the bundled `vendor/openocd/scripts/interface/…`):
