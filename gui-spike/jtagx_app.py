@@ -108,8 +108,8 @@ class App(QMainWindow):
         split.setCollapsible(1, False)
         split.setSizes([620, 190])            # sensible initial split (work area : console)
         split.setHandleWidth(6)
-        split.setStyleSheet("QSplitter#mainsplit::handle{background:#161c26;} "
-                            "QSplitter#mainsplit::handle:hover{background:#2c3644;}")
+        split.setStyleSheet("QSplitter#mainsplit::handle{background:#dfe4ea;} "
+                            "QSplitter#mainsplit::handle:hover{background:#c7d0da;}")
         self._split = split
         outer.addWidget(split, 1)
         outer.addWidget(self._statusbar())
@@ -152,7 +152,7 @@ class App(QMainWindow):
             self.board_sel.addItem(f"{b['name']}", b["soc"])
         self.board_sel.setToolTip("Target board profile (drives the Chain page, adapters, and console soc/cfg)")
         self.board_sel.setStyleSheet(
-            "QComboBox{background:#141922; color:#cdd7e4; border:1px solid #232c39;"
+            "QComboBox{background:#ffffff; color:#2f3947; border:1px solid #dfe4ea;"
             "border-radius:8px; padding:4px 8px; font-size:12px;}")
         self.board_sel.currentIndexChanged.connect(self._set_board)
         h.addWidget(self.board_sel)
@@ -165,7 +165,7 @@ class App(QMainWindow):
         self.backend_sel.addItem("hw_server (xsdb)", "hw_server")
         self.backend_sel.setToolTip("Which backend drives capability commands (Auto detects the plugged-in adapter)")
         self.backend_sel.setStyleSheet(
-            "QComboBox{background:#141922; color:#cdd7e4; border:1px solid #232c39;"
+            "QComboBox{background:#ffffff; color:#2f3947; border:1px solid #dfe4ea;"
             "border-radius:8px; padding:4px 8px; font-size:12px;}")
         self.backend_sel.currentIndexChanged.connect(self._set_backend)
         h.addWidget(self.backend_sel)
@@ -281,10 +281,10 @@ class App(QMainWindow):
         page = QWidget(); page.setAttribute(Qt.WA_StyledBackground, True)
         v = QVBoxLayout(page); v.setContentsMargins(14, 12, 14, 8); v.setSpacing(8)
         bar = QHBoxLayout()
-        lbl = QLabel("DUMP"); lbl.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:600;")
+        lbl = QLabel("DUMP"); lbl.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:600;")
         bar.addWidget(lbl)
         self.dumpsel = QComboBox(); self.dumpsel.setMinimumWidth(320)
-        self.dumpsel.setStyleSheet("QComboBox{background:#141922; color:#e7ecf3; border:1px solid #232c39;"
+        self.dumpsel.setStyleSheet("QComboBox{background:#ffffff; color:#151b26; border:1px solid #dfe4ea;"
                                    "border-radius:7px; padding:4px 8px;}")
         self.dumpsel.currentIndexChanged.connect(self._on_dump_pick)
         bar.addWidget(self.dumpsel)
@@ -378,8 +378,8 @@ class App(QMainWindow):
         if hasattr(self, "_dap_badge"):
             self._dap_badge.setText("● DAP OPEN" if home else "◌ DAP UNKNOWN")
             self._dap_badge.setStyleSheet(
-                "color:#3ecf8e; font-size:12px; font-weight:600;" if home
-                else "color:#e7b04b; font-size:12px; font-weight:600;")
+                "color:#15915f; font-size:12px; font-weight:600;" if home
+                else "color:#a6710a; font-size:12px; font-weight:600;")
         if hasattr(self, "_st_chain"):
             self._st_chain.setText("chain 2 TAPs" if home else "chain: run scan")
         if hasattr(self, "_st_verdict"):
@@ -400,12 +400,12 @@ class App(QMainWindow):
         be_txt = f"backend: {be}" + ("  (auto)" if sel == "auto" else "  (pinned)")
         if present:
             self._st_conn.setText("● Connected")
-            self._st_conn.setStyleSheet("color:#3ecf8e; font-size:11px;")
+            self._st_conn.setStyleSheet("color:#15915f; font-size:11px;")
             first = present[0]
             self._st_adapter.setText(f"{first['name']}  ·  {be_txt}")
         else:
             self._st_conn.setText("○ No adapter")
-            self._st_conn.setStyleSheet("color:#e7b04b; font-size:11px;")
+            self._st_conn.setStyleSheet("color:#a6710a; font-size:11px;")
             self._st_adapter.setText(be_txt)
 
     def closeEvent(self, event):

@@ -30,35 +30,35 @@ except Exception:
 PREFERRED = ["engagement.md", "vxworks-analysis.md", "dram-secrets.md", "sym-crypto.md", "triage.md"]
 
 BROWSER_CSS = """
-QTextBrowser { background:#0e131b; color:#cdd6e2; border:1px solid #232c39; border-radius:10px;
+QTextBrowser { background:#f3f5f8; color:#2f3947; border:1px solid #dfe4ea; border-radius:10px;
     padding:6px 16px; font-size:13px; }
 """
 
 # document stylesheet — styles the RENDERED markdown (QTextDocument HTML elements), not the widget frame
 DOC_CSS = """
-h1 { color:#e7ecf3; font-size:22px; font-weight:800; border-bottom:2px solid #2a3646; padding-bottom:6px; }
-h2 { color:#5bb6f0; font-size:16px; font-weight:700; padding-top:10px; }
-h3 { color:#8fd39a; font-size:14px; font-weight:700; }
-h4 { color:#98a6b8; font-size:12.5px; font-weight:700; }
-p  { color:#cdd6e2; line-height:150%; }
-li { color:#cdd6e2; line-height:150%; }
-a  { color:#5b8cff; }
-strong { color:#eaf1ff; }
-em { color:#b7c2d0; }
-code { background:#0b0e14; color:#33d6c4; font-family:"DejaVu Sans Mono",monospace; padding:1px 4px; }
-pre  { background:#0b0e14; color:#aeb9c7; font-family:"DejaVu Sans Mono",monospace;
-       border:1px solid #232c39; padding:8px 10px; }
-blockquote { color:#98a6b8; border-left:3px solid #3b6ff0; padding-left:12px; margin-left:2px; }
-table { border:1px solid #2a3646; }
-th { background:#141c27; color:#98a6b8; border:1px solid #2a3646; padding:5px 9px; font-weight:700; }
-td { border:1px solid #232c39; padding:4px 9px; color:#cdd6e2; }
-hr { border:1px solid #1c242f; }
+h1 { color:#151b26; font-size:22px; font-weight:800; border-bottom:2px solid #c7d0da; padding-bottom:6px; }
+h2 { color:#1c7fb0; font-size:16px; font-weight:700; padding-top:10px; }
+h3 { color:#4a9d68; font-size:14px; font-weight:700; }
+h4 { color:#5b6b80; font-size:12.5px; font-weight:700; }
+p  { color:#2f3947; line-height:150%; }
+li { color:#2f3947; line-height:150%; }
+a  { color:#3868d1; }
+strong { color:#152238; }
+em { color:#3b4757; }
+code { background:#eef1f5; color:#0f8e80; font-family:"DejaVu Sans Mono",monospace; padding:1px 4px; }
+pre  { background:#eef1f5; color:#3b4757; font-family:"DejaVu Sans Mono",monospace;
+       border:1px solid #dfe4ea; padding:8px 10px; }
+blockquote { color:#5b6b80; border-left:3px solid #3b6ff0; padding-left:12px; margin-left:2px; }
+table { border:1px solid #c7d0da; }
+th { background:#f3f5f8; color:#5b6b80; border:1px solid #c7d0da; padding:5px 9px; font-weight:700; }
+td { border:1px solid #dfe4ea; padding:4px 9px; color:#2f3947; }
+hr { border:1px solid #e7ebf0; }
 """
 LIST_CSS = """
-QListWidget { background:#0f141c; color:#b7c2d0; border:1px solid #232c39; border-radius:10px;
+QListWidget { background:#ffffff; color:#3b4757; border:1px solid #dfe4ea; border-radius:10px;
     padding:4px; font-size:12px; outline:0; }
 QListWidget::item { padding:6px 8px; border-radius:6px; }
-QListWidget::item:selected { background:#1e2735; color:#fff; }
+QListWidget::item:selected { background:#dbe7fb; color:#152238; }
 """
 
 
@@ -72,15 +72,15 @@ class ReportsPage(QWidget):
 
         # header: title + live count + reports dir + refresh
         top = QHBoxLayout()
-        title = QLabel("REPORTS"); title.setStyleSheet("color:#e7ecf3; font-size:13px; font-weight:700;")
+        title = QLabel("REPORTS"); title.setStyleSheet("color:#151b26; font-size:13px; font-weight:700;")
         top.addWidget(title)
-        self.count_lbl = QLabel(""); self.count_lbl.setStyleSheet("color:#5e6b7c; font-size:11px;")
+        self.count_lbl = QLabel(""); self.count_lbl.setStyleSheet("color:#8592a3; font-size:11px;")
         top.addWidget(self.count_lbl)
         top.addStretch(1)
-        dirlbl = QLabel(self.dir); dirlbl.setStyleSheet("color:#3a4553; font-size:10px;")
+        dirlbl = QLabel(self.dir); dirlbl.setStyleSheet("color:#b7c2ce; font-size:10px;")
         dirlbl.setToolTip(self.dir); top.addWidget(dirlbl)
-        _bs = ("QPushButton{background:#141922; color:#98a6b8; border:1px solid #232c39;"
-               "border-radius:8px; padding:5px 12px;} QPushButton:hover{border-color:#2c3644;}")
+        _bs = ("QPushButton{background:#ffffff; color:#5b6b80; border:1px solid #dfe4ea;"
+               "border-radius:8px; padding:5px 12px;} QPushButton:hover{border-color:#c7d0da;}")
         self.gen_btn = QPushButton("＋  Generate"); self.gen_btn.setCursor(Qt.PointingHandCursor)
         self.gen_btn.setStyleSheet(_bs)
         self.gen_btn.setToolTip("Run engagement-report.py (auto-derives posture from the newest capture)")
@@ -245,6 +245,6 @@ if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication
     app = QApplication(sys.argv)
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    w = ReportsPage(root); w.resize(1000, 720); w.setStyleSheet("background:#0d1017;")
+    w = ReportsPage(root); w.resize(1000, 720); w.setStyleSheet("background:#f4f6f9;")
     w.setWindowTitle("Reports"); w.show()
     sys.exit(app.exec())

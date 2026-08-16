@@ -42,9 +42,9 @@ APS = [("AP0", "0x34770004", "AXI MEM-AP — memory access (DDR/OCM)"),
        ("AP1", "0x44770002", "APB MEM-AP — debug registers"),
        ("AP2", "0x24760010", "JTAG-AP — PL/PMU")]
 MFG = {0x049: "Xilinx/AMD", 0x23b: "ARM Ltd"}
-TIER_COLOR = {"a": "#5e6b7c", "b": "#e7b04b", "c": "#4bb5c9", "d": "#3ecf8e", "e": "#3ecf8e"}
-ROLE_COL = {"a53": "#3ecf8e", "r5": "#5aa9e6", "pmu": "#e7b04b", "pl": "#b07de7",
-            "apu": "#7c8898", "rpu": "#7c8898", "psu": "#7c8898", "tap": "#5e6b7c"}
+TIER_COLOR = {"a": "#8592a3", "b": "#a6710a", "c": "#4bb5c9", "d": "#15915f", "e": "#15915f"}
+ROLE_COL = {"a53": "#15915f", "r5": "#1c6fa0", "pmu": "#a6710a", "pl": "#7c3fc4",
+            "apu": "#94a1b3", "rpu": "#94a1b3", "psu": "#94a1b3", "tap": "#8592a3"}
 
 
 def decode_idcode(idc):
@@ -87,9 +87,9 @@ class ChainPage(QWidget):
 
         # header: title + live refresh
         hdr = QHBoxLayout()
-        hdr.addWidget(_lbl("CHAIN & TRANSPORT", "#e7ecf3", 13, True))
+        hdr.addWidget(_lbl("CHAIN & TRANSPORT", "#151b26", 13, True))
         hdr.addStretch(1)
-        self.refresh_note = _lbl("", "#5e6b7c", 11)
+        self.refresh_note = _lbl("", "#8592a3", 11)
         hdr.addWidget(self.refresh_note)
         self.btn_refresh = QPushButton("↻  Refresh")
         self.btn_refresh.setToolTip("Re-scan USB adapters and rebuild the transport view")
@@ -105,7 +105,7 @@ class ChainPage(QWidget):
             tf = QFrame(); tf.setProperty("cls", "panel")
             tv = QVBoxLayout(tf); tv.setContentsMargins(12, 10, 12, 10); tv.setSpacing(6)
             trow = QHBoxLayout()
-            trow.addWidget(_lbl("🛟  STUCK AT FIRST CONTACT?", "#98a6b8", 11, True))
+            trow.addWidget(_lbl("🛟  STUCK AT FIRST CONTACT?", "#5b6b80", 11, True))
             trow.addStretch(1)
             tv.addLayout(trow)
             srow = QHBoxLayout()
@@ -148,23 +148,23 @@ class ChainPage(QWidget):
         hits = _firstcontact.diagnose(symptom, limit=3)
         if not hits or hits[0][0] == 0:
             none = _lbl("No strong match — try different words, or see docs/32-first-contact-troubleshooting.md.",
-                       "#5e6b7c", 11)
+                       "#8592a3", 11)
             none.setWordWrap(True)
             self._tc_results.addWidget(none)
             return
         for score, b in hits:
             card = QFrame(); card.setProperty("cls", "cap")
             cv = QVBoxLayout(card); cv.setContentsMargins(10, 8, 10, 8); cv.setSpacing(3)
-            sev_col = "#f2685f" if b["severity"] == "block" else "#e7b04b"
+            sev_col = "#c73a30" if b["severity"] == "block" else "#a6710a"
             head = QHBoxLayout()
-            head.addWidget(_lbl(f"[{b['stage']}] {b['id']}", "#e7ecf3", 11, True))
+            head.addWidget(_lbl(f"[{b['stage']}] {b['id']}", "#151b26", 11, True))
             head.addStretch(1)
             head.addWidget(_lbl(b["severity"].upper(), sev_col, 10, True))
             cv.addLayout(head)
-            sym = _lbl(b["symptom"], "#98a6b8", 10.5); sym.setWordWrap(True)
+            sym = _lbl(b["symptom"], "#5b6b80", 10.5); sym.setWordWrap(True)
             cv.addWidget(sym)
             for f in b["fix"]:
-                fl = _lbl(f"→ {f}", "#3ecf8e", 10.5); fl.setWordWrap(True)
+                fl = _lbl(f"→ {f}", "#15915f", 10.5); fl.setWordWrap(True)
                 cv.addWidget(fl)
             self._tc_results.addWidget(card)
 
@@ -224,17 +224,17 @@ class ChainPage(QWidget):
             return None
         pf = QFrame(); pf.setProperty("cls", "panel")
         v = QVBoxLayout(pf); v.setContentsMargins(12, 10, 12, 10); v.setSpacing(5)
-        vcol = "#3ecf8e" if verdict == "GO" else "#f2685f"
+        vcol = "#15915f" if verdict == "GO" else "#c73a30"
         vtxt = "✓ GO — you can reach this board" if verdict == "GO" else "✗ BLOCKED — fix the ✗ below before you start"
         hdr = QLabel(f"⛑  PRE-FLIGHT:  {vtxt}")
         hdr.setStyleSheet(f"color:{vcol}; font-size:12px; font-weight:700;"); hdr.setWordWrap(True)
         v.addWidget(hdr)
-        icon = {"GO": ("✓", "#3ecf8e"), "BLOCKED": ("✗", "#f2685f"), "WARN": ("⚠", "#e7b04b"),
-                "info": ("·", "#8a97a8")}
+        icon = {"GO": ("✓", "#15915f"), "BLOCKED": ("✗", "#c73a30"), "WARN": ("⚠", "#a6710a"),
+                "info": ("·", "#5b6b80")}
         for s, t, d in checks:
-            gl, col = icon.get(s, ("·", "#8a97a8"))
+            gl, col = icon.get(s, ("·", "#5b6b80"))
             row = QLabel(f"{gl}  {t}: {d}"); row.setWordWrap(True)
-            row.setStyleSheet(f"color:{col if s in ('BLOCKED','WARN') else '#98a6b8'}; font-size:11px;")
+            row.setStyleSheet(f"color:{col if s in ('BLOCKED','WARN') else '#5b6b80'}; font-size:11px;")
             v.addWidget(row)
         return pf
 
@@ -242,20 +242,20 @@ class ChainPage(QWidget):
         card = QFrame(); card.setProperty("cls", "panel")
         g = QGridLayout(card); g.setContentsMargins(16, 12, 16, 12); g.setHorizontalSpacing(28); g.setVerticalSpacing(6)
         det = f"  ·  {len(present)} adapter(s) detected" if present else "  ·  no adapter detected (offline)"
-        g.addWidget(_lbl("⛓  TRANSPORT & VERDICT" + det, "#98a6b8", 11, True), 0, 0, 1, 4)
+        g.addWidget(_lbl("⛓  TRANSPORT & VERDICT" + det, "#5b6b80", 11, True), 0, 0, 1, 4)
         backend = sel_backend or "openocd"
         backend_val = backend + (" 0.12" if backend == "openocd" else " (vendor)")
         kv = [("Adapter", adapter_line), ("Backend", backend_val),
               ("Transport", "JTAG · 10 MHz"), ("Target", self.prof.get("name", self.soc))]
         for i, (k, val) in enumerate(kv):
-            g.addWidget(_lbl(k, "#5e6b7c"), 1 + i // 2, (i % 2) * 2)
-            g.addWidget(_lbl(val, "#e7ecf3"), 1 + i // 2, (i % 2) * 2 + 1)
+            g.addWidget(_lbl(k, "#8592a3"), 1 + i // 2, (i % 2) * 2)
+            g.addWidget(_lbl(val, "#151b26"), 1 + i // 2, (i % 2) * 2 + 1)
         # Only the home ZCU102 is a KNOWN-open baseline; every other board's verdict is UNKNOWN until
         # jtag-access-check.tcl / cortexm-access-check.tcl is actually run against it.
         if self.soc == "zynqmp":
-            vtext, vcol = "● Access verdict: OPEN", ("#3ecf8e", "62,207,142")
+            vtext, vcol = "● Access verdict: OPEN", ("#15915f", "62,207,142")
         else:
-            vtext, vcol = "◌ Access verdict: UNKNOWN — run access-check", ("#e7b04b", "231,176,75")
+            vtext, vcol = "◌ Access verdict: UNKNOWN — run access-check", ("#a6710a", "231,176,75")
         verdict = QLabel(vtext)
         verdict.setStyleSheet(f"color:{vcol[0]}; background:rgba({vcol[1]},0.10);"
                               f"border:1px solid rgba({vcol[1]},0.30); border-radius:8px; padding:5px 12px; font-weight:600;")
@@ -271,15 +271,15 @@ class ChainPage(QWidget):
             m = (self.prof or {}).get("match", {})
             fam = m.get("family", "?"); mt = m.get("min_taps")
             pids = m.get("part_ids", [])
-            cv.addWidget(_lbl("  JTAG CHAIN  ·  not scanned", "#98a6b8", 11, True))
+            cv.addWidget(_lbl("  JTAG CHAIN  ·  not scanned", "#5b6b80", 11, True))
             exp = f"expected: {fam} family" + (f", ≥{mt} TAP(s)" if mt else "")
             if pids:
                 exp += "  ·  IDCODEs " + ", ".join(f"0x{p:08X}" if isinstance(p, int) else str(p) for p in pids)
             note = _lbl(exp + ".\nRun discover.tcl (or tools/probe-board.sh) to read the live chain, then "
-                        "access-check for the verdict.", "#8a97a8", 11)
+                        "access-check for the verdict.", "#5b6b80", 11)
             note.setWordWrap(True); cv.addWidget(note)
             return cf
-        cv.addWidget(_lbl("  JTAG CHAIN  ·  2 TAPs", "#98a6b8", 11, True))
+        cv.addWidget(_lbl("  JTAG CHAIN  ·  2 TAPs", "#5b6b80", 11, True))
         tree = QTreeWidget(); tree.setHeaderHidden(True); tree.setRootIsDecorated(True)
         for name, idc in CHAIN:
             it = QTreeWidgetItem([f"{name}    0x{idc:08X}    {decode_idcode(idc)}"])
@@ -300,13 +300,13 @@ class ChainPage(QWidget):
         tv = QVBoxLayout(tf); tv.setContentsMargins(8, 8, 8, 8); tv.setSpacing(4)
         src = "hw_server (selected backend)" if live else "reference — install hw_server/xsdb to enumerate live"
         tv.addWidget(_lbl(f"  ⌗ xsdb DEBUG TARGETS  ·  {src}  —  click a core to copy its xsdb command",
-                          "#98a6b8", 11, True))
+                          "#5b6b80", 11, True))
         ttree = QTreeWidget(); ttree.setHeaderHidden(True); ttree.setRootIsDecorated(True)
         stack = []   # (level, QTreeWidgetItem)
         for n in flatten_targets(roots):
             st = f"   ({n.state})" if n.state else ""
             item = QTreeWidgetItem([f"[{n.tid:>2}] {n.name}{st}   <{n.role}>"])
-            item.setForeground(0, QColor(ROLE_COL.get(n.role, "#e7ecf3")))
+            item.setForeground(0, QColor(ROLE_COL.get(n.role, "#151b26")))
             sel = self._selector_for(n)
             if sel:
                 item.setData(0, Qt.UserRole, sel)
@@ -318,7 +318,7 @@ class ChainPage(QWidget):
             stack.append((n.level, item))
         ttree.itemClicked.connect(self._on_target_click)
         tv.addWidget(ttree)
-        self.tgt_note = _lbl("", "#5e6b7c", 11); tv.addWidget(self.tgt_note)
+        self.tgt_note = _lbl("", "#8592a3", 11); tv.addWidget(self.tgt_note)
         return tf
 
     @staticmethod
@@ -351,7 +351,7 @@ class ChainPage(QWidget):
         av = QVBoxLayout(af); av.setContentsMargins(8, 8, 8, 8); av.setSpacing(6)
         adapters = self.prof.get("adapters", [])
         av.addWidget(_lbl(f"  ADAPTERS FOR THIS BOARD  ·  {len(adapters)} (from profiles/{self.soc}.json)",
-                          "#98a6b8", 11, True))
+                          "#5b6b80", 11, True))
         t = QTableWidget(len(adapters), 6)
         t.setHorizontalHeaderLabels(["Adapter", "Backend", "Transports", "Tier", "Vendor SW", "Present"])
         t.verticalHeader().setVisible(False); t.setShowGrid(False)
@@ -372,17 +372,17 @@ class ChainPage(QWidget):
             t.setItem(r, 3, ti)
             pill = QLabel("vendor" if a.get("vendor_sw") else "open")
             pill.setAlignment(Qt.AlignCenter)
-            col = "#e7b04b" if a.get("vendor_sw") else "#3ecf8e"
+            col = "#a6710a" if a.get("vendor_sw") else "#15915f"
             pill.setStyleSheet(f"color:{col}; font-weight:600; font-size:11px;")
             tw = QLabel(f"  {tier.upper()}  "); tw.setAlignment(Qt.AlignCenter)
-            tw.setStyleSheet(f"color:#0d1017; background:{TIER_COLOR.get(tier,'#5e6b7c')};"
+            tw.setStyleSheet(f"color:#0d1017; background:{TIER_COLOR.get(tier,'#8592a3')};"
                              "border-radius:8px; font-weight:700; font-size:11px;")
             t.setCellWidget(r, 3, tw)
             t.setCellWidget(r, 4, pill)
             # Present: ● if any of this adapter's usb_ids is currently plugged in
             here = bool(set(u.lower() for u in a.get("usb_ids", [])) & present_ids)
             pr = QLabel("● detected" if here else "—"); pr.setAlignment(Qt.AlignCenter)
-            pr.setStyleSheet(f"color:{'#3ecf8e' if here else '#5e6b7c'}; font-weight:600; font-size:11px;")
+            pr.setStyleSheet(f"color:{'#15915f' if here else '#8592a3'}; font-weight:600; font-size:11px;")
             t.setCellWidget(r, 5, pr)
         av.addWidget(t)
         return af
@@ -400,7 +400,7 @@ class ChainPage(QWidget):
         cf = QFrame(); cf.setProperty("cls", "panel")
         cv = QVBoxLayout(cf); cv.setContentsMargins(8, 8, 8, 8); cv.setSpacing(6)
         cv.addWidget(_lbl("  CAPABILITY MATRIX  ·  adapter × op  —  what runs where, what's BLOCKED",
-                          "#98a6b8", 11, True))
+                          "#5b6b80", 11, True))
         cols = ["Adapter", "Backend", "Reach"] + [OP_LABEL[o] for o in OPS]
         t = QTableWidget(len(rows), len(cols))
         t.setHorizontalHeaderLabels(cols)
@@ -420,7 +420,7 @@ class ChainPage(QWidget):
             for i, op in enumerate(OPS):
                 ok = row["ops"].get(op)
                 cell = QLabel("✓" if ok else "·"); cell.setAlignment(Qt.AlignCenter)
-                cell.setStyleSheet(f"color:{'#3ecf8e' if ok else '#5e6b7c'}; font-weight:700;")
+                cell.setStyleSheet(f"color:{'#15915f' if ok else '#8592a3'}; font-weight:700;")
                 t.setCellWidget(r, 3 + i, cell)
         # Cap the table's height at exactly enough for its header + rows, so it displays in full without
         # its own internal scrollbar. Must MEASURE the real row height rather than guess a constant: a
@@ -436,7 +436,7 @@ class ChainPage(QWidget):
             for op, (chosen, reason) in plan.items():
                 ok = chosen is not None
                 lbl = _lbl(("→ " if ok else "✗ ") + f"{OP_LABEL[op]}: {reason}",
-                           "#8fd39a" if ok else "#f2685f", 10)
+                           "#4a9d68" if ok else "#c73a30", 10)
                 lbl.setWordWrap(True)
                 cv.addWidget(lbl)
         return cf
@@ -446,6 +446,6 @@ if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication
     app = QApplication(sys.argv)
     w = ChainPage(sys.argv[1] if len(sys.argv) > 1 else "zynqmp")
-    w.resize(900, 760); w.setStyleSheet("background:#0d1017; color:#e7ecf3;")
+    w.resize(900, 760); w.setStyleSheet("background:#f4f6f9; color:#151b26;")
     w.setWindowTitle("Chain & Transport"); w.show()
     sys.exit(app.exec())

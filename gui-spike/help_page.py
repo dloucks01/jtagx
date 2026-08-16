@@ -42,7 +42,7 @@ _(Full guide: docs/guides/gui-quick-reference.md)_
 """
 
 BROWSER_CSS = """
-QTextBrowser { background:#0e131b; color:#cdd6e2; border:1px solid #232c39; border-radius:10px;
+QTextBrowser { background:#f3f5f8; color:#2f3947; border:1px solid #dfe4ea; border-radius:10px;
     padding:12px 18px; font-size:13px; }
 """
 
@@ -54,7 +54,7 @@ class HelpPage(QWidget):
         self._root = root
         v = QVBoxLayout(self); v.setContentsMargins(16, 14, 16, 14); v.setSpacing(10)
         hdr = QLabel("❔  HELP / USER GUIDE")
-        hdr.setStyleSheet("color:#e7ecf3; font-size:13px; font-weight:700;")
+        hdr.setStyleSheet("color:#151b26; font-size:13px; font-weight:700;")
         v.addWidget(hdr)
         self.browser = QTextBrowser(); self.browser.setStyleSheet(BROWSER_CSS)
         self.browser.setOpenExternalLinks(False)
@@ -76,6 +76,6 @@ if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication
     app = QApplication(sys.argv)
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    w = HelpPage(root); w.resize(900, 720); w.setStyleSheet("background:#0d1017;")
+    w = HelpPage(root); w.resize(900, 720); w.setStyleSheet("background:#f4f6f9;")
     w.setWindowTitle("Help"); w.show()
     sys.exit(app.exec())

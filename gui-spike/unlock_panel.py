@@ -40,8 +40,8 @@ except Exception:
 KIND_TAG = {"software-lever": "AUTO", "misconfig": "AUTO", "alternate-path": "SCRIPT",
             "physical-offline": "MANUAL", "firmware-attack": "OFFLINE",
             "fault-injection": "HARDWARE", "side-channel": "HARDWARE"}
-TAG_COLOR = {"AUTO": "#3ecf8e", "SCRIPT": "#5b8cff", "MANUAL": "#e7b04b",
-             "OFFLINE": "#b58bff", "HARDWARE": "#f2685f"}
+TAG_COLOR = {"AUTO": "#15915f", "SCRIPT": "#3868d1", "MANUAL": "#a6710a",
+             "OFFLINE": "#b58bff", "HARDWARE": "#c73a30"}
 ACTION = {"software-lever": "▶ Run", "misconfig": "▶ Run", "alternate-path": "⧉ Copy",
           "firmware-attack": "⧉ Copy", "physical-offline": "≡ Guide",
           "fault-injection": "≡ Guide", "side-channel": "≡ Guide"}
@@ -70,12 +70,12 @@ POSTURE_OPTIONS = {
 def enf_color(enf):
     e = (enf or "").lower()
     if "reversible" in e:
-        return "#3ecf8e"      # green — easy win
+        return "#15915f"      # green — easy win
     if "unknown" in e:
-        return "#e7b04b"      # amber — read SEC_CTRL to classify
+        return "#a6710a"      # amber — read SEC_CTRL to classify
     if "hardware" in e or "efuse" in e or "bbram" in e or "bootrom" in e:
-        return "#f2685f"      # red — hard
-    return "#98a6b8"
+        return "#c73a30"      # red — hard
+    return "#5b6b80"
 
 
 def run_unlock(args):
@@ -88,33 +88,33 @@ def run_unlock(args):
 
 
 QSS = """
-* { color:#e7ecf3; font-family:"Inter","Segoe UI","Noto Sans",sans-serif; font-size:13px; }
-QWidget#root, QScrollArea, QScrollArea > QWidget > QWidget { background:#0d1017; }
-QFrame#topbar { background:#0f141c; border-bottom:1px solid #1c242f; }
+* { color:#151b26; font-family:"Inter","Segoe UI","Noto Sans",sans-serif; font-size:13px; }
+QWidget#root, QScrollArea, QScrollArea > QWidget > QWidget { background:#f4f6f9; }
+QFrame#topbar { background:#ffffff; border-bottom:1px solid #e7ebf0; }
 QLabel#title { font-size:15px; font-weight:700; }
-QLabel#sub { color:#98a6b8; }
-QPushButton[cls~="scn"] { background:#141922; color:#ccd6e2; border:1px solid #232c39;
+QLabel#sub { color:#5b6b80; }
+QPushButton[cls~="scn"] { background:#ffffff; color:#2f3947; border:1px solid #dfe4ea;
     border-radius:8px; padding:6px 12px; }
-QPushButton[cls~="scn"]:hover { border-color:#2c3644; }
-QPushButton[cls~="scn"]:checked { background:#1e2735; color:#fff; border-color:#3b6ff0; }
+QPushButton[cls~="scn"]:hover { border-color:#c7d0da; }
+QPushButton[cls~="scn"]:checked { background:#dbe7fb; color:#152238; border-color:#3b6ff0; }
 QLabel#summary { font-size:13px; padding:10px 16px; }
-QFrame[cls~="card"] { background:#141922; border:1px solid #232c39; border-radius:12px; }
+QFrame[cls~="card"] { background:#ffffff; border:1px solid #dfe4ea; border-radius:12px; }
 QLabel[cls~="lockname"] { font-size:14px; font-weight:600; }
 QLabel[cls~="statepill"] { border-radius:10px; padding:2px 9px; font-size:11px; font-weight:700; }
 QLabel[cls~="enf"] { font-size:11.5px; }
-QFrame[cls~="srow"] { background:#0f141c; border:1px solid #1c242f; border-radius:9px; }
+QFrame[cls~="srow"] { background:#ffffff; border:1px solid #e7ebf0; border-radius:9px; }
 QLabel[cls~="tag"] { border-radius:6px; padding:2px 7px; font-size:10px; font-weight:800; }
 QLabel[cls~="stitle"] { font-weight:600; }
-QLabel[cls~="show"] { color:#8a97a8; font-size:11px; }
-QLabel[cls~="conf"] { color:#6f7c8c; font-size:10.5px; }
-QLabel[cls~="destr"] { color:#f2685f; font-size:10px; font-weight:700; }
-QPushButton[cls~="act"] { background:#1a2230; color:#cdd7e4; border:1px solid #2c3644;
+QLabel[cls~="show"] { color:#5b6b80; font-size:11px; }
+QLabel[cls~="conf"] { color:#8592a3; font-size:10.5px; }
+QLabel[cls~="destr"] { color:#c73a30; font-size:10px; font-weight:700; }
+QPushButton[cls~="act"] { background:#eef1f5; color:#2f3947; border:1px solid #c7d0da;
     border-radius:7px; padding:5px 12px; }
-QPushButton[cls~="act"]:hover { background:#222d3d; }
-QPlainTextEdit#log { background:#090c11; border:1px solid #232c39; border-radius:10px;
-    color:#aeb9c7; font-family:"DejaVu Sans Mono",monospace; font-size:11.5px; padding:6px; }
+QPushButton[cls~="act"]:hover { background:#e2e8f0; }
+QPlainTextEdit#log { background:#eef1f5; border:1px solid #dfe4ea; border-radius:10px;
+    color:#3b4757; font-family:"DejaVu Sans Mono",monospace; font-size:11.5px; padding:6px; }
 QScrollBar:vertical { background:transparent; width:10px; margin:2px; }
-QScrollBar::handle:vertical { background:#2c3644; border-radius:5px; min-height:24px; }
+QScrollBar::handle:vertical { background:#c7d0da; border-radius:5px; min-height:24px; }
 QScrollBar::add-line, QScrollBar::sub-line { height:0; }
 """
 
@@ -135,7 +135,7 @@ class StrategyRow(QFrame):
         tag = KIND_TAG.get(strat["kind"], "?")
         h = QHBoxLayout(self); h.setContentsMargins(10, 8, 10, 8); h.setSpacing(10)
         tg = _lbl(tag, cls="tag")
-        c = TAG_COLOR.get(tag, "#98a6b8")
+        c = TAG_COLOR.get(tag, "#5b6b80")
         tg.setStyleSheet(f"color:#0d1017; background:{c}; border-radius:6px; padding:2px 7px; font-weight:800;")
         tg.setAlignment(Qt.AlignCenter); tg.setFixedWidth(72)
         h.addWidget(tg, 0, Qt.AlignTop)
@@ -167,7 +167,7 @@ class LockCard(QFrame):
         head = QHBoxLayout(); head.setSpacing(10)
         head.addWidget(_lbl(lock["name"], cls="lockname"))
         pill = _lbl(lock["state"], cls="statepill")
-        pcol = "#f2685f" if lock["state"] in ("LOCKED", "ENABLED") else "#3ecf8e"
+        pcol = "#c73a30" if lock["state"] in ("LOCKED", "ENABLED") else "#15915f"
         pill.setStyleSheet(f"color:#0d1017; background:{pcol}; border-radius:10px; padding:2px 9px; font-weight:700;")
         head.addWidget(pill)
         # guided-workflow status pill (engaged → defeated/partial/resisted after Try & Verify)
@@ -181,7 +181,7 @@ class LockCard(QFrame):
 
     def set_status(self, status_key):
         self.status_key = status_key
-        label, color, _ = WF_STATUS.get(status_key, (status_key.lower(), "#98a6b8", ""))
+        label, color, _ = WF_STATUS.get(status_key, (status_key.lower(), "#5b6b80", ""))
         self.wf_pill.setText(f"▸ {label}")
         self.wf_pill.setStyleSheet(f"color:#0d1017; background:{color}; border-radius:10px; "
                                    "padding:2px 9px; font-weight:700;")
@@ -311,8 +311,8 @@ class UnlockPanel(QWidget):
             return
         done = sum(1 for c in self._cards.values() if c.status_key in ("DEFEATED", "PARTIAL"))
         auto = sum(1 for c in self._cards.values() if any(s.get("cmd") for s in c.lock["strategies"]))
-        tail = (" — <span style='color:#3ecf8e'>all defeated ✓</span>" if done == total and total
-                else f" — <span style='color:#3ecf8e'>{done}/{total} defeated</span>")
+        tail = (" — <span style='color:#15915f'>all defeated ✓</span>" if done == total and total
+                else f" — <span style='color:#15915f'>{done}/{total} defeated</span>")
         self.summary.setText(
             f"<b>{getattr(self, '_label', '')}:</b> {total} lock(s) engaged &nbsp;·&nbsp; "
             f"{auto} AUTO lever(s) — click <b>▶ Run</b> to try &amp; verify each.{tail}")

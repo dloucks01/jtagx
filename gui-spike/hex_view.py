@@ -63,16 +63,16 @@ class HexModel(QAbstractTableModel):
             if c < 16:
                 i = base + c
                 if self._hl[0] <= i < self._hl[1]:
-                    return QColor("#3b5a2a")   # green wash over the matched hex bytes
+                    return QColor("#c8f0d8")   # green wash over the matched hex bytes
             else:   # ASCII column — wash the whole cell if the row intersects the match
                 if base < self._hl[1] and self._hl[0] < base + 16:
-                    return QColor("#26361c")
+                    return QColor("#ddf5e6")
         if role == Qt.ForegroundRole and c < 16:
             i = base + c
             if self._hl and self._hl[0] <= i < self._hl[1]:
-                return QColor("#eaffea")   # brighten the matched bytes
+                return QColor("#0f6b3f")   # darken the matched bytes' text for contrast on the green wash
             if i < len(self._d) and self._d[i] == 0:
-                return QColor("#3a4453")   # dim the zeros so real data stands out
+                return QColor("#b8c2cf")   # dim the zeros so real data stands out
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -91,14 +91,14 @@ class HexView(QWidget):
         v = QVBoxLayout(self); v.setContentsMargins(14, 12, 14, 12); v.setSpacing(8)
         bar = QHBoxLayout()
         self.file_lbl = QLabel("(no file loaded)")
-        self.file_lbl.setStyleSheet("color:#98a6b8; font-size:12px;")
+        self.file_lbl.setStyleSheet("color:#5b6b80; font-size:12px;")
         bar.addWidget(self.file_lbl); bar.addStretch(1)
-        _fld = ("background:#141922; color:#e7ecf3; border:1px solid #232c39;"
+        _fld = ("background:#ffffff; color:#151b26; border:1px solid #dfe4ea;"
                 "border-radius:7px; padding:4px 8px;")
-        _btn = ("background:#1a2230; color:#cdd7e4; border:1px solid #2c3644;"
+        _btn = ("background:#eef1f5; color:#2f3947; border:1px solid #c7d0da;"
                 "border-radius:7px; padding:4px 12px;")
         # find: hex bytes ("de ad be ef") or an ASCII string ('PRIVATE KEY)
-        lf = QLabel("find:"); lf.setStyleSheet("color:#98a6b8;"); bar.addWidget(lf)
+        lf = QLabel("find:"); lf.setStyleSheet("color:#5b6b80;"); bar.addWidget(lf)
         self.find = QLineEdit(); self.find.setFixedWidth(200)
         self.find.setPlaceholderText("hex bytes or 'ascii")
         self.find.setStyleSheet(_fld)
@@ -106,14 +106,14 @@ class HexView(QWidget):
         fb = QPushButton("Next"); fb.clicked.connect(self._find_next); fb.setStyleSheet(_btn)
         bar.addWidget(fb)
         self._find_pos = 0
-        lo = QLabel("go to offset:"); lo.setStyleSheet("color:#98a6b8;")
+        lo = QLabel("go to offset:"); lo.setStyleSheet("color:#5b6b80;")
         bar.addWidget(lo)
         self.goto = QLineEdit(); self.goto.setFixedWidth(130); self.goto.setPlaceholderText("0x1000")
-        self.goto.setStyleSheet("background:#141922; color:#e7ecf3; border:1px solid #232c39;"
+        self.goto.setStyleSheet("background:#ffffff; color:#151b26; border:1px solid #dfe4ea;"
                                 "border-radius:7px; padding:4px 8px;")
         self.goto.returnPressed.connect(self._goto); bar.addWidget(self.goto)
         gob = QPushButton("Go"); gob.clicked.connect(self._goto)
-        gob.setStyleSheet("background:#1a2230; color:#cdd7e4; border:1px solid #2c3644;"
+        gob.setStyleSheet("background:#eef1f5; color:#2f3947; border:1px solid #c7d0da;"
                           "border-radius:7px; padding:4px 12px;")
         bar.addWidget(gob)
         v.addLayout(bar)
@@ -125,10 +125,10 @@ class HexView(QWidget):
         self.table.setShowGrid(False)
         self.table.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.table.setStyleSheet(
-            "QTableView{background:#0b0e14; color:#c7cfdb; border:1px solid #232c39; border-radius:10px;"
-            " gridline-color:#161b23; selection-background-color:#2a4a7a;}"
-            "QHeaderView::section{background:#10151d; color:#5e6b7c; border:0;"
-            " border-bottom:1px solid #232c39; padding:3px 6px; font-size:10px;}")
+            "QTableView{background:#eef1f5; color:#2f3947; border:1px solid #dfe4ea; border-radius:10px;"
+            " gridline-color:#e2e6ec; selection-background-color:#dbe7fb;}"
+            "QHeaderView::section{background:#ffffff; color:#8592a3; border:0;"
+            " border-bottom:1px solid #dfe4ea; padding:3px 6px; font-size:10px;}")
         vh = self.table.verticalHeader(); vh.setDefaultSectionSize(20)
         vh.setSectionResizeMode(QHeaderView.Fixed)
         hh = self.table.horizontalHeader()
@@ -206,6 +206,6 @@ class HexView(QWidget):
 if __name__ == "__main__":   # standalone: python3 hex_view.py <file>
     app = QApplication(sys.argv)
     path = sys.argv[1] if len(sys.argv) > 1 else None
-    w = HexView(path); w.resize(760, 640); w.setStyleSheet("background:#0d1017;")
+    w = HexView(path); w.resize(760, 640); w.setStyleSheet("background:#f4f6f9;")
     w.setWindowTitle("hex view"); w.show()
     sys.exit(app.exec())

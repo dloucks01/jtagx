@@ -122,88 +122,101 @@ CAPS = [
 ]
 # ------------------------------------------------------------------ theme
 QSS = """
-* { color: #e7ecf3; font-family: "Inter","Segoe UI","Noto Sans",sans-serif; font-size: 13px; }
-QMainWindow, QWidget#root { background: #0d1017; }
-QFrame#topbar { background: #0f141c; border-bottom: 1px solid #1c242f; }
+* { color: #151b26; font-family: "Inter","Segoe UI","Noto Sans",sans-serif; font-size: 13px; }
+QMainWindow, QWidget#root { background: #f4f6f9; }
+/* base look for any QLineEdit/QPushButton/QComboBox with no [cls~=...]/#objectName of its own --
+   without this, an unstyled widget falls through to the platform's native/system palette instead of
+   this app's palette, which on this box renders dark regardless of the theme above (found 2026-08-15:
+   chain_page.py's first-contact search box + Diagnose button, invisible-on-dark text on a still-dark
+   field, exactly this gap). Low specificity so every existing [cls~=...] rule below still wins. */
+QLineEdit { background: #ffffff; color: #151b26; border: 1px solid #dfe4ea; border-radius: 7px;
+    padding: 4px 8px; }
+QLineEdit:focus { border-color: #3b6ff0; }
+QPushButton { background: #ffffff; color: #2f3947; border: 1px solid #dfe4ea; border-radius: 7px;
+    padding: 5px 12px; }
+QPushButton:hover { border-color: #c7d0da; }
+QComboBox { background: #ffffff; color: #151b26; border: 1px solid #dfe4ea; border-radius: 7px;
+    padding: 4px 8px; }
+QFrame#topbar { background: #ffffff; border-bottom: 1px solid #e7ebf0; }
 QLabel#brand { font-size: 15px; font-weight: 700; }
-QLabel#brandDim { color: #5e6b7c; }
-QFrame#crumb { background: #141922; border: 1px solid #232c39; border-radius: 8px; }
-QLabel#crumbTxt { color: #98a6b8; }
-QLabel#live { color: #3ecf8e; background: rgba(62,207,142,0.08);
+QLabel#brandDim { color: #8592a3; }
+QFrame#crumb { background: #ffffff; border: 1px solid #dfe4ea; border-radius: 8px; }
+QLabel#crumbTxt { color: #5b6b80; }
+QLabel#live { color: #15915f; background: rgba(62,207,142,0.08);
     border: 1px solid rgba(62,207,142,0.25); border-radius: 8px; padding: 5px 10px; font-weight: 600; }
 QPushButton#enumerate { background: #3b6ff0; color: white; border: 0; border-radius: 8px;
     padding: 6px 14px; font-weight: 600; }
 QPushButton#enumerate:hover { background: #4d82ff; }
-QPushButton#ghost { background: #141922; color: #98a6b8; border: 1px solid #232c39;
+QPushButton#ghost { background: #ffffff; color: #5b6b80; border: 1px solid #dfe4ea;
     border-radius: 8px; padding: 6px 12px; }
 
-QFrame#rail { background: #0c1016; border-right: 1px solid #1c242f; }
-QPushButton[cls~="railbtn"] { background: transparent; border: 0; border-radius: 11px; color: #5e6b7c;
+QFrame#rail { background: #ffffff; border-right: 1px solid #e7ebf0; }
+QPushButton[cls~="railbtn"] { background: transparent; border: 0; border-radius: 11px; color: #8592a3;
     font-size: 17px; padding: 10px; }
-QPushButton[cls~="railbtn"]:hover { background: #141922; color: #98a6b8; }
-QPushButton[cls~="railbtn"]:checked { background: #1a212c; color: white; }
+QPushButton[cls~="railbtn"]:hover { background: #ffffff; color: #5b6b80; }
+QPushButton[cls~="railbtn"]:checked { background: #eef1f5; color: #151b26; }
 
-QFrame[cls~="card"] { background: #171e29; border: 1px solid #232c39; border-radius: 14px; }
-QFrame#idcard { background: #131a24; border: 1px solid #232c39; border-radius: 14px; }
-QLabel[cls~="tileLabel"] { color: #5e6b7c; font-size: 10px; font-weight: 600; letter-spacing: 1px; }
+QFrame[cls~="card"] { background: #ffffff; border: 1px solid #dfe4ea; border-radius: 14px; }
+QFrame#idcard { background: #ffffff; border: 1px solid #dfe4ea; border-radius: 14px; }
+QLabel[cls~="tileLabel"] { color: #8592a3; font-size: 10px; font-weight: 600; letter-spacing: 1px; }
 QLabel[cls~="tileNum"] { font-size: 24px; font-weight: 800; font-family: "DejaVu Sans Mono",monospace; }
-QLabel[cls~="tileSub"] { color: #98a6b8; font-size: 11px; }
+QLabel[cls~="tileSub"] { color: #5b6b80; font-size: 11px; }
 QLabel#board { font-size: 18px; font-weight: 700; }
-QLabel#chip { color: #33d6c4; font-family: "DejaVu Sans Mono",monospace; font-size: 12px; }
-QLabel#vbadge { color: #3ecf8e; background: rgba(62,207,142,0.10);
+QLabel#chip { color: #0f8e80; font-family: "DejaVu Sans Mono",monospace; font-size: 12px; }
+QLabel#vbadge { color: #15915f; background: rgba(62,207,142,0.10);
     border: 1px solid rgba(62,207,142,0.30); border-radius: 20px; padding: 4px 10px; font-weight: 600; font-size: 11px; }
 
-QFrame[cls~="panel"] { background: #10151d; border: 1px solid #232c39; border-radius: 14px; }
-QLabel[cls~="panelHdr"] { color: #98a6b8; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 12px 14px; }
+QFrame[cls~="panel"] { background: #ffffff; border: 1px solid #dfe4ea; border-radius: 14px; }
+QLabel[cls~="panelHdr"] { color: #5b6b80; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 12px 14px; }
 
 QTreeWidget, QTableWidget { background: transparent; border: 0; outline: 0; }
 QTreeWidget::item, QTableWidget::item { padding: 5px 4px; }
 QTreeWidget::item:selected, QTableWidget::item:selected {
-    background: rgba(91,140,255,0.16); color: #eaf1ff; }
-QHeaderView::section { background: #0f151d; color: #5e6b7c; border: 0;
-    border-bottom: 1px solid #232c39; padding: 8px 10px; font-size: 10px; font-weight: 700; }
-QTableWidget { gridline-color: #1c242f; }
+    background: rgba(91,140,255,0.16); color: #152238; }
+QHeaderView::section { background: #f3f5f8; color: #8592a3; border: 0;
+    border-bottom: 1px solid #dfe4ea; padding: 8px 10px; font-size: 10px; font-weight: 700; }
+QTableWidget { gridline-color: #e7ebf0; }
 
 QTabWidget::pane { border: 0; }
-QTabBar::tab { background: transparent; color: #98a6b8; padding: 8px 14px; margin-right: 4px;
+QTabBar::tab { background: transparent; color: #5b6b80; padding: 8px 14px; margin-right: 4px;
     border-top-left-radius: 9px; border-top-right-radius: 9px; }
-QTabBar::tab:selected { background: #1a212c; color: white; }
+QTabBar::tab:selected { background: #eef1f5; color: #151b26; }
 
-QFrame[cls~="cap"] { background: #141922; border: 1px solid #232c39; border-radius: 11px; }
+QFrame[cls~="cap"] { background: #ffffff; border: 1px solid #dfe4ea; border-radius: 11px; }
 QLabel[cls~="capTitle"] { font-weight: 600; }
-QLabel[cls~="capTitleOff"] { color: #5e6b7c; font-weight: 600; }
-QLabel[cls~="capSub"] { color: #5e6b7c; font-size: 10px; }
+QLabel[cls~="capTitleOff"] { color: #8592a3; font-weight: 600; }
+QLabel[cls~="capSub"] { color: #8592a3; font-size: 10px; }
 
-QPlainTextEdit#console { background: #090c11; border: 1px solid #232c39; border-radius: 14px;
-    color: #aeb9c7; font-family: "DejaVu Sans Mono",monospace; font-size: 12px; padding: 8px; }
-QFrame#consolePanel { background: #10151d; border: 1px solid #232c39; border-radius: 14px; }
-QLabel[cls~="panelHdrInline"] { color: #98a6b8; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
-QPushButton[cls~="cfilter"] { background: #141922; color: #98a6b8; border: 1px solid #232c39;
+QPlainTextEdit#console { background: #eef1f5; border: 1px solid #dfe4ea; border-radius: 14px;
+    color: #3b4757; font-family: "DejaVu Sans Mono",monospace; font-size: 12px; padding: 8px; }
+QFrame#consolePanel { background: #ffffff; border: 1px solid #dfe4ea; border-radius: 14px; }
+QLabel[cls~="panelHdrInline"] { color: #5b6b80; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+QPushButton[cls~="cfilter"] { background: #ffffff; color: #5b6b80; border: 1px solid #dfe4ea;
     border-radius: 7px; padding: 3px 10px; font-size: 11px; }
-QPushButton[cls~="cfilter"]:hover { border-color: #2c3644; }
-QPushButton[cls~="cfilter"]:checked { background: #1e2735; color: #fff; border-color: #3b6ff0; }
-QPushButton[cls~="cbtn"] { background: #141922; color: #98a6b8; border: 1px solid #232c39;
+QPushButton[cls~="cfilter"]:hover { border-color: #c7d0da; }
+QPushButton[cls~="cfilter"]:checked { background: #dbe7fb; color: #152238; border-color: #3b6ff0; }
+QPushButton[cls~="cbtn"] { background: #ffffff; color: #5b6b80; border: 1px solid #dfe4ea;
     border-radius: 7px; padding: 3px 10px; font-size: 11px; }
-QPushButton[cls~="cbtn"]:hover { border-color: #2c3644; color: #cdd7e4; }
-QLineEdit[cls~="csearch"] { background: #0b0e14; color: #e7ecf3; border: 1px solid #232c39;
+QPushButton[cls~="cbtn"]:hover { border-color: #c7d0da; color: #2f3947; }
+QLineEdit[cls~="csearch"] { background: #eef1f5; color: #151b26; border: 1px solid #dfe4ea;
     border-radius: 7px; padding: 3px 8px; font-size: 11px; }
 QLineEdit[cls~="csearch"]:focus { border-color: #3b6ff0; }
-QLabel[cls~="cprompt"] { color: #3ecf8e; font-family: "DejaVu Sans Mono",monospace; font-weight: 700; }
-QLineEdit[cls~="cinput"] { background: #0b0e14; color: #e7ecf3; border: 1px solid #232c39;
+QLabel[cls~="cprompt"] { color: #15915f; font-family: "DejaVu Sans Mono",monospace; font-weight: 700; }
+QLineEdit[cls~="cinput"] { background: #eef1f5; color: #151b26; border: 1px solid #dfe4ea;
     border-radius: 8px; padding: 5px 9px; font-family: "DejaVu Sans Mono",monospace; font-size: 12px; }
-QLineEdit[cls~="cinput"]:focus { border-color: #3ecf8e; }
-QFrame#statusbar { background: #0b0f15; border-top: 1px solid #1c242f; }
-QLabel#statusTxt { color: #98a6b8; font-size: 11px; }
+QLineEdit[cls~="cinput"]:focus { border-color: #15915f; }
+QFrame#statusbar { background: #ffffff; border-top: 1px solid #e7ebf0; }
+QLabel#statusTxt { color: #5b6b80; font-size: 11px; }
 
 QScrollBar:vertical { background: transparent; width: 10px; margin: 2px; }
-QScrollBar::handle:vertical { background: #2c3644; border-radius: 5px; min-height: 24px; }
+QScrollBar::handle:vertical { background: #c7d0da; border-radius: 5px; min-height: 24px; }
 QScrollBar::add-line, QScrollBar::sub-line { height: 0; }
 """
 
 PILL = {
-    "open":     ("● open", "#f79087", "rgba(242,104,95,0.10)", "rgba(242,104,95,0.25)"),
-    "hardened": ("● hardened", "#8fd39a", "rgba(62,207,142,0.10)", "rgba(62,207,142,0.30)"),
-    "na":       ("n/a",    "#98a6b8", "#232c39",               "#2c3644"),
+    "open":     ("● open", "#c9584d", "rgba(242,104,95,0.10)", "rgba(242,104,95,0.25)"),
+    "hardened": ("● hardened", "#4a9d68", "rgba(62,207,142,0.10)", "rgba(62,207,142,0.30)"),
+    "na":       ("n/a",    "#5b6b80", "#dfe4ea",               "#c7d0da"),
 }
 
 def load_real_posture(root):
@@ -291,7 +304,7 @@ def count_dumps():
         return 0
 
 
-CAPIC = {"ok": ("✓", "#3ecf8e"), "warn": ("!", "#e7b04b"), "off": ("✕", "#5e6b7c")}
+CAPIC = {"ok": ("✓", "#15915f"), "warn": ("!", "#a6710a"), "off": ("✕", "#8592a3")}
 
 # the real command each capability runs (logged to the console on click; hands-on model — no auto-run)
 CAP_CMDS = {
@@ -326,7 +339,7 @@ class ClickFrame(QFrame):
 
 
 # ------------------------------------------------------------------ console
-LINE_COLOR = {"t": "#4d6b7f", "i": "#5bb6f0", "g": "#3ecf8e", "w": "#e7b04b", "d": "#566270"}
+LINE_COLOR = {"t": "#4d6b7f", "i": "#1c7fb0", "g": "#15915f", "w": "#a6710a", "d": "#8592a3"}
 
 # console slash-commands → a one-line description (the interpreter expands them to real invocations)
 SLASH_HELP = [
@@ -760,11 +773,11 @@ class ConsolePanel(QFrame):
             return
         current = (idx == self._cur_sec)
         if self._sec_warn.get(idx):
-            fg, bg, bd = "#e7b04b", "rgba(231,176,75,0.12)", "rgba(231,176,75,0.4)"
+            fg, bg, bd = "#a6710a", "rgba(231,176,75,0.12)", "rgba(231,176,75,0.4)"
         elif current:
-            fg, bg, bd = "#5bb6f0", "rgba(91,182,240,0.14)", "rgba(91,182,240,0.5)"
+            fg, bg, bd = "#1c7fb0", "rgba(91,182,240,0.14)", "rgba(91,182,240,0.5)"
         else:
-            fg, bg, bd = "#8fd39a", "rgba(62,207,142,0.10)", "rgba(62,207,142,0.3)"
+            fg, bg, bd = "#4a9d68", "rgba(62,207,142,0.10)", "rgba(62,207,142,0.3)"
         ring = "2px" if chip.isChecked() else "1px"
         chip.setStyleSheet(f"QPushButton{{color:{fg}; background:{bg}; border:{ring} solid {bd};"
                            f"border-radius:9px; padding:2px 9px; font-size:11px; font-weight:600;}}")
@@ -798,7 +811,7 @@ class ConsolePanel(QFrame):
 
     def _emit(self, kind, text):
         import html
-        color = LINE_COLOR.get(kind, "#aeb9c7")
+        color = LINE_COLOR.get(kind, "#3b4757")
         self.text.appendHtml(f'<span style="color:{color}">{html.escape(text)}</span>')
 
     def _rerender(self):
@@ -808,7 +821,7 @@ class ConsolePanel(QFrame):
             if self._passes(kind, text, sec):
                 self._emit(kind, text); shown += 1
         if not shown:
-            self.text.appendHtml('<span style="color:#566270">— no lines match the current filter —</span>')
+            self.text.appendHtml('<span style="color:#8592a3">— no lines match the current filter —</span>')
 
     def _save(self):
         if not self._log:
@@ -847,20 +860,20 @@ class RingMeter(QWidget):
         rect = self.rect().adjusted(7, 7, -7, -7)
         w = 8
         # track
-        p.setPen(QPen(QColor("#1c242f"), w))
+        p.setPen(QPen(QColor("#e7ebf0"), w))
         p.drawArc(rect, 0, 360 * 16)
         total = max(1, self._total)
         frac = self._hardened / total
         span = int(360 * 16 * frac)
-        pen_h = QPen(QColor("#3ecf8e"), w); pen_h.setCapStyle(Qt.RoundCap)
-        pen_o = QPen(QColor("#f2685f"), w); pen_o.setCapStyle(Qt.RoundCap)
+        pen_h = QPen(QColor("#15915f"), w); pen_h.setCapStyle(Qt.RoundCap)
+        pen_o = QPen(QColor("#c73a30"), w); pen_o.setCapStyle(Qt.RoundCap)
         # hardened arc from 12 o'clock, clockwise; open arc fills the rest
         if span > 0:
             p.setPen(pen_h); p.drawArc(rect, 90 * 16, -span)
         if span < 360 * 16:
             p.setPen(pen_o); p.drawArc(rect, 90 * 16 - span, -(360 * 16 - span))
         # center: hardened count
-        p.setPen(QColor("#e7ecf3"))
+        p.setPen(QColor("#151b26"))
         f = self.font(); f.setPointSize(15); f.setBold(True); p.setFont(f)
         p.drawText(rect, Qt.AlignCenter, str(self._hardened))
 
@@ -915,7 +928,7 @@ class Dashboard(QWidget):
         self._hero_chip = tag("XCZU9EG · MPSoC", "chip"); iv.addWidget(self._hero_chip)
         self._hero_access = tag("⛨ Access: OPEN · unprovisioned", "vbadge"); iv.addWidget(self._hero_access)
         self._hero_note = tag("", cls="tileSub"); self._hero_note.setWordWrap(True)
-        self._hero_note.setStyleSheet("color:#e7b04b; font-size:10px;"); self._hero_note.hide()
+        self._hero_note.setStyleSheet("color:#a6710a; font-size:10px;"); self._hero_note.hide()
         iv.addWidget(self._hero_note)
         h.addWidget(idc)
         # tiles that navigate somewhere when clicked (dashboard as launchpad)
@@ -962,17 +975,17 @@ class Dashboard(QWidget):
         soc = getattr(self, "_board_soc", "zynqmp")
         if soc != "zynqmp":
             locks = len(_security_model(soc)) if _security_model else 0
-            return [("CHAIN", "?", "scan to enumerate", "#5b8cff"),
-                    ("POSTURE", "?", "UNKNOWN — access-check", "#e7b04b"),
-                    ("CAPABILITIES", str(locks), "lock mechanism(s)", "#e7b04b" if locks else "#3ecf8e"),
-                    ("ARTIFACTS", str(count_dumps()), "dumps captured", "#98a6b8")]
+            return [("CHAIN", "?", "scan to enumerate", "#3868d1"),
+                    ("POSTURE", "?", "UNKNOWN — access-check", "#a6710a"),
+                    ("CAPABILITIES", str(locks), "lock mechanism(s)", "#a6710a" if locks else "#15915f"),
+                    ("ARTIFACTS", str(count_dumps()), "dumps captured", "#5b6b80")]
         rows = load_real_posture(ROOT) or POSTURE
         opens = sum(1 for r in rows if r[3] == "open")
         caps_on = sum(1 for k, *_ in CAPS if k != "off")
-        return [("CHAIN", "2", "TAPs · 6 cores", "#5b8cff"),
-                ("POSTURE", str(opens), f"open / dev of {len(rows)}", "#f2685f"),
-                ("CAPABILITIES", str(caps_on), "available now", "#3ecf8e"),
-                ("ARTIFACTS", str(count_dumps()), "dumps captured", "#98a6b8")]
+        return [("CHAIN", "2", "TAPs · 6 cores", "#3868d1"),
+                ("POSTURE", str(opens), f"open / dev of {len(rows)}", "#c73a30"),
+                ("CAPABILITIES", str(caps_on), "available now", "#15915f"),
+                ("ARTIFACTS", str(count_dumps()), "dumps captured", "#5b6b80")]
 
     def refresh_hero(self):
         """Update the hero tile numbers/subs/colour from current state (after enumerate / a dump / a
@@ -1016,7 +1029,7 @@ class Dashboard(QWidget):
             self._step_btns.append(b)
             h.addWidget(b)
             if i < len(self._STEP_LABELS) - 1:
-                arrow = QLabel("→"); arrow.setStyleSheet("color:#3a4553; font-size:12px;")
+                arrow = QLabel("→"); arrow.setStyleSheet("color:#b7c2ce; font-size:12px;")
                 h.addWidget(arrow)
         h.addStretch(1)
         self.refresh_stepper()
@@ -1028,7 +1041,7 @@ class Dashboard(QWidget):
         steps, current = self._stepper_state()
         for i, b in enumerate(self._step_btns):
             if steps[i][1]:
-                b.setStyleSheet("QPushButton{color:#3ecf8e; font-weight:700; font-size:11px; "
+                b.setStyleSheet("QPushButton{color:#15915f; font-weight:700; font-size:11px; "
                                "border:none; background:transparent; padding:2px 0;}")
                 b.setToolTip("done — click to revisit")
             elif i == current:
@@ -1037,7 +1050,7 @@ class Dashboard(QWidget):
                                "text-decoration:underline;}")
                 b.setToolTip("you are here")
             else:
-                b.setStyleSheet("QPushButton{color:#5e6b7c; font-weight:500; font-size:11px; "
+                b.setStyleSheet("QPushButton{color:#8592a3; font-weight:500; font-size:11px; "
                                "border:none; background:transparent; padding:2px 0;}")
                 b.setToolTip("not yet — earlier steps come first")
 
@@ -1117,12 +1130,12 @@ class Dashboard(QWidget):
             note = QLabel("This board's JTAG chain, access verdict, target tree and adapter × op "
                           "capability matrix are on the Chain tab.")
             note.setWordWrap(True)
-            note.setStyleSheet("color:#98a6b8; font-size:11px; padding:12px 12px;")
+            note.setStyleSheet("color:#5b6b80; font-size:11px; padding:12px 12px;")
             self._chain_v.addWidget(note)
             btn = QPushButton("Open Chain tab →"); btn.setCursor(Qt.PointingHandCursor)
-            btn.setStyleSheet("QPushButton{background:#141922; color:#98a6b8; border:1px solid #232c39;"
+            btn.setStyleSheet("QPushButton{background:#ffffff; color:#5b6b80; border:1px solid #dfe4ea;"
                               "border-radius:8px; padding:6px 10px; margin:0 12px;} "
-                              "QPushButton:hover{border-color:#2c3644;}")
+                              "QPushButton:hover{border-color:#c7d0da;}")
             btn.clicked.connect(lambda: self.navigate.emit(2))
             self._chain_v.addWidget(btn)
             self._chain_v.addStretch(1)
@@ -1199,15 +1212,15 @@ class Dashboard(QWidget):
         b = QPushButton(glyph); b.setCheckable(True); b.setChecked(True)
         b.setFixedWidth(14); b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         b.setCursor(Qt.PointingHandCursor); b.setToolTip(tooltip)
-        b.setStyleSheet("QPushButton{background:#12171f; color:#5e6b7c; border:1px solid #232c39; "
+        b.setStyleSheet("QPushButton{background:#f3f5f8; color:#8592a3; border:1px solid #dfe4ea; "
                         "border-radius:6px; font-size:11px;} "
-                        "QPushButton:checked{color:#98a6b8; background:#161c26;} "
-                        "QPushButton:hover{color:#e7ecf3;}")
+                        "QPushButton:checked{color:#5b6b80; background:#eef1f5;} "
+                        "QPushButton:hover{color:#151b26;}")
         b.clicked.connect(slot)
         return b
 
-    _CLS_CLR = {"design-primitive": "#5aa9e6", "trust-assumption": "#e7b04b", "alternate-master": "#b07de7",
-                "asymmetric-protection": "#e7b04b", "volatile-secret": "#e07b53", "thesis": "#3ecf8e"}
+    _CLS_CLR = {"design-primitive": "#1c6fa0", "trust-assumption": "#a6710a", "alternate-master": "#7c3fc4",
+                "asymmetric-protection": "#a6710a", "volatile-secret": "#e07b53", "thesis": "#15915f"}
 
     def _misuse_posture(self):
         """Derive the posture dict (jtag_open/secure_boot/aes/efuse) from the real capture rows — honest,
@@ -1229,7 +1242,7 @@ class Dashboard(QWidget):
         console. Not CVEs — where reading the design says it COULD be misused."""
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(8, 8, 8, 8); v.setSpacing(6)
         self._as_hdr = QLabel("ATTACK SURFACE — implementation-review misuse (research, NOT a CVE)")
-        self._as_hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700;")
+        self._as_hdr.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:700;")
         self._as_hdr.setWordWrap(True)
         v.addWidget(self._as_hdr)
         # class filter chips
@@ -1242,7 +1255,7 @@ class Dashboard(QWidget):
             b.clicked.connect(lambda _=False, k=key: self._filter_attack_surface(k))
             self._as_group.addButton(b); fbar.addWidget(b)
         fbar.addStretch(1)
-        self._as_count = QLabel(""); self._as_count.setStyleSheet("color:#5e6b7c; font-size:11px;")
+        self._as_count = QLabel(""); self._as_count.setStyleSheet("color:#8592a3; font-size:11px;")
         fbar.addWidget(self._as_count)
         v.addLayout(fbar)
         self._as_scroll = QScrollArea(); self._as_scroll.setWidgetResizable(True); self._as_scroll.setFrameShape(QFrame.NoFrame)
@@ -1251,7 +1264,7 @@ class Dashboard(QWidget):
         self._as_scroll.setWidget(self._as_host); v.addWidget(self._as_scroll, 1)
         foot = QLabel("grows as more silicon is reviewed (jtagx/weakness.py) · ▶ probe sends the investigation "
                       "command to the console · distinct from the CVE matcher")
-        foot.setStyleSheet("color:#5e6b7c; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
+        foot.setStyleSheet("color:#8592a3; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
         self._as_filter = "all"
         self.refresh_attack_surface()
         return w
@@ -1312,9 +1325,9 @@ class Dashboard(QWidget):
         cm = self._cm_posture.get(soc)
         if cm:
             mhead = QLabel(f"MEASURED — {name}  (family: {cm['family']})")
-            mhead.setStyleSheet("color:#e7ecf3; font-size:13px; font-weight:700;"); mhead.setWordWrap(True)
+            mhead.setStyleSheet("color:#151b26; font-size:13px; font-weight:700;"); mhead.setWordWrap(True)
             v.addWidget(mhead)
-            vcol = {"OPEN": "#3ecf8e", "LOCKED": "#f2685f"}.get(cm["verdict"], "#e7b04b")
+            vcol = {"OPEN": "#15915f", "LOCKED": "#c73a30"}.get(cm["verdict"], "#a6710a")
             vtext = f"✓ {cm['verdict']}"
             if cm["verdict_row"]:
                 vtext += f" — {cm['verdict_row'][0]}: {cm['verdict_row'][1]}"
@@ -1325,16 +1338,16 @@ class Dashboard(QWidget):
                                   "padding:7px 10px; font-size:11px; font-weight:700;")
             v.addWidget(vbanner)
             for sec in cm["sections"]:
-                sl = QLabel(sec["title"]); sl.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700; padding-top:4px;")
+                sl = QLabel(sec["title"]); sl.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:700; padding-top:4px;")
                 v.addWidget(sl)
                 for label, val in sec["rows"]:
                     r = QLabel(f"  {label} : {val}"); r.setWordWrap(True)
-                    r.setStyleSheet("color:#cdd6e2; font-size:11px; font-family:monospace;")
+                    r.setStyleSheet("color:#2f3947; font-size:11px; font-family:monospace;")
                     v.addWidget(r)
-            div = QFrame(); div.setFixedHeight(1); div.setStyleSheet("background:#232c39;")
+            div = QFrame(); div.setFixedHeight(1); div.setStyleSheet("background:#dfe4ea;")
             v.addWidget(div)
         head = QLabel(f"SECURITY MODEL — {name}" + ("  (reference)" if cm else ""))
-        head.setStyleSheet("color:#e7ecf3; font-size:13px; font-weight:700;"); head.setWordWrap(True)
+        head.setStyleSheet("color:#151b26; font-size:13px; font-weight:700;"); head.setWordWrap(True)
         v.addWidget(head)
         if not cm:
             banner = QLabel(f"Posture UNKNOWN — no live measurement for {soc} yet. Run Enumerate (top bar) or "
@@ -1342,20 +1355,20 @@ class Dashboard(QWidget):
                             "is ZynqMP-specific; for other boards the lock model below + the Chain capability "
                             "matrix are the posture view until you measure it.")
             banner.setWordWrap(True)
-            banner.setStyleSheet("color:#0d1017; background:#e7b04b; border-radius:8px; padding:7px 10px; font-size:11px;")
+            banner.setStyleSheet("color:#0d1017; background:#a6710a; border-radius:8px; padding:7px 10px; font-size:11px;")
             v.addWidget(banner)
         locks = _security_model(soc) if _security_model else []
         if not locks:
             none = QLabel("No lock mechanism modeled for this part yet — it is treated as open-debug "
                           "(scan + halt + dump once a debugger is attached). See the Chain capability matrix.")
-            none.setWordWrap(True); none.setStyleSheet("color:#98a6b8; font-size:12px; padding:6px 2px;")
+            none.setWordWrap(True); none.setStyleSheet("color:#5b6b80; font-size:12px; padding:6px 2px;")
             v.addWidget(none)
         for L in locks:
             v.addWidget(self._lock_card(L))
         foot = QLabel("→ Unlock tab: the ranked defeat plan (guided reopen→verify)   ·   "
                       "→ Chain tab: adapter × op capability matrix + extraction path   ·   "
                       "→ Attack Surface tab: implementation-review misuse")
-        foot.setWordWrap(True); foot.setStyleSheet("color:#5e6b7c; font-size:10px; padding-top:4px;")
+        foot.setWordWrap(True); foot.setStyleSheet("color:#8592a3; font-size:10px; padding-top:4px;")
         v.addWidget(foot); v.addStretch(1)
         return w
 
@@ -1370,15 +1383,15 @@ class Dashboard(QWidget):
         # colour the enforcement by how hard it is to defeat
         low = enf.lower()
         if "efuse" in low or "sealed" in low or "permanent" in low or "hardware" in low:
-            ecol = "#f2685f"
+            ecol = "#c73a30"
         elif "reversible" in low or "register" in low or "downgrad" in low or "glitch" in low:
-            ecol = "#e7b04b"
+            ecol = "#a6710a"
         else:
-            ecol = "#98a6b8"
+            ecol = "#5b6b80"
         top.addStretch(1)
         if reversible:
             b = QLabel("runnable lever"); b.setStyleSheet(
-                "color:#0d1017; background:#3ecf8e; border-radius:6px; padding:2px 8px; "
+                "color:#0d1017; background:#15915f; border-radius:6px; padding:2px 8px; "
                 "font-size:10px; font-weight:700;")
             top.addWidget(b)
         cv.addLayout(top)
@@ -1391,7 +1404,7 @@ class Dashboard(QWidget):
             s0 = strats[0]
             d = "  ⚠ destructive" if s0.get("destructive") else ""
             hint = QLabel(f"first move: {s0['title']}{d}"); hint.setWordWrap(True)
-            hint.setStyleSheet("color:#98a6b8; font-size:11px;")
+            hint.setStyleSheet("color:#5b6b80; font-size:11px;")
             cv.addWidget(hint)
         return card
 
@@ -1417,7 +1430,7 @@ class Dashboard(QWidget):
         rows = [(sec["title"], label, val) for sec in cm["sections"] for label, val in sec["rows"]]
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(2, 4, 2, 2); v.setSpacing(6)
         hdr = QLabel(f"MEASURED — {name}  (family: {cm['family']}, cortexm-protect.tcl)")
-        hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700; padding:2px 4px;")
+        hdr.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:700; padding:2px 4px;")
         v.addWidget(hdr)
         t = QTableWidget(len(rows), 3)
         t.setHorizontalHeaderLabels(["Section", "Register", "Value"])
@@ -1432,7 +1445,7 @@ class Dashboard(QWidget):
             si = QTableWidgetItem(sec); si.setForeground(Qt.gray)
             t.setItem(r, 0, si)
             t.setItem(r, 1, QTableWidgetItem(label))
-            vi = QTableWidgetItem(val); vi.setFont(mono); vi.setForeground(QColor("#33d6c4"))
+            vi = QTableWidgetItem(val); vi.setFont(mono); vi.setForeground(QColor("#0f8e80"))
             t.setItem(r, 2, vi)
         v.addWidget(t, 1)
         return w
@@ -1446,8 +1459,8 @@ class Dashboard(QWidget):
         self.refresh_killchain()
         self.refresh_shell()
 
-    _KC_STATE = {"ACHIEVED": ("#3ecf8e", "✓"), "AVAILABLE": ("#5bb6f0", "▶"),
-                 "BLOCKED": ("#f2685f", "✗"), "GATED": ("#7c8898", "…"), "N/A": ("#5e6b7c", "·")}
+    _KC_STATE = {"ACHIEVED": ("#15915f", "✓"), "AVAILABLE": ("#1c7fb0", "▶"),
+                 "BLOCKED": ("#c73a30", "✗"), "GATED": ("#94a1b3", "…"), "N/A": ("#8592a3", "·")}
 
     def _load_profile(self, soc):
         """Load profiles/<soc>.json (JSONC) so the kill-chain's capability-matrix nodes resolve. Cached."""
@@ -1472,21 +1485,21 @@ class Dashboard(QWidget):
         posture, each node's state, and its exact next command (▶ runs it in the console)."""
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(8, 8, 8, 8); v.setSpacing(6)
         self._kc_hdr = QLabel("KILL CHAIN — the ordered path for this board + posture")
-        self._kc_hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700;")
+        self._kc_hdr.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:700;")
         self._kc_hdr.setWordWrap(True)
         v.addWidget(self._kc_hdr)
         self._kc_reach = QLabel(""); self._kc_reach.setWordWrap(True)
-        self._kc_reach.setStyleSheet("color:#cdd6e2; font-size:12px;")
+        self._kc_reach.setStyleSheet("color:#2f3947; font-size:12px;")
         v.addWidget(self._kc_reach)
         # closes the extraction -> result loop: a node/avenue's ▶ run drops a command in the console;
         # this banner appears the moment that command actually finishes AND grew dumps/, with a direct
         # link to go look at what landed — so "I ran an extraction" and "here's the file" aren't two
         # unconnected facts the operator has to notice on their own.
         self._kc_dump_banner = QFrame(); self._kc_dump_banner.setProperty("cls", "cap")
-        self._kc_dump_banner.setStyleSheet("QFrame{border-color:#2f6b4f; background:#0f1d16;}")
+        self._kc_dump_banner.setStyleSheet("QFrame{border-color:#8fd39a; background:#e6f7ee;}")
         self._kc_dump_banner.hide()
         bv = QHBoxLayout(self._kc_dump_banner); bv.setContentsMargins(11, 8, 11, 8)
-        self._kc_dump_msg = QLabel(""); self._kc_dump_msg.setStyleSheet("color:#3ecf8e; font-size:12px; font-weight:700;")
+        self._kc_dump_msg = QLabel(""); self._kc_dump_msg.setStyleSheet("color:#15915f; font-size:12px; font-weight:700;")
         bv.addWidget(self._kc_dump_msg); bv.addStretch(1)
         openbtn = QPushButton("Open in Memory →"); openbtn.setProperty("cls", "cbtn")
         openbtn.setCursor(Qt.PointingHandCursor)
@@ -1500,7 +1513,7 @@ class Dashboard(QWidget):
         self._kc_scroll.setWidget(self._kc_host); v.addWidget(self._kc_scroll, 1)
         foot = QLabel("fuses the unlock engine + capability matrix + findings (jtagx.attackgraph) · ▶ runs "
                       "the node's next command in the console · ✗ BLOCKED = only a physical rig continues")
-        foot.setStyleSheet("color:#5e6b7c; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
+        foot.setStyleSheet("color:#8592a3; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
         self.refresh_killchain()
         return w
 
@@ -1533,18 +1546,18 @@ class Dashboard(QWidget):
         _dav = _debug_auth_verdict(soc, P)
         _davtxt = ""
         if _dav:
-            _DAV_COL = {"OPEN": "#f2685f", "GATED": "#e7b04b",
-                        "AUTHENTICATED": "#5aa0e0", "LOCKED": "#5cc98f", "NONE": "#7c8898"}
+            _DAV_COL = {"OPEN": "#c73a30", "GATED": "#a6710a",
+                        "AUTHENTICATED": "#5aa0e0", "LOCKED": "#219a63", "NONE": "#94a1b3"}
             _davtxt = f"  ·  debug-auth: {_dav[0]} ({_dav[2]})"
         self._kc_reach.setText(f"Reach: {g['depth']}/5 — {g['depth_label']}  ·  {_src}{_davtxt}  (non-physical; "
                                "glitch/side-channel/physical deferred)")
         for i, n in enumerate(g["nodes"]):
-            col, glyph = self._KC_STATE.get(n["state"], ("#7c8898", "·"))
+            col, glyph = self._KC_STATE.get(n["state"], ("#94a1b3", "·"))
             card = QFrame(); card.setProperty("cls", "cap")
             cv = QVBoxLayout(card); cv.setContentsMargins(11, 8, 11, 8); cv.setSpacing(3)
             head = QHBoxLayout()
             spine = "↳ branch" if n["id"] == "secure-boot" else f"{i + 1}"
-            num = QLabel(spine); num.setStyleSheet("color:#5e6b7c; font:600 11px monospace;")
+            num = QLabel(spine); num.setStyleSheet("color:#8592a3; font:600 11px monospace;")
             num.setFixedWidth(52); head.addWidget(num)
             head.addWidget(tag(n["title"], cls="capTitle"))
             head.addStretch(1)
@@ -1559,7 +1572,7 @@ class Dashboard(QWidget):
             cv.addLayout(head)
             if n.get("why"):
                 why = QLabel(n["why"]); why.setWordWrap(True)
-                why.setStyleSheet("color:#98a6b8; font-size:11px;")
+                why.setStyleSheet("color:#5b6b80; font-size:11px;")
                 cv.addWidget(why)
             self._kc_v.addWidget(card)
         # extraction avenues — every real way to get memory/flash off this board, with runnable commands
@@ -1571,7 +1584,7 @@ class Dashboard(QWidget):
             if ex:
                 lbl = QLabel("EXTRACTION AVENUES  ·  best-first  ·  ▶ drops the command in the console — "
                             "run it there, and the result shows up here + in Memory")
-                lbl.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700; padding-top:8px;")
+                lbl.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:700; padding-top:8px;")
                 self._kc_v.addWidget(lbl)
                 for m in ex:
                     row = QFrame(); row.setProperty("cls", "cap")
@@ -1579,8 +1592,8 @@ class Dashboard(QWidget):
                     top = QHBoxLayout()
                     gate = m["access"] if m["access"] != "jtag" else "debug-port"
                     top.addWidget(tag(m["method"], cls="capTitle"))
-                    gcol = {"jtag": "#5bb6f0", "rom-loader": "#3ecf8e", "readback": "#e7b04b",
-                            "chip-off": "#f2685f"}.get(m["access"], "#8a97a8")
+                    gcol = {"jtag": "#1c7fb0", "rom-loader": "#15915f", "readback": "#a6710a",
+                            "chip-off": "#c73a30"}.get(m["access"], "#5b6b80")
                     gl = QLabel(gate + ("  ⚠" if not m["non_destructive"] else ""))
                     gl.setStyleSheet(f"color:{gcol}; font-weight:700; font-size:10px;")
                     top.addStretch(1); top.addWidget(gl)
@@ -1590,7 +1603,7 @@ class Dashboard(QWidget):
                         pb.clicked.connect(lambda _=False, c=m["cmd"]: self.run_in_console.emit(c))
                         top.addWidget(pb)
                     rv.addLayout(top)
-                    hy = QLabel(m["how"]); hy.setWordWrap(True); hy.setStyleSheet("color:#98a6b8; font-size:10.5px;")
+                    hy = QLabel(m["how"]); hy.setWordWrap(True); hy.setStyleSheet("color:#5b6b80; font-size:10.5px;")
                     rv.addWidget(hy)
                     self._kc_v.addWidget(row)
         self._kc_v.addStretch(1)
@@ -1604,7 +1617,7 @@ class Dashboard(QWidget):
         auto-detected from the newest capture when available; the goal chips always work."""
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(8, 8, 8, 8); v.setSpacing(6)
         hdr = QLabel("JTAG-TO-SHELL — the capstone: from this access, how do I get IN")
-        hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700;")
+        hdr.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:700;")
         v.addWidget(hdr)
         fbar = QHBoxLayout(); fbar.setSpacing(6)
         self._sh_group = QButtonGroup(self); self._sh_group.setExclusive(True)
@@ -1616,13 +1629,13 @@ class Dashboard(QWidget):
         fbar.addStretch(1)
         v.addLayout(fbar)
         self._sh_state = QLabel(""); self._sh_state.setWordWrap(True)
-        self._sh_state.setStyleSheet("color:#cdd6e2; font-size:12px;")
+        self._sh_state.setStyleSheet("color:#2f3947; font-size:12px;")
         v.addWidget(self._sh_state)
         wedge = QLabel("⚠ Live code injection on a running core WEDGES the DAP on OpenOCD 0.12 — every "
                        "step here is a memory WRITE to already-executing code, never fresh code+jump.")
         wedge.setWordWrap(True)
-        wedge.setStyleSheet("color:#e7b04b; font-size:10.5px; background:#241d0d; border:1px solid "
-                            "#4a3a12; border-radius:6px; padding:6px 9px;")
+        wedge.setStyleSheet("color:#a6710a; font-size:10.5px; background:#fbf0dc; border:1px solid "
+                            "#e8c98a; border-radius:6px; padding:6px 9px;")
         v.addWidget(wedge)
         self._sh_scroll = QScrollArea(); self._sh_scroll.setWidgetResizable(True)
         self._sh_scroll.setFrameShape(QFrame.NoFrame)
@@ -1631,7 +1644,7 @@ class Dashboard(QWidget):
         self._sh_scroll.setWidget(self._sh_host); v.addWidget(self._sh_scroll, 1)
         foot = QLabel("jtagx.jtagtoshell chains dump → locate → patch → apply / cold-boot / break-capture "
                       "/ reflash · ▶ drops each step's command in the console, in order")
-        foot.setStyleSheet("color:#5e6b7c; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
+        foot.setStyleSheet("color:#8592a3; font-size:10px;"); foot.setWordWrap(True); v.addWidget(foot)
         self._sh_goal = "shell"
         self.refresh_shell()
         return w
@@ -1671,12 +1684,12 @@ class Dashboard(QWidget):
             head.addWidget(tag(p["title"], cls="capTitle"))
             if p["id"] == result.get("recommended"):
                 rec = QLabel("recommended"); rec.setStyleSheet(
-                    "color:#0d1017; background:#3ecf8e; border-radius:6px; padding:2px 8px; "
+                    "color:#0d1017; background:#15915f; border-radius:6px; padding:2px 8px; "
                     "font-size:10px; font-weight:700;")
                 head.addWidget(rec)
             head.addStretch(1)
             cv.addLayout(head)
-            why = QLabel(p["why"]); why.setWordWrap(True); why.setStyleSheet("color:#98a6b8; font-size:11px;")
+            why = QLabel(p["why"]); why.setWordWrap(True); why.setStyleSheet("color:#5b6b80; font-size:11px;")
             cv.addWidget(why)
             for i, s in enumerate(p["steps"], 1):
                 srow = QFrame(); srow.setProperty("cls", "cap")
@@ -1692,11 +1705,11 @@ class Dashboard(QWidget):
                 sv.addLayout(stop)
                 if s.get("cmd"):
                     cmdlbl = QLabel(s["cmd"]); cmdlbl.setWordWrap(True)
-                    cmdlbl.setStyleSheet("color:#33d6c4; font-size:10.5px; font-family:monospace;")
+                    cmdlbl.setStyleSheet("color:#0f8e80; font-size:10.5px; font-family:monospace;")
                     sv.addWidget(cmdlbl)
                 if s.get("note"):
                     note = QLabel(s["note"]); note.setWordWrap(True)
-                    note.setStyleSheet("color:#5e6b7c; font-size:10px;")
+                    note.setStyleSheet("color:#8592a3; font-size:10px;")
                     sv.addWidget(note)
                 cv.addWidget(srow)
             self._sh_v.addWidget(card)
@@ -1731,19 +1744,19 @@ class Dashboard(QWidget):
             cv = QVBoxLayout(card); cv.setContentsMargins(11, 9, 11, 9); cv.setSpacing(3)
             head = QHBoxLayout()
             badge = QLabel(cls); badge.setStyleSheet(
-                f"color:#0d1017; background:{self._CLS_CLR.get(cls,'#7c8898')}; border-radius:6px; "
+                f"color:#0d1017; background:{self._CLS_CLR.get(cls,'#94a1b3')}; border-radius:6px; "
                 "padding:2px 8px; font-size:10px; font-weight:700;")
             head.addWidget(badge)
             head.addWidget(tag(hid, cls="capTitle"))
             sv = QLabel(sev); sv.setStyleSheet(
-                f"color:{'#f2685f' if sev == 'HIGH' else '#e7b04b'}; font-weight:700; font-size:11px;")
+                f"color:{'#c73a30' if sev == 'HIGH' else '#a6710a'}; font-weight:700; font-size:11px;")
             head.addWidget(sv)
             confirmed = states.get(hid, {}).get("state") == "confirmed"
             stp = QLabel("confirmed" if confirmed else "asserted")
             stp.setToolTip("posture READ from a live capture" if confirmed
                            else "predicted from the supplied/derived posture — verify on hardware")
             stp.setStyleSheet(
-                ("color:#0d1017; background:#5cc98f;" if confirmed else "color:#8fa0b4; border:1px solid #33404f;")
+                ("color:#0d1017; background:#219a63;" if confirmed else "color:#8592a3; border:1px solid #dfe4ea;")
                 + " border-radius:6px; padding:1px 7px; font-size:9px; font-weight:700; margin-left:5px;")
             head.addWidget(stp); head.addStretch(1)
             if probe:
@@ -1751,7 +1764,7 @@ class Dashboard(QWidget):
                 pb.setToolTip(probe); pb.clicked.connect(lambda _=False, c=probe: self.run_in_console.emit(c))
                 head.addWidget(pb)
             cv.addLayout(head)
-            body = QLabel(txt); body.setWordWrap(True); body.setStyleSheet("color:#98a6b8; font-size:11px;")
+            body = QLabel(txt); body.setWordWrap(True); body.setStyleSheet("color:#5b6b80; font-size:11px;")
             cv.addWidget(body)
             self._as_v.addWidget(card)
         self._as_v.addStretch(1)
@@ -1762,7 +1775,7 @@ class Dashboard(QWidget):
         if not findings and hasattr(self, "_as_v"):
             empty = QLabel(f"No implementation-review hypotheses fire for {soc} at its current posture — "
                            "a locked/provisioned board closes most of this surface.")
-            empty.setWordWrap(True); empty.setStyleSheet("color:#5e6b7c; font-size:11px; padding:8px;")
+            empty.setWordWrap(True); empty.setStyleSheet("color:#8592a3; font-size:11px; padding:8px;")
             self._as_v.insertWidget(0, empty)
 
     def _filter_attack_surface(self, cls):
@@ -1810,9 +1823,9 @@ class Dashboard(QWidget):
             bi = QTableWidgetItem(block); bi.setForeground(Qt.gray)
             t.setItem(r, 0, bi)
             t.setItem(r, 1, QTableWidgetItem(name))
-            ai = QTableWidgetItem(addr); ai.setForeground(QColor("#7c8898")); ai.setFont(mono)
+            ai = QTableWidgetItem(addr); ai.setForeground(QColor("#94a1b3")); ai.setFont(mono)
             t.setItem(r, 2, ai)
-            vi = QTableWidgetItem(val); vi.setFont(mono); vi.setForeground(QColor("#33d6c4"))
+            vi = QTableWidgetItem(val); vi.setFont(mono); vi.setForeground(QColor("#0f8e80"))
             t.setItem(r, 3, vi)
         t.currentCellChanged.connect(lambda cr, *_: self._show_reg_fields(cr))
         t.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -1823,8 +1836,8 @@ class Dashboard(QWidget):
         # field-decode detail for the selected register
         self._reg_detail = QLabel("select a register to decode its bit-fields")
         self._reg_detail.setWordWrap(True)
-        self._reg_detail.setStyleSheet("color:#98a6b8; font-size:11px; background:#0e131b;"
-                                       "border:1px solid #232c39; border-radius:8px; padding:8px 10px;")
+        self._reg_detail.setStyleSheet("color:#5b6b80; font-size:11px; background:#f3f5f8;"
+                                       "border:1px solid #dfe4ea; border-radius:8px; padding:8px 10px;")
         self._reg_detail.setTextInteractionFlags(Qt.TextSelectableByMouse)
         v.addWidget(self._reg_detail)
         self._filter_registers()
@@ -1838,14 +1851,14 @@ class Dashboard(QWidget):
         pf = QFrame(); pf.setProperty("cls", "panel")
         v = QVBoxLayout(pf); v.setContentsMargins(12, 9, 12, 9); v.setSpacing(5)
         hdr = QLabel(f"🧬  DEBUG TOPOLOGY (CoreSight)  ·  {len(comps)} component(s) identified")
-        hdr.setStyleSheet("color:#98a6b8; font-size:11px; font-weight:700;")
+        hdr.setStyleSheet("color:#5b6b80; font-size:11px; font-weight:700;")
         v.addWidget(hdr)
         if not comps:
             note = QLabel("No ROM-table components parsed from this capture's `dap info` text — either "
                           "no AP exposes a walkable ROM table here, or the capture predates the "
                           "CoreSight walker (re-run enumerate.tcl §10). A hardened/production board's "
                           "DAP typically populates this.")
-            note.setWordWrap(True); note.setStyleSheet("color:#5e6b7c; font-size:10.5px;")
+            note.setWordWrap(True); note.setStyleSheet("color:#8592a3; font-size:10.5px;")
             v.addWidget(note)
             return pf
         cap = comps[:12]
@@ -1857,11 +1870,11 @@ class Dashboard(QWidget):
             same = kind.replace("-", " ").lower() == name.lower()
             label = kind if same else f"{kind:<10}  {name}"
             row = QLabel(f"{d['base']}  ·  {label}" + (f"  ({d.get('part')})" if d.get("part") else ""))
-            row.setStyleSheet("color:#33d6c4; font-size:10.5px; font-family:monospace;")
+            row.setStyleSheet("color:#0f8e80; font-size:10.5px; font-family:monospace;")
             v.addWidget(row)
         if len(comps) > 12:
             more = QLabel(f"… +{len(comps) - 12} more")
-            more.setStyleSheet("color:#5e6b7c; font-size:10px;")
+            more.setStyleSheet("color:#8592a3; font-size:10px;")
             v.addWidget(more)
         return pf
 
@@ -1896,16 +1909,16 @@ class Dashboard(QWidget):
         if row is None or row < 0 or row >= len(self._regs):
             return
         block, name, addr, val, flds = self._regs[row]
-        head = f"<b>{block}.{name}</b>  <span style='color:#7c8898'>{addr}</span> = <span style='color:#33d6c4'>{val}</span>"
+        head = f"<b>{block}.{name}</b>  <span style='color:#94a1b3'>{addr}</span> = <span style='color:#0f8e80'>{val}</span>"
         if not flds:
-            self._reg_detail.setText(head + "  <span style='color:#5e6b7c'>(no decoded fields)</span>")
+            self._reg_detail.setText(head + "  <span style='color:#8592a3'>(no decoded fields)</span>")
             return
         parts = []
         for fname, fd in flds.items():
             bits = fd.get("bits", "?") if isinstance(fd, dict) else "?"
             fv = fd.get("value", fd) if isinstance(fd, dict) else fd
-            parts.append(f"<span style='color:#cdd7e4'>{fname}</span>"
-                         f"<span style='color:#5e6b7c'>[{bits}]</span>=<span style='color:#e7b04b'>{fv}</span>")
+            parts.append(f"<span style='color:#2f3947'>{fname}</span>"
+                         f"<span style='color:#8592a3'>[{bits}]</span>=<span style='color:#a6710a'>{fv}</span>")
         self._reg_detail.setText(head + "<br>" + " &nbsp; ".join(parts))
 
     def _launcher(self, title, body, btn_text, page_idx, on_click=None):
@@ -1914,7 +1927,7 @@ class Dashboard(QWidget):
         w = QWidget(); lay = QVBoxLayout(w); lay.setContentsMargins(24, 22, 24, 22); lay.setSpacing(10)
         lay.addStretch(1)
         lay.addWidget(tag(title, cls="capTitle"))
-        b = QLabel(body); b.setWordWrap(True); b.setStyleSheet("color:#98a6b8; font-size:12px;")
+        b = QLabel(body); b.setWordWrap(True); b.setStyleSheet("color:#5b6b80; font-size:12px;")
         lay.addWidget(b)
         btn = QPushButton(btn_text); btn.setObjectName("ghost"); btn.setCursor(Qt.PointingHandCursor)
         btn.setFixedWidth(220)
@@ -2045,12 +2058,12 @@ class Dashboard(QWidget):
                   "  •  Unlock tab — run the guided reopen→verify lock-defeat\n"
                   "  •  Chain tab — the adapter × op capability matrix picks the extraction path\n"
                   "  •  Attack Surface tab — implementation-review misuse")
-            msg.setWordWrap(True); msg.setStyleSheet("color:#98a6b8; font-size:11px; padding:10px 6px;")
+            msg.setWordWrap(True); msg.setStyleSheet("color:#5b6b80; font-size:11px; padding:10px 6px;")
             self._caps_v.addWidget(msg)
             for label, idx in (("Open Unlock tab →", 1), ("Open Chain tab →", 2)):
                 b = QPushButton(label); b.setCursor(Qt.PointingHandCursor)
-                b.setStyleSheet("QPushButton{background:#141922; color:#98a6b8; border:1px solid #232c39;"
-                                "border-radius:8px; padding:6px 10px;} QPushButton:hover{border-color:#2c3644;}")
+                b.setStyleSheet("QPushButton{background:#ffffff; color:#5b6b80; border:1px solid #dfe4ea;"
+                                "border-radius:8px; padding:6px 10px;} QPushButton:hover{border-color:#c7d0da;}")
                 b.clicked.connect(lambda _=False, i=idx: self.navigate.emit(i))
                 self._caps_v.addWidget(b)
             self._caps_v.addStretch(1)
@@ -2063,7 +2076,7 @@ class Dashboard(QWidget):
             ch = QHBoxLayout(c); ch.setContentsMargins(11, 9, 11, 9); ch.setSpacing(10)
             glyph, color = CAPIC[kind]
             ic = QLabel(glyph); ic.setFixedSize(28, 28); ic.setAlignment(Qt.AlignCenter)
-            ic.setStyleSheet(f"color:{color}; background:#1a212c; border-radius:9px; font-weight:700;")
+            ic.setStyleSheet(f"color:{color}; background:#eef1f5; border-radius:9px; font-weight:700;")
             ch.addWidget(ic)
             col = QVBoxLayout(); col.setSpacing(2)
             col.addWidget(tag(title, cls="capTitleOff" if kind == "off" else "capTitle"))
