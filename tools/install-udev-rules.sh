@@ -32,8 +32,11 @@ echo ">> installing $RULES -> /etc/udev/rules.d/99-jtagx-kit.rules"
 cp "$RULES" /etc/udev/rules.d/99-jtagx-kit.rules
 
 echo ">> reloading udev rules"
-udevadm control --reload-rules
-udevadm trigger
+if ! udevadm control --reload-rules || ! udevadm trigger; then
+    echo "warning: udevadm couldn't reload/trigger rules (no udevd running here? container/chroot?)." >&2
+    echo "  the rules file is installed at /etc/udev/rules.d/99-jtagx-kit.rules regardless; it will" >&2
+    echo "  take effect once udevd is actually running (e.g. after a reboot on real hardware)." >&2
+fi
 
 # the user who ran `sudo` (fall back to root if run directly as root, e.g. inside a container)
 TARGET_USER="${SUDO_USER:-root}"

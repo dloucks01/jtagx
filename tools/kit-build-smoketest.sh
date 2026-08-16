@@ -91,6 +91,9 @@ if [ ! -f "$KIT/install-udev-rules.sh" ]; then
 elif [ ! -x "$KIT/install-udev-rules.sh" ]; then
     fail "install-udev-rules.sh is bundled but not executable"
 fi
+if [ ! -f "$KIT/tools/install-udev-rules.sh" ]; then
+    fail "install-udev-rules.sh was not bundled at tools/ (the wholesale rsync source)"
+fi
 if [ ! -f "$KIT/openocd/adapters/99-jtagx-kit.rules" ]; then
     fail "openocd/adapters/99-jtagx-kit.rules was not bundled"
 elif command -v udevadm >/dev/null 2>&1; then

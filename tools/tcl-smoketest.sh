@@ -145,6 +145,14 @@ fi
 echo "PASS: all register addresses match canonical source"
 
 echo ""
+echo "Verifying adapter VID:PID consistency..."
+if ! python3 tools/verify-adapter-ids.py --quiet; then
+    echo "FAIL: adapter-ID mismatch (run 'python3 tools/verify-adapter-ids.py' for details)"
+    exit 1
+fi
+echo "PASS: vendor-backend adapter IDs agree between detect.py and 99-jtagx-kit.rules"
+
+echo ""
 echo "Running handler-verdict unit tests..."
 if ! tclsh tests/handler-verdicts.tcl >/tmp/handler-verdict-output 2>&1; then
     cat /tmp/handler-verdict-output
