@@ -29,7 +29,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QFrame, QPushButton,
     QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem, QHeaderView, QApplication,
-    QLineEdit,
+    QLineEdit, QScrollArea,
 )
 try:
     from jtagx import firstcontact as _firstcontact
@@ -121,10 +121,18 @@ class ChainPage(QWidget):
             tv.addLayout(self._tc_results)
             outer.addWidget(tf)
 
-        # a container the refresh() rebuilds
-        self.body = QVBoxLayout(); self.body.setContentsMargins(0, 0, 0, 0); self.body.setSpacing(12)
-        bw = QWidget(); bw.setLayout(self.body)
-        outer.addWidget(bw, 1)
+        # a container the refresh() rebuilds. This page has more natural content (preflight, transport
+        # card, chain tree, xsdb target tree, adapter table, capability matrix) than fits in one viewport
+        # — without a scroll area, a plain QVBoxLayout has nowhere to put the overflow but to compress
+        # every "expanding" child below its natural size (found 2026-08-15: the capability matrix table
+        # was squeezed to ~100px against a 178px need, clipping its last row right where the routing-
+        # summary text started, reading as a visual overlap). Same QScrollArea pattern already used for
+        # Dashboard's Kill Chain / Attack Surface / Shell tabs and the Unlock panel.
+        scroll = QScrollArea(); scroll.setWidgetResizable(True); scroll.setFrameShape(QFrame.NoFrame)
+        bw = QWidget()
+        self.body = QVBoxLayout(bw); self.body.setContentsMargins(0, 0, 0, 8); self.body.setSpacing(12)
+        scroll.setWidget(bw)
+        outer.addWidget(scroll, 1)
 
         self.refresh()
 
@@ -414,7 +422,13 @@ class ChainPage(QWidget):
                 cell = QLabel("✓" if ok else "·"); cell.setAlignment(Qt.AlignCenter)
                 cell.setStyleSheet(f"color:{'#3ecf8e' if ok else '#5e6b7c'}; font-weight:700;")
                 t.setCellWidget(r, 3 + i, cell)
-        t.setMaximumHeight(38 + 26 * len(rows))
+        # Cap the table's height at exactly enough for its header + rows, so it displays in full without
+        # its own internal scrollbar. Must MEASURE the real row height rather than guess a constant: a
+        # guessed "26px/row" (found 2026-08-15, one row too short vs the actual styled 30px) silently
+        # clips the last row behind a scrollbar, which then visually runs into the routing-summary text
+        # added right after it in the layout — looks like an overlap bug, but the cause is just an
+        # undersized budget.
+        t.setMaximumHeight(t.horizontalHeader().height() + t.rowHeight(0) * len(rows) + 6)
         cv.addWidget(t)
         # op routing summary — the actionable line: best adapter per op, or BLOCKED + why
         if routing_plan is not None:

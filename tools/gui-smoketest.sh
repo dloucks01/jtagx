@@ -595,6 +595,32 @@ if not d._kc_dump_banner.isHidden(): bad("refresh_killchain should clear a stale
 d._on_run_done(0)
 if not d._kc_dump_banner.isHidden(): bad("no new dumps should NOT show the banner")
 
+# 30. Chain page: the capability matrix table renders ALL its rows without needing its own internal
+# scroll. Regression-guards a real layout bug found by hand (2026-08-15): chain_page.py's body had no
+# QScrollArea (every other content-heavy page/tab in this app does), so with 6+ stacked panels
+# (preflight, transport card, chain tree, xsdb tree, adapter table, capability matrix) all competing for
+# stretch=1 in a fixed-height page, Qt squeezed the capability matrix table to ~100px against its real
+# ~178px need, clipping the last row right where the routing-summary text began below it — read as a
+# visual overlap. Fixed by wrapping the page body in a QScrollArea (same pattern as Dashboard's Kill
+# Chain / Attack Surface / Shell tabs and the Unlock panel) + measuring the real row height instead of
+# guessing a constant for the height budget. Assert the table's rendered height actually reaches its
+# natural content size (header + all rows), which only holds if the page can scroll for the overflow.
+w._go(2)
+app.processEvents()
+from PySide6.QtWidgets import QScrollArea as _QScrollArea, QTableWidget as _QTableWidget
+chain_page = w.stack.widget(2)
+if not chain_page.findChildren(_QScrollArea):
+    bad("Chain page should have a QScrollArea (content overflows a single viewport)")
+_cap_tables = [t for t in chain_page.findChildren(_QTableWidget) if t.columnCount() > 6]
+if not _cap_tables:
+    bad("Chain page should have a capability-matrix table (adapter x op, 6+ columns)")
+else:
+    _ct = _cap_tables[0]
+    _needed = _ct.horizontalHeader().height() + _ct.rowHeight(0) * _ct.rowCount()
+    if _ct.height() < _needed - 2:   # small slack for frame/border rounding
+        bad(f"capability matrix table is clipped: height={_ct.height()} but needs >={_needed} "
+            f"for its {_ct.rowCount()} rows without an internal scrollbar")
+
 w.dash.stop()
 print("  gui end-to-end OK (5 pages, hero real, tabs filled, nav flow, memory selector, unlock plans)")
 PY
